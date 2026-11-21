@@ -100,7 +100,7 @@ export class RebuildChaptersModal extends Modal {
             };
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async populateVolumes(project: string, selectEl: HTMLSelectElement): Promise<void> {

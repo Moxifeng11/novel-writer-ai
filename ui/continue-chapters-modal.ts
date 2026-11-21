@@ -93,7 +93,7 @@ export class ContinueChaptersModal extends Modal {
             };
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async detectContinuePoint(project: string): Promise<void> {

@@ -119,7 +119,7 @@ export class ForeshadowSection extends SettingsSection {
         });
         exportBtn.onclick = () => {
             const json = configManager.exportConfig();
-            copyText(json).then(() => {
+            void copyText(json).then(() => {
                 showSuccessNotice(t('settings.foreshadow.copiedNotice'));
             });
         };
@@ -189,7 +189,7 @@ export class ForeshadowSection extends SettingsSection {
 
     private saveForeshadowConfig(configManager: ForeshadowConfigManager): void {
         this.plugin.settings.foreshadowConfig = configManager.getConfig();
-        this.plugin.saveSettings();
+        void this.plugin.saveSettings();
     }
 
     private showForeshadowTypeModal(existingType?: ForeshadowTypeConfig): void {

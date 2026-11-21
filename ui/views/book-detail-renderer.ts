@@ -827,9 +827,9 @@ export class BookDetailRenderer {
             cls: 'nw-btn nw-btn-secondary nw-btn-xs',
             attr: { title: t('bookDetail.genre.autoTip') }
         });
-        autoClassifyBtn.addEventListener('click', async () => {
+        autoClassifyBtn.addEventListener('click', () => { void (async () => {
             await this.deps.onClassifyBook(book);
-        });
+        })(); });
 
         const editBtn = actionBtns.createEl('button', {
             text: t('bookDetail.genre.edit'),
@@ -875,9 +875,9 @@ export class BookDetailRenderer {
                 const recRow = recSection.createDiv({
                     cls: 'nw-kb-detail-rec-row'
                 });
-                recRow.addEventListener('click', async () => {
+                recRow.addEventListener('click', () => { void (async () => {
                     await this.deps.onApplyGenreRecommendation(book, rec);
-                });
+                })(); });
 
                 const left = recRow.createDiv({ cls: 'nw-kb-detail-rec-main' });
                 left.createSpan({
@@ -2125,10 +2125,10 @@ export class BookDetailRenderer {
             await this.deps.onAddCustomTag(book, tag);
             addInput.value = '';
         };
-        addBtn.addEventListener('click', addHandler);
+        addBtn.addEventListener('click', () => { void addHandler(); });
         addInput.addEventListener('keydown', (e) => {
             if (isImeComposing(e)) return;
-            if (e.key === 'Enter') addHandler();
+            if (e.key === 'Enter') void addHandler();
         });
     }
 

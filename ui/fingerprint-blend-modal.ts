@@ -560,9 +560,9 @@ export class FingerprintBlendModal extends Modal {
                 style: 'padding:6px 14px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:12px;'
             }
         });
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => { void (async () => {
             await this.handleSave();
-        });
+        })(); });
     }
 
     private async handleSave(): Promise<void> {

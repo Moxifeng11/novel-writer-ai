@@ -491,11 +491,11 @@ export class PromptManagerSettings {
             cls: 'nw-pm-check'
         });
         toggle.checked = this.promptManager.isABTestingEnabled();
-        toggle.addEventListener('change', async () => {
+        toggle.addEventListener('change', () => { void (async () => {
             this.promptManager.setABTestingEnabled(toggle.checked);
             showSuccessNotice(t(toggle.checked ? 'settings.promptManager.abEnabledNotice' : 'settings.promptManager.abDisabledNotice'));
             this.renderActiveTab();
-        });
+        })(); });
 
         const tests = this.promptManager.getABTests();
 
@@ -817,7 +817,7 @@ export class PromptManagerSettings {
             cls: 'nw-pm-file-input',
             attr: { accept: '.json' }
         });
-        input.addEventListener('change', async (e) => {
+        input.addEventListener('change', (e) => { void (async () => {
             const target = e.target as HTMLInputElement;
             const file = target.files?.[0];
             if (!file) return;
@@ -831,7 +831,7 @@ export class PromptManagerSettings {
                 return;
             }
             this.openImportPreview(file.name, text);
-        });
+        })(); });
     }
 
     /**

@@ -295,14 +295,14 @@ export function renderValidationResult(
     const actionRow = panel.createDiv({ cls: 'novel-writer-cowrite-card-actions' });
     const useBtn = actionRow.createEl('button', { text: t('cowrite.cards.useBtn'), cls: 'novel-writer-cowrite-primary-btn' });
     // 与「✓ 接受」同一把采纳互斥锁：连点两次不能重复插入同一段校验后的文本
-    useBtn.addEventListener('click', async () => {
+    useBtn.addEventListener('click', () => { void (async () => {
         if (!actions.tryBeginAccept()) return;
         try {
             await actions.onContinue(modifiedText, suggestion, validation, editDurationMs);
         } finally {
             actions.endAccept();
         }
-    });
+    })(); });
     const editBtn = actionRow.createEl('button', { text: t('cowrite.cards.editThenValidate'), cls: 'novel-writer-cowrite-secondary-btn' });
     editBtn.addEventListener('click', () => actions.onEdit(suggestion, modifiedText));
 }

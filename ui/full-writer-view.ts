@@ -684,7 +684,7 @@ export class FullWriterView extends ItemView {
             this.plugin,
             (container, filePath, title) => this.showFileContentInline(container, filePath, title),
             (tab, step) => this.wizardStepExecutors.executeWizardStep(tab, step),
-            (tab, skipAutoAdvance) => this.renderWizardTabContent(tab, skipAutoAdvance),
+            (tab, skipAutoAdvance) => { void this.renderWizardTabContent(tab, skipAutoAdvance); },
             (modal) => { this.outlineTreeModal = modal; },
         );
         this.wizardStepExecutors = new WizardStepExecutors(
@@ -694,7 +694,7 @@ export class FullWriterView extends ItemView {
             this.wizardStepResults,
             this.wizardStepExecuting,
             (id) => this.tabs.find(t => t.id === id) as WizardTab | undefined,
-            (tab, skipAutoAdvance) => this.renderWizardTabContent(tab, skipAutoAdvance),
+            (tab, skipAutoAdvance) => { void this.renderWizardTabContent(tab, skipAutoAdvance); },
             (project) => this.checkChaptersComplete(project),
             () => this.tabContent,
         );
@@ -719,7 +719,7 @@ export class FullWriterView extends ItemView {
                 onAddFanficSetting: (project) => {
                     new AddFanficSettingModal(this.app, this.plugin, project).open();
                 },
-                onDeleteProject: () => this.renderProjectSelectorInTab(),
+                onDeleteProject: () => { void this.renderProjectSelectorInTab(); },
                 // 项目页没有 activeFile：把卡片选中同步给命令层，右侧快捷工具才能拿到项目
                 onProjectSelected: (project) => {
                     if (project) {
@@ -756,7 +756,7 @@ export class FullWriterView extends ItemView {
             },
             onOpenUnit: (project, mode, unitNumber) => this.openUnitTab(project, unitNumber, mode),
             onBrowseUnits: (project, mode) => this.openAllUnits(project, mode),
-            onSettle: (project) => this.openSettlementTarget(project),
+            onSettle: (project) => { void this.openSettlementTarget(project); },
             onExport: (project) => {
                 new ExportManuscriptModal(this.app, this.plugin, project, {
                     onExported: () => markFlowExported(project),
@@ -849,7 +849,7 @@ export class FullWriterView extends ItemView {
             getChaptersForProject: (project) => this.getChaptersForProject(project),
             sortChaptersByNumber: (chapters) => this.sortChaptersByNumber(chapters),
             selectChapter: (project, chapter) => this.selectChapter(project, chapter),
-            openCurrentChapterInCoWriting: () => this.openCurrentChapterInCoWriting(),
+            openCurrentChapterInCoWriting: () => { void this.openCurrentChapterInCoWriting(); },
             openKnowledgeBase: () => this.openKnowledgeBase(),
             openFingerprintLibrary: () => this.openFingerprintLibrary(),
             executeCommand: (commandId) => this.plugin.executeCommand(commandId),
@@ -1019,7 +1019,7 @@ export class FullWriterView extends ItemView {
                 log.error('[FullWriter] onOpen error:', errMsg);
                 // 回到项目页必须说明原因，否则用户只看到「闪一下又回去了」
                 showErrorNotice(errMsg, { title: t('fullwriter.chapterLoadFailed'), timeout: 8000 });
-                this.activateTab('project-selector');
+                void this.activateTab('project-selector');
             }
         } else {
             // 无活跃章节 → 显示项目选择
@@ -1051,7 +1051,7 @@ export class FullWriterView extends ItemView {
 
         // 监听项目创建事件（Obsidian Workspace 内置事件系统）
         this.registerEvent(
-            this.app.workspace.on('novel-writer:project-created', async (data: { projectName: string; projectType: 'original' | 'fanfic' }) => {
+            this.app.workspace.on('novel-writer:project-created', (data: { projectName: string; projectType: 'original' | 'fanfic' }) => { void (async () => {
                 log.warn('[FullWriter] project-created 事件触发:', data.projectName, data.projectType);
                 // 1. 确保在 project-selector tab（不依赖 activateTab 的提前返回）
                 if (this.activeTabId !== 'project-selector') {
@@ -1060,7 +1060,7 @@ export class FullWriterView extends ItemView {
                 // 2. 直接调用 renderProjectSelectorInTab 强制重渲染（不依赖 refresh/container）
                 //    延迟 150ms 确保 vault.create 已完成
                 if (this.projectRefreshTimer) window.clearTimeout(this.projectRefreshTimer);
-                this.projectRefreshTimer = window.setTimeout(async () => {
+                this.projectRefreshTimer = window.setTimeout(() => { void (async () => {
                     this.projectRefreshTimer = null;
                     // 视图已关闭时 contentEl 已脱离 DOM，继续渲染只会写进空容器
                     if (!contentEl.isConnected) return;
@@ -1072,8 +1072,8 @@ export class FullWriterView extends ItemView {
                         const errMsg = e instanceof Error ? e.message : String(e);
                         log.error('[FullWriter] 刷新项目列表失败:', errMsg);
                     }
-                }, 150);
-            })
+                })(); }, 150);
+            })(); })
         );
 
         // 监听刷新上下文面板事件
@@ -1323,7 +1323,7 @@ export class FullWriterView extends ItemView {
     }
 
     private openKnowledgeBase(): void {
-        this.plugin.openKnowledgeBaseView();
+        void this.plugin.openKnowledgeBaseView();
     }
 
     private openFingerprintLibrary(): void {
@@ -2393,7 +2393,7 @@ export class FullWriterView extends ItemView {
                 cls: 'nw-step-action nw-step-action-cowrite',
                 attr: { title: t('fullwriter.enterCoWriteTip') },
             });
-            cowriteBtn.addEventListener('click', () => this.openCurrentChapterInCoWriting());
+            cowriteBtn.addEventListener('click', () => { void this.openCurrentChapterInCoWriting(); });
 
             const draftBtn = actions.createEl('button', {
                 text: done ? t('fullwriter.regenChapterBtn') : t('fullwriter.draftChapterBtn'),
@@ -2423,7 +2423,7 @@ export class FullWriterView extends ItemView {
                 cls: 'nw-step-action nw-step-action-ghost',
                 attr: { title: t('fullwriter.skipTip') },
             });
-            skipBtn.addEventListener('click', () => this.stepRunner.moveToNextStep(this._makeStepRunCtx()));
+            skipBtn.addEventListener('click', () => { void this.stepRunner.moveToNextStep(this._makeStepRunCtx()); });
         }
 
         const params = bar.createDiv({ cls: 'nw-step-params' });
@@ -2533,7 +2533,7 @@ export class FullWriterView extends ItemView {
                 tabEl.addClass('is-clickable');
                 tabEl.addEventListener('click', () => {
                     this.currentStepIndex = tab.index;
-                    this.renderInContainer(this.tabContent);
+                    void this.renderInContainer(this.tabContent);
                 });
             }
         }
@@ -2577,7 +2577,7 @@ export class FullWriterView extends ItemView {
             generateBtn.setText(t('fullwriter.planFaster'));
         }
 
-        generateBtn.addEventListener('click', async () => {
+        generateBtn.addEventListener('click', () => { void (async () => {
             if (this.isLoading) return;
 
             const doneCount = planningSteps.filter(s => this.stepCompleted.has(s.key)).length;
@@ -2598,9 +2598,9 @@ export class FullWriterView extends ItemView {
                         stepKeys,
                         this._makeStepRunCtx(),
                         {
-                            onStepStart: () => { this.renderInContainer(this.tabContent); },
-                            onStepComplete: () => { this.renderInContainer(this.tabContent); },
-                            onStepError: () => { this.renderInContainer(this.tabContent); },
+                            onStepStart: () => { void this.renderInContainer(this.tabContent); },
+                            onStepComplete: () => { void this.renderInContainer(this.tabContent); },
+                            onStepError: () => { void this.renderInContainer(this.tabContent); },
                         }
                     );
                 }
@@ -2640,7 +2640,7 @@ export class FullWriterView extends ItemView {
                     log.error('[Planning] 失败后重渲染异常:', renderError);
                 }
             }
-        });
+        })(); });
     }
 
     // ============================================================

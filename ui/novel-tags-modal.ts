@@ -64,7 +64,7 @@ export class NovelTagsModal extends Modal {
             };
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async analyzeTags(project: string): Promise<void> {

@@ -144,14 +144,14 @@ export class MemoryPreview {
                 text: '✓ 标记为已揭示',
                 attr: { style: 'margin-top: 4px; padding: 2px 8px; font-size: 0.78em; cursor: pointer;' },
             });
-            btn.addEventListener('click', async () => {
+            btn.addEventListener('click', () => { void (async () => {
                 await markMemoryRevealed(
                     this.host.app, project, shard.characterName,
                     shard.id, currentChapter,
                 );
                 btn.disabled = true;
                 btn.textContent = '✅ 已揭示';
-            });
+            })(); });
         }
     }
 }

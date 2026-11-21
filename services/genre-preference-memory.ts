@@ -341,19 +341,18 @@ export class GenrePreferenceMemory {
             window.clearTimeout(this.saveTimer);
         }
 
-        return new Promise((resolve) => {
-            this.saveTimer = window.setTimeout(async () => {
-                if (this.dirty && this.saveCallback) {
-                    try {
-                        await this.saveCallback(this.data);
-                        this.dirty = false;
-                    } catch (e) {
-                        log.warn('[GenrePreferenceMemory] 保存失败:', e);
-                    }
-                }
-                resolve();
-            }, 500);
+        await new Promise<void>((resolve) => {
+            this.saveTimer = window.setTimeout(resolve, 500);
         });
+
+        if (this.dirty && this.saveCallback) {
+            try {
+                await this.saveCallback(this.data);
+                this.dirty = false;
+            } catch (e) {
+                log.warn('[GenrePreferenceMemory] 保存失败:', e);
+            }
+        }
     }
 
     /**

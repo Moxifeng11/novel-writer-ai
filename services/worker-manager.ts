@@ -282,7 +282,7 @@ export class WorkerManager {
                     reject(new Error('Worker 初始化超时'));
                 }, 5000);
             } catch (error) {
-                reject(error);
+                reject(error instanceof Error ? error : new Error(String(error)));
             }
         });
     }
@@ -465,19 +465,21 @@ export class WorkerManager {
         const abortController = new AbortController();
         task.abortController = abortController;
 
-        window.setTimeout(async () => {
+        window.setTimeout(() => {
             if (task.cancelled) return;
 
-            try {
-                const result = await handler(task.input as never, task.onProgress);
-                if (!task.cancelled) {
-                    this.resolveTask(task, result);
+            void (async () => {
+                try {
+                    const result = await handler(task.input as never, task.onProgress);
+                    if (!task.cancelled) {
+                        this.resolveTask(task, result);
+                    }
+                } catch (error) {
+                    if (!task.cancelled) {
+                        this.rejectTask(task, error);
+                    }
                 }
-            } catch (error) {
-                if (!task.cancelled) {
-                    this.rejectTask(task, error);
-                }
-            }
+            })();
         }, 0);
     }
 

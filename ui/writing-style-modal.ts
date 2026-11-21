@@ -141,7 +141,7 @@ export class WritingStyleModal extends Modal {
             this.applyPreset(preset);
         });
 
-        aiGenerateBtn.addEventListener('click', async () => {
+        aiGenerateBtn.addEventListener('click', () => { void (async () => {
             const name = presetNameInput.value.trim();
             if (!name) {
                 new Notice(t('writingStyle.fillPresetName'), 3000);
@@ -165,9 +165,9 @@ export class WritingStyleModal extends Modal {
                 aiGenerateBtn.disabled = false;
                 aiGenerateBtn.setText(t('writingStyle.aiGenerate'));
             }
-        });
+        })(); });
 
-        saveAsPresetBtn.addEventListener('click', async () => {
+        saveAsPresetBtn.addEventListener('click', () => { void (async () => {
             const name = presetNameInput.value.trim();
             if (!name) {
                 new Notice(t('writingStyle.fillPresetName'), 3000);
@@ -191,7 +191,7 @@ export class WritingStyleModal extends Modal {
             } catch (e) {
                 new Notice(`❌ ${e instanceof Error ? e.message : String(e)}`, 6000);
             }
-        });
+        })(); });
 
         const formEl = contentEl.createDiv({ attr: { style: 'max-height: 60vh; overflow-y: auto; padding-right: 8px;' } });
 
@@ -223,7 +223,7 @@ export class WritingStyleModal extends Modal {
         }
 
         // 加载已有内容
-        this.loadExistingContent();
+        void this.loadExistingContent();
 
         // 按钮行
         const btnRow = contentEl.createDiv({ attr: { style: 'display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:12px; border-top:1px solid var(--background-modifier-border);' } });
@@ -238,11 +238,11 @@ export class WritingStyleModal extends Modal {
             text: t('writingStyle.save'),
             attr: { style: 'padding:8px 20px; background:var(--text-accent); color:white; border:none; border-radius:4px; cursor:pointer; font-weight:600;' },
         });
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => { void (async () => {
             await this.save();
             if (this.onSaved) this.onSaved();
             this.close();
-        });
+        })(); });
     }
 
     private applyPreset(preset: WritingStylePreset): void {

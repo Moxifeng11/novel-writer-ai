@@ -514,21 +514,21 @@ export class RulesSection extends SettingsSection {
                 cls: 'nw-btn nw-btn-secondary',
                 attr: { type: 'button' },
             });
-            refreshBtn.addEventListener('click', async () => {
+            refreshBtn.addEventListener('click', () => { void (async () => {
                 if (refreshBtn.disabled) return;
                 refreshBtn.disabled = true;
                 refreshBtn.setText(t('settings.general.rulesChecking'));
                 rulesService.invalidateCache();
                 // 只重绘本容器，不追加新模块
                 await this.mountRulesSection(section);
-            });
+            })(); });
 
             const viewBtn = actions.createEl('button', {
                 text: t('settings.general.rulesView'),
                 cls: 'nw-btn nw-btn-primary',
                 attr: { type: 'button' },
             });
-            viewBtn.addEventListener('click', async () => {
+            viewBtn.addEventListener('click', () => { void (async () => {
                 const rules = await rulesService.getWritingRules();
                 const modal = new (class extends Modal {
                     constructor(app: App) { super(app); }
@@ -542,14 +542,14 @@ export class RulesSection extends SettingsSection {
                     }
                 })(this.app);
                 modal.open();
-            });
+            })(); });
 
             const openBtn = actions.createEl('button', {
                 text: t('settings.general.rulesOpen'),
                 cls: 'nw-btn nw-btn-secondary',
                 attr: { type: 'button' },
             });
-            openBtn.addEventListener('click', async () => {
+            openBtn.addEventListener('click', () => { void (async () => {
                 const { VAULT_RULES_PATH } = await import('@/services/rules-registry');
                 const file = this.app.vault.getAbstractFileByPath(VAULT_RULES_PATH);
                 if (file instanceof TFile) {
@@ -557,7 +557,7 @@ export class RulesSection extends SettingsSection {
                 } else {
                     showWarningNotice(t('settings.general.rulesMissingWarn'), { timeout: 4000 });
                 }
-            });
+            })(); });
 
         } catch (e) {
             statusCard.createDiv({
@@ -649,7 +649,7 @@ export class AboutSection extends SettingsSection {
             cls: 'nw-st-btn nw-st-btn--primary nw-st-btn--lg nw-st-btn--fw500',
             attr: { type: 'button' }
         });
-        checkBtn.addEventListener('click', async () => {
+        checkBtn.addEventListener('click', () => { void (async () => {
             checkBtn.disabled = true;
             checkBtn.textContent = t('settings.general.aboutChecking');
             try {
@@ -675,7 +675,7 @@ export class AboutSection extends SettingsSection {
             checkBtn.disabled = false;
             checkBtn.textContent = t('settings.general.aboutCheck');
             this.refresh();
-        });
+        })(); });
 
         const changelogBtn = btnRow.createEl('button', {
             text: t('settings.general.aboutChangelog'),

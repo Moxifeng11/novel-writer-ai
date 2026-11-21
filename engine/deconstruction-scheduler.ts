@@ -335,7 +335,7 @@ export class DeconstructionScheduler {
         this.vectorEnhancer = vectorEnhancer;
         this.settingsGetter = settingsGetter;
         this.timeEstimator = new TimeEstimator();
-        this.timeEstimator.loadHistory();
+        void this.timeEstimator.loadHistory();
         this.initDeconstructors();
         this.workerManager = new DeconstructionWorkerManager(vectorEnhancer, {
             maxWorkers: 2,
@@ -976,7 +976,7 @@ export class DeconstructionScheduler {
         while (this.activeCount < effectiveConcurrency && this.queue.length > 0) {
             const taskId = this.queue.shift();
             if (taskId) {
-                this.runTask(taskId);
+                void this.runTask(taskId);
             }
         }
     }
@@ -1142,7 +1142,7 @@ export class DeconstructionScheduler {
                         mode: usedVector ? 'vector' : 'statistical',
                         duration: dimensionDuration,
                     });
-                    this.timeEstimator.saveHistory();
+                    void this.timeEstimator.saveHistory();
 
                     if (dimResult !== undefined && dimResult !== null) {
                         dimensionResults.set(dimension, dimResult);
@@ -2433,7 +2433,7 @@ export class DeconstructionScheduler {
             const elapsed = Date.now() - lastAlive;
             if (elapsed > DeconstructionScheduler.WATCHDOG_TIMEOUT) {
                 log.warn(`[拆解] Watchdog: 任务 ${taskId} 超过 ${elapsed / 1000}秒 无心跳，判定为中断`);
-                this.handleWatchdogTimeout(taskId, bookId);
+                void this.handleWatchdogTimeout(taskId, bookId);
             }
         }, DeconstructionScheduler.WATCHDOG_INTERVAL);
         this.watchdogTimers.set(taskId, timer);
@@ -2452,7 +2452,7 @@ export class DeconstructionScheduler {
         this.progressDebounceManager.debounceFixed(
             `progress:${bookId}`,
             () => {
-                this.knowledgeBaseManager.setBreakdownStatus(bookId, 'processing', progress);
+                void this.knowledgeBaseManager.setBreakdownStatus(bookId, 'processing', progress);
             },
             DeconstructionScheduler.PROGRESS_DEBOUNCE_DELAY
         );

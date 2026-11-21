@@ -316,7 +316,7 @@ export class DeconstructionSection extends SettingsSection {
             cls: 'nw-st-dc-reset-btn',
             attr: { type: 'button', title: t('settings.deconstruction.resetTitleAttr') }
         });
-        resetBtn.addEventListener('click', async () => {
+        resetBtn.addEventListener('click', () => { void (async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
                 title: t('settings.deconstruction.resetConfirmTitle'),
                 description: t('settings.deconstruction.resetConfirmDesc'),
@@ -329,6 +329,6 @@ export class DeconstructionSection extends SettingsSection {
             await this.plugin.saveSettings();
             this.refresh();
             new Notice(t('settings.deconstruction.resetNotice'));
-        });
+        })(); });
     }
 }

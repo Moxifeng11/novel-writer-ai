@@ -206,7 +206,7 @@ export class WizardController {
             if (canNavigate && i !== tab.currentStepIdx) {
                 stepEl.addEventListener('click', () => {
                     tab.currentStepIdx = i;
-                    this.renderTabContent(tab, true);
+                    void this.renderTabContent(tab, true);
                 });
             } else if (!canNavigate) {
                 stepEl.addClass('nw-wizard-step-disabled');
@@ -313,7 +313,7 @@ export class WizardController {
             const prevBtn = navBar.createEl('button', { text: t('cowrite.wiz.prevStepBtn'), cls: 'nw-wizard-nav-btn' });
             prevBtn.addEventListener('click', () => {
                 tab.currentStepIdx--;
-                this.renderTabContent(tab, true);
+                void this.renderTabContent(tab, true);
             });
         }
 
@@ -321,7 +321,7 @@ export class WizardController {
         
         if (isLastStep) {
             const enterBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.enterWritingBtn'), cls: 'nw-wizard-nav-btn-primary' });
-            enterBtn.addEventListener('click', async () => {
+            enterBtn.addEventListener('click', () => { void (async () => {
                 const chaptersStep = tab.steps.find(s => s.id === 'chapters');
                 if (chaptersStep && chaptersStep.status !== 'skipped') {
                     const validation = await validateWizardStepContent(this.view.app, tab.project, 'chapters');
@@ -333,7 +333,7 @@ export class WizardController {
                 step.status = 'done';
                 this.view.closeTab(tab.id);
                 await this.view.openFirstUnwrittenChapter(tab.project);
-            });
+            })(); });
             return;
         }
         
@@ -359,7 +359,7 @@ export class WizardController {
                 ))
             );
             const execBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.execBtn'), cls: 'nw-wizard-nav-btn-primary' });
-            execBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
+            execBtn.addEventListener('click', () => { void this.stepExecutors.executeWizardStep(tab, step); });
             if (hasExistingFile) {
                 const nextBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.nextStepWarnBtn'), cls: 'nw-wizard-nav-btn-warning', attr: { title: t('cowrite.wiz.nextStepValidateTip') } });
                 nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
@@ -376,12 +376,12 @@ export class WizardController {
             nextBtn.addEventListener('click', () => { void this.tryAdvance(tab, step); });
         } else if (step.status === 'retry') {
             const retryBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.regenerate'), cls: 'nw-wizard-nav-btn-primary' });
-            retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
+            retryBtn.addEventListener('click', () => { void this.stepExecutors.executeWizardStep(tab, step); });
         } else if (step.status === 'complete_with_warnings') {
             const retryBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.regenerate'), cls: 'nw-wizard-nav-btn-primary' });
-            retryBtn.addEventListener('click', () => this.stepExecutors.executeWizardStep(tab, step));
+            retryBtn.addEventListener('click', () => { void this.stepExecutors.executeWizardStep(tab, step); });
             const skipBtn = rightGroup.createEl('button', { text: t('cowrite.wiz.skipStepBtn'), cls: 'nw-wizard-nav-btn-warning' });
-            skipBtn.addEventListener('click', async () => {
+            skipBtn.addEventListener('click', () => { void (async () => {
                 const ok = await OperationConfirmModal.confirm(this.view.app, {
                     title: t('common.confirmTitle'),
                     description: t('cowrite.wiz.skipConfirm', { step: step.label }),
@@ -389,7 +389,7 @@ export class WizardController {
                     cancelText: t('common.cancel'),
                 });
                 if (ok) this.skipStep(tab, step);
-            });
+            })(); });
         }
     }
 
@@ -398,7 +398,7 @@ export class WizardController {
         // 用户已显式跳过的步骤：再次前进时不再重复校验，避免被重新拉回「内容不完整」
         if (step.status === 'skipped') {
             tab.currentStepIdx++;
-            this.renderTabContent(tab, true);
+            void this.renderTabContent(tab, true);
             return;
         }
         const validation = await validateWizardStepContent(this.view.app, tab.project, step.id);
@@ -408,13 +408,13 @@ export class WizardController {
                 t('cowrite.wiz.incompleteWarning', { step: step.label, fields: validation.missingFields.slice(0, 5).join('、'), more: validation.missingFields.length > 5 ? t('cowrite.wiz.andMore') : '' }),
                 12000
             );
-            this.renderTabContent(tab, true);
+            void this.renderTabContent(tab, true);
             return;
         }
 
         if (step.status !== 'done') step.status = 'done';
         tab.currentStepIdx++;
-        this.renderTabContent(tab, true);
+        void this.renderTabContent(tab, true);
     }
 
     /** 显式跳过（用户确认后调用） */
@@ -422,6 +422,6 @@ export class WizardController {
         step.status = 'skipped';
         if (step.subSteps) step.subSteps.forEach(s => s.status = 'skipped');
         tab.currentStepIdx++;
-        this.renderTabContent(tab, true);
+        void this.renderTabContent(tab, true);
     }
 }

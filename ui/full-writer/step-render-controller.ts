@@ -287,7 +287,7 @@ export class StepRenderController {
                     );
                 };
                 // v3.4.9: 结算完成后渲染润色编辑器
-                d.renderPolishEditor(area);
+                void d.renderPolishEditor(area);
             } else {
                 // 结算成功后会 add('settlement') 并重渲染；失败时也会重渲染。
                 // 若每次渲染都自动触发，失败 → 重渲染 → 再失败会变成无限循环，
@@ -622,7 +622,7 @@ export class StepRenderController {
             }
         });
 
-        sceneController.render(sceneEditorWrap);
+        void sceneController.render(sceneEditorWrap);
 
         let rawMode = false;
         let rawTextarea: HTMLTextAreaElement | null = null;
@@ -647,7 +647,7 @@ export class StepRenderController {
                 if (rawTextarea && rawTextarea.parentElement) {
                     rawTextarea.parentElement.remove();
                 }
-                sceneController.render(sceneEditorWrap);
+                void sceneController.render(sceneEditorWrap);
             }
         };
 

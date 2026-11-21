@@ -78,7 +78,7 @@ export function createObsidianSettingStorage<S extends State>(
                     plugin.settings[key] = {};
                 }
                 (plugin.settings[key] as Record<string, PersistStorageValue<S>>)[name] = value;
-                plugin.saveSettings();
+                void plugin.saveSettings();
             } catch {
                 // 持久化失败，静默降级
             }
@@ -88,7 +88,7 @@ export function createObsidianSettingStorage<S extends State>(
                 const data = plugin.settings[key] as Record<string, PersistStorageValue<S>> | undefined;
                 if (data) {
                     delete data[name];
-                    plugin.saveSettings();
+                    void plugin.saveSettings();
                 }
             } catch {
                 // 忽略删除失败
@@ -153,7 +153,7 @@ export function createIndexedDbStorage<S extends State>(
 
             const request = indexedDB.open(dbName, version);
 
-            request.onerror = () => reject(request.error);
+            request.onerror = () => reject(new Error(request.error?.message ?? 'IndexedDB open failed'));
             request.onsuccess = () => resolve(request.result);
 
             request.onupgradeneeded = (event) => {
@@ -350,7 +350,7 @@ export function persist<T extends State, PersistedState extends State = T>(
                 saveTimeout = null;
                 if (pendingSave) {
                     pendingSave = false;
-                    saveToStorage();
+                    void saveToStorage();
                 }
             }, 0);
         };
@@ -382,13 +382,13 @@ export function persist<T extends State, PersistedState extends State = T>(
                 saveTimeout = null;
             }
             if (pendingSave) {
-                saveToStorage();
+                void saveToStorage();
             }
             originalDestroy();
         };
 
         window.setTimeout(() => {
-            persistApi.rehydrate();
+            void persistApi.rehydrate();
         }, 0);
 
         return {

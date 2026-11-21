@@ -237,7 +237,7 @@ export class GenerateFactionModal extends Modal {
                 this._renderManagementPanel('势力');
             };
         };
-        populate();
+        void populate();
     }
 
     private _renderManagementPanel(entityLabel: string): void {

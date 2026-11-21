@@ -250,13 +250,13 @@ export class ProjectSidePanelView extends ItemView {
             const warn = body.createDiv({ cls: 'nw-side-panel-warn' });
             warn.setText(`缺少必填属性：${missing.map((spec) => spec.label).join('、')}`);
             const fix = warn.createEl('button', { cls: 'nw-side-panel-link', text: '补齐' });
-            fix.addEventListener('click', async () => {
+            fix.addEventListener('click', () => { void (async () => {
                 const plan = planPropertyCompletionForFile(file.path, frontmatter);
                 if (!plan) return;
                 await applyPropertyCompletion(this.app, [plan]);
                 showSuccessNotice('已补齐缺失属性', { timeout: 3000 });
                 await this.render();
-            });
+            })(); });
         }
 
         for (const spec of specs) {
@@ -383,10 +383,10 @@ export class ProjectSidePanelView extends ItemView {
                 return;
             }
             case 'open-cowrite':
-                this.plugin.registry.execute(CommandIds.CO_WRITING);
+                void this.plugin.registry.execute(CommandIds.CO_WRITING);
                 return;
             case 'settle':
-                this.plugin.registry.execute(CommandIds.CHAPTER_SETTLEMENT);
+                void this.plugin.registry.execute(CommandIds.CHAPTER_SETTLEMENT);
                 return;
             case 'open-board': {
                 if (!project) {

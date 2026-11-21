@@ -1269,7 +1269,7 @@ npm run check:release  # 发布前资产与版本一致性校验
 
 单测环境是 node（`vitest.config.ts` 的 `environment: 'node'`），而代码改用了 Obsidian 注入的全局 `createEl/createDiv/createSpan` 与 `window.setTimeout`。`tests/setup.ts` 负责垫片：`window` 缺省指向 `globalThis`；`createEl/createDiv/createSpan/createFragment` 缺省用 `tests/unit/ui/support/fake-dom.ts` 的 `FakeEl`，若测试已用 `stubDocument()` 注入 `document.createElement` 则优先用该工厂（保证断言拿到的元素类型一致）。新增垫片时不要覆盖测试已有的定义。
 
-当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **1,232**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-misused-promises` 163、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`no-floating-promises` 147；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
+当前存量（2026-11-21，`eslint.obsidian-review.mjs` 口径）：warn 2,732 → **913**，error 0。`npm run check:review-warn` 用 `.review-warn-baseline.json` 按规则设预算，任何一类上涨即失败（已在 preflight 里）。`no-explicit-any` 已清零；剩余大头 `no-unnecessary-type-assertion` 346（规则不可靠，不追）、`no-deprecated` 232（StyleFingerprint V1 类型 193 + 旧提示词/模板路径 31 + `setWarning` 7 等兼容保留）、`no-unused-vars` 148（全部是 assigned-but-never-used 的 DOM 创建，有副作用，暂不动）、`ui/sentence-case` 51；`no-misused-promises` 与 `no-floating-promises` 已全部清零（第七批）；`no-tfile-tfolder-cast` 已从 38 降到 4（只剩 `shared/file-system-port.ts` 适配层的假对象，故意保留）。
 
 批次排期、风险分级与验收口径见 `docs/planning/2026-11-21-quality-optimization-roadmap.md`；新增批次先在那里登记，再按本节的约束执行。
 
@@ -1309,6 +1309,14 @@ npm run check:release  # 发布前资产与版本一致性校验
 - IME 的 `keyCode === 229` 仍要保留（部分输入法 compositionend 后只给 229），同样用结构类型读取，避免规则告警。
 - `main.ts` 里的 `hidePreset/restorePreset/restoreAllPresets/savePresetOverride` 是 plugin-api 的兼容入口，方法名不动、实现改走 `setHidden` / `restoreDefaultProviders` / `updateProvider`。
 - 旧提示词常量（`SELF_CHECK_PROMPTS` 等）与 `shared/paths.ts` 的 `pj*Template` 只读兼容路径没有替代 API，不强行去掉 `@deprecated`，保留在预算里。
+
+第七批（2026-11-21）落地手法：
+
+- `no-floating-promises`：语句位置直接前置 `void`（`void this.saveHistory();`）；表达式落在 `case 'x':`、`if (cond)` 或单行箭头体里时手工补 `void`（如 `case 'save': void this.saveBody(true); return;`）。
+- `no-misused-promises` 绝大多数是 `addEventListener('click', async () => {...})` 与回调属性 `onDelete: async (fp) => {...}`：统一改成 `() => { void (async () => {...})(); }`，既保留异步逻辑又明确「不等待」；不要为了消 warn 把异步改同步。
+- 同步箭头隐式返回 Promise（`() => this.saveAll()`）改块体 `() => { void this.saveAll(); }`。
+- 回调类型声明为 `() => void` 但实现是 async 时，先确认调用方没有 `await`（本项目 `ui/` 内没有 await 调回调），再按 fire-and-forget 包；Obsidian 生命周期钩子（`Modal.onClose`、`Plugin.onunload`）契约是 void，把异步体抽成私有方法后 `void this.flush()`。
+- 319 个观测点用 TypeScript AST 定位回调节点后改写（按诊断行列找最近的箭头、取行内最近者），比正则安全；改完必须 tsc + 全量测试。
 
 ### 异步等待原语（2026-10-31 批次 14）
 

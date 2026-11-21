@@ -391,7 +391,7 @@ export class BatchImportManager {
         });
 
         this.history.unshift(historyItem);
-        this.saveHistory();
+        void this.saveHistory();
 
         this.sortQueue();
         this.scheduleNext();
@@ -414,7 +414,7 @@ export class BatchImportManager {
         while (this.activeCount < concurrency && this.queue.length > 0) {
             const taskId = this.queue.shift();
             if (taskId) {
-                this.runTask(taskId);
+                void this.runTask(taskId);
             }
         }
         this.emitProgress();
@@ -536,7 +536,7 @@ export class BatchImportManager {
             }
         }
         this.recalculateHistoryCounts();
-        this.saveHistory();
+        void this.saveHistory();
     }
 
     private recalculateHistoryCounts(): void {
@@ -758,7 +758,7 @@ export class BatchImportManager {
      */
     clearHistory(): void {
         this.history = [];
-        this.saveHistory();
+        void this.saveHistory();
     }
 
     /**
@@ -813,7 +813,7 @@ export class BatchImportManager {
             updatedAt: Date.now(),
         };
         this.presets.push(preset);
-        this.savePresets();
+        void this.savePresets();
         return preset;
     }
 
@@ -824,7 +824,7 @@ export class BatchImportManager {
      */
     deletePreset(presetId: string): void {
         this.presets = this.presets.filter(p => p.id !== presetId);
-        this.savePresets();
+        void this.savePresets();
     }
 
     /**
@@ -854,7 +854,7 @@ export class BatchImportManager {
         if (updates.settings) {
             preset.settings = { ...updates.settings };
         }
-        this.savePresets();
+        void this.savePresets();
     }
 
     /**

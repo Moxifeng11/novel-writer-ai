@@ -155,10 +155,10 @@ export class ImportBookModal extends Modal {
                         renderList(searchInput.value);
                     });
                 }
-            })(this.app, files, async (file: TFile) => {
+            })(this.app, files, (file: TFile) => { void (async () => {
                 const content = await this.app.vault.read(file);
                 await this.importBook(file.basename, '', file.path, content);
-            });
+            })(); });
             modal.open();
         } catch {
             showErrorNotice(t('knowledgebase.modal.import.selectFailed'));
@@ -169,7 +169,7 @@ export class ImportBookModal extends Modal {
         const input = createEl('input', {
             attr: { type: 'file', accept: '.txt,.md', style: 'display:none;' }
         });
-        input.addEventListener('change', async (e) => {
+        input.addEventListener('change', (e) => { void (async () => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
             if (isSourceFileTooLarge(file.size, MAX_SOURCE_FILE_SIZE)) {
@@ -184,7 +184,7 @@ export class ImportBookModal extends Modal {
             } catch {
                 showErrorNotice(t('knowledgebase.modal.import.readFailed'));
             }
-        });
+        })(); });
         document.body.appendChild(input);
         input.click();
         document.body.removeChild(input);
@@ -227,7 +227,7 @@ export class ImportBookModal extends Modal {
                 new Notice(t('knowledgebase.modal.import.needName'));
                 return;
             }
-            this.importBook(this.nameValue.trim(), this.authorValue.trim(), '', '');
+            void this.importBook(this.nameValue.trim(), this.authorValue.trim(), '', '');
         });
     }
 
@@ -1004,7 +1004,7 @@ export class GenreEditModal extends Modal {
                 text: t('knowledgebase.modal.genre.delete'),
                 cls: 'nw-btn nw-btn-danger'
             });
-            deleteBtn.addEventListener('click', async () => {
+            deleteBtn.addEventListener('click', () => { void (async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
                     title: t('knowledgebase.modal.genre.deleteTitle'),
                     description: t('knowledgebase.modal.genre.deleteDesc', { name: this.tempGenre.name }),
@@ -1017,7 +1017,7 @@ export class GenreEditModal extends Modal {
                     this.dirtyGuard.markClean();
                     this.close();
                 }
-            });
+            })(); });
 
             const cancelBtn = actions.createEl('button', {
                 text: t('knowledgebase.common.cancel'),
@@ -1259,7 +1259,7 @@ export class BatchOperationsModal extends Modal {
             cls: 'nw-btn nw-btn-primary',
             attr: { disabled: this.selectedBooks.size === 0 || this.processing ? 'true' : null }
         });
-        executeBtn.addEventListener('click', async () => {
+        executeBtn.addEventListener('click', () => { void (async () => {
             if (this.selectedBooks.size === 0 || this.processing) return;
             this.processing = true;
             this.render();
@@ -1278,7 +1278,7 @@ export class BatchOperationsModal extends Modal {
                 this.processing = false;
                 this.render();
             }
-        });
+        })(); });
     }
 
     private getGenreLabel(genreId: string, subGenreId?: string): string {

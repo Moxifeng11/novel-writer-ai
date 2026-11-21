@@ -247,7 +247,7 @@ export class UnifiedEntityGenerateModal extends Modal {
         });
         projectSelect.addClass('nw-ue-w-full');
 
-        this.contextManager.detectProjects().then((projects) => {
+        void this.contextManager.detectProjects().then((projects) => {
             if (projects.length === 0) {
                 container.createEl('p', { text: '❌ 未找到项目，请先创建新项目', cls: 'nw-ue-error' });
                 return;

@@ -437,15 +437,15 @@ export class WritingFingerprintView extends ItemView {
             attr: {}
         });
 
-        const addBtn = this.createToolbarButton(t('fingerprint.view.tbAdd'), () => this.handleAddFingerprint(), false, t('fingerprint.view.tbAddTip'));
-        const extractBtn = this.createToolbarButton(t('fingerprint.view.tbExtractText'), () => this.handleExtractFromText(), false, t('fingerprint.view.tbExtractTextTip'));
-        const extractChapterBtn = this.createToolbarButton(t('fingerprint.view.tbExtractChapters'), () => this.handleExtractFromChapters(), false, t('fingerprint.view.tbExtractChaptersTip'));
-        const importBtn = this.createToolbarButton(t('fingerprint.view.tbImportKb'), () => this.handleImportFromKnowledge(), false, t('fingerprint.view.tbImportKbTip'));
+        const addBtn = this.createToolbarButton(t('fingerprint.view.tbAdd'), () => { void this.handleAddFingerprint(); }, false, t('fingerprint.view.tbAddTip'));
+        const extractBtn = this.createToolbarButton(t('fingerprint.view.tbExtractText'), () => { void this.handleExtractFromText(); }, false, t('fingerprint.view.tbExtractTextTip'));
+        const extractChapterBtn = this.createToolbarButton(t('fingerprint.view.tbExtractChapters'), () => { void this.handleExtractFromChapters(); }, false, t('fingerprint.view.tbExtractChaptersTip'));
+        const importBtn = this.createToolbarButton(t('fingerprint.view.tbImportKb'), () => { void this.handleImportFromKnowledge(); }, false, t('fingerprint.view.tbImportKbTip'));
         const blendBtn = this.createToolbarButton(t('fingerprint.view.tbBlend'), () => this.handleBlendFingerprints(), false, t('fingerprint.view.tbBlendTip'));
         const fillSamplesBtn = this.createToolbarButton(t('fingerprint.view.tbFillSamples'), () => { void this.handleBatchFillSamples(); }, false, t('fingerprint.view.tbFillSamplesTip'));
-        const migrateBtn = this.createToolbarButton(t('fingerprint.view.tbMigrateV2'), () => this.handleMigrateToV2(), false, t('fingerprint.view.tbMigrateV2Tip'));
-        const deleteBtn = this.createToolbarButton(t('fingerprint.view.tbDelete'), () => this.handleDeleteFingerprint(), true, t('fingerprint.view.tbDeleteTip'));
-        const toggleBtn = this.createToolbarButton(t('fingerprint.view.tbToggle'), () => this.handleToggleEnabled(), false, t('fingerprint.view.tbToggleTip'));
+        const migrateBtn = this.createToolbarButton(t('fingerprint.view.tbMigrateV2'), () => { void this.handleMigrateToV2(); }, false, t('fingerprint.view.tbMigrateV2Tip'));
+        const deleteBtn = this.createToolbarButton(t('fingerprint.view.tbDelete'), () => { void this.handleDeleteFingerprint(); }, true, t('fingerprint.view.tbDeleteTip'));
+        const toggleBtn = this.createToolbarButton(t('fingerprint.view.tbToggle'), () => { void this.handleToggleEnabled(); }, false, t('fingerprint.view.tbToggleTip'));
         const classifyBtn = this.createToolbarButton(t('fingerprint.view.tbClassify'), () => void this.handleAutoClassify(), false, t('fingerprint.view.tbClassifyTip'));
 
         this.toolbar.appendChild(addBtn);
@@ -939,7 +939,7 @@ export class WritingFingerprintView extends ItemView {
         } else {
             const toggleBtn = this.createActionButton(
                 fp.enabled ? t('fingerprint.view.actionDisable') : t('fingerprint.view.actionEnable'),
-                () => this.handleToggleEnabled(),
+                () => { void this.handleToggleEnabled(); },
                 false,
                 t('fingerprint.view.actionToggleTip')
             );
@@ -955,26 +955,26 @@ export class WritingFingerprintView extends ItemView {
 
         // V2 强度调节入口（模板层不参与注入，强度无消费方）
         if (!sourceOnly) {
-            const intensityBtn = this.createActionButton(t('fingerprint.view.actionIntensity'), () => this.handleOpenIntensity(fp), false, t('fingerprint.view.actionIntensityTip'));
+            const intensityBtn = this.createActionButton(t('fingerprint.view.actionIntensity'), () => { void this.handleOpenIntensity(fp); }, false, t('fingerprint.view.actionIntensityTip'));
             actionsGrid.appendChild(intensityBtn);
         }
 
         if (fp.scope === 'project') {
-            const promoteBtn = this.createActionButton(t('fingerprint.view.actionPromote'), () => this.handlePromoteToGlobal(fp), false, t('fingerprint.view.actionPromoteTip'));
+            const promoteBtn = this.createActionButton(t('fingerprint.view.actionPromote'), () => { void this.handlePromoteToGlobal(fp); }, false, t('fingerprint.view.actionPromoteTip'));
             actionsGrid.appendChild(promoteBtn);
         }
 
         if (fp.scope === 'template') {
-            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => this.handleCopyToProject(fp), false, t('fingerprint.view.actionCopyTip'));
+            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => { void this.handleCopyToProject(fp); }, false, t('fingerprint.view.actionCopyTip'));
             actionsGrid.appendChild(copyBtn);
         }
 
         if (fp.scope === 'global') {
-            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => this.handleCopyToProject(fp), false, t('fingerprint.view.actionCopyTip'));
+            const copyBtn = this.createActionButton(t('fingerprint.view.actionCopy'), () => { void this.handleCopyToProject(fp); }, false, t('fingerprint.view.actionCopyTip'));
             actionsGrid.appendChild(copyBtn);
         }
 
-        const deleteBtn = this.createActionButton(t('fingerprint.view.actionDelete'), () => this.handleDeleteFingerprint(), true, t('fingerprint.view.actionDeleteTip'));
+        const deleteBtn = this.createActionButton(t('fingerprint.view.actionDelete'), () => { void this.handleDeleteFingerprint(); }, true, t('fingerprint.view.actionDeleteTip'));
         actionsGrid.appendChild(deleteBtn);
     }
 
@@ -999,10 +999,10 @@ export class WritingFingerprintView extends ItemView {
             onReextract: () => {
                 void this.handleReextract();
             },
-            onDelete: async () => {
+            onDelete: () => { void (async () => {
                 await this.handleDeleteFingerprint();
-            },
-            onOpenIntensity: sourceOnly ? undefined : (target) => this.handleOpenIntensity(target),
+            })(); },
+            onOpenIntensity: sourceOnly ? undefined : (target) => { void this.handleOpenIntensity(target); },
         }).open();
     }
 
@@ -1055,7 +1055,7 @@ export class WritingFingerprintView extends ItemView {
         const modal = new AddFingerprintModal(this.app, {
             scope: this.filter.activeScope,
             extractor: this.extractor,
-            onCompleted: (fp) => this.saveExtractedFingerprint(fp, t('fingerprint.view.fpAdded'))
+            onCompleted: (fp) => { void this.saveExtractedFingerprint(fp, t('fingerprint.view.fpAdded')); }
         });
         modal.open();
     }
@@ -1216,7 +1216,7 @@ export class WritingFingerprintView extends ItemView {
             const modal = new ExtractFromChaptersModal(
                 this.app,
                 chapters,
-                async (selectedChapters, fingerprintName) => {
+                (selectedChapters, fingerprintName) => { void (async () => {
                     if (!this.extractor || !this.fingerprintLibrary) {
                         new Notice(t('fingerprint.view.extractorNotInit'));
                         return;
@@ -1273,7 +1273,7 @@ export class WritingFingerprintView extends ItemView {
                         log.error('提取指纹失败:', e);
                         showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('fingerprint.view.extractFailedTitle') });
                     }
-                }
+                })(); }
             );
             modal.open();
         } catch (e) {
@@ -1311,7 +1311,7 @@ export class WritingFingerprintView extends ItemView {
         }
 
         const library = this.fingerprintLibrary;
-        new KnowledgeBookPickerModal(this.app, books, async (book) => {
+        new KnowledgeBookPickerModal(this.app, books, (book) => { void (async () => {
             try {
                 // v4.20 补样本断链：从知识库原文取真实 prose 分块作为 few-shot 样本。
                 // 没有样本的指纹只剩特征描述，段落层（真实文风 few-shot）不会注入。
@@ -1337,7 +1337,7 @@ export class WritingFingerprintView extends ItemView {
                 log.error('从知识库导入指纹失败:', e);
                 showErrorNotice(t('fingerprint.view.importFailed', { msg: e instanceof Error ? e.message : String(e) }));
             }
-        }).open();
+        })(); }).open();
     }
 
     /**
@@ -1529,7 +1529,7 @@ export class WritingFingerprintView extends ItemView {
             })();
             },
             v2,
-            async (updated, features) => {
+            (updated, features) => { void (async () => {
                 // V2 路径：十二维与 V1 投影同步更新，磁盘保持 version:'v2'
                 if (!this.fingerprintLibrary) {
                     showErrorNotice(t('fingerprint.view.libNotInitNoSave2'));
@@ -1548,7 +1548,7 @@ export class WritingFingerprintView extends ItemView {
                 this.renderFingerprintList();
                 this.renderDetailPanel();
                 showSuccessNotice(t('fingerprint.view.fpUpdatedV2'));
-            },
+            })(); },
         ).open();
     }
 
@@ -1615,12 +1615,12 @@ export class WritingFingerprintView extends ItemView {
             library: this.fingerprintLibrary,
             scope: this.filter.activeScope,
             project,
-            onSaved: async () => {
+            onSaved: () => { void (async () => {
                 await this.loadAllFingerprints();
                 this.renderSearchAndFilter();
                 this.renderFingerprintList();
                 this.renderDetailPanel();
-            },
+            })(); },
         }).open();
     }
 

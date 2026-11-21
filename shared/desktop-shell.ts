@@ -63,7 +63,7 @@ export async function setPathReadOnly(targetPath: string): Promise<DesktopComman
         const { execFile } = await import('node:child_process');
         await new Promise<void>((resolve, reject) => {
             execFile(command, args, { windowsHide: true }, (error) => {
-                if (error) reject(error);
+                if (error) reject(error instanceof Error ? error : new Error(String(error)));
                 else resolve();
             });
         });

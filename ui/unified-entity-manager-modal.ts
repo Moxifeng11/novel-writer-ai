@@ -112,7 +112,7 @@ export class UnifiedEntityManagerModal extends Modal {
         this._renderHeader();
         this._renderToolbar();
         this._renderBody();
-        this._loadEntities();
+        void this._loadEntities();
     }
 
     /**
@@ -385,7 +385,7 @@ export class UnifiedEntityManagerModal extends Modal {
                 this.searchQuery = '';
                 this.selectedTags.clear();
                 if (this.searchInputEl) this.searchInputEl.value = '';
-                this._loadEntities();
+                void this._loadEntities();
                 tabBar
                     .querySelectorAll('button')
                     .forEach(() => { });
@@ -546,7 +546,7 @@ export class UnifiedEntityManagerModal extends Modal {
             item.onclick = () => {
                 this.selectedEntity = entity;
                 this._renderEntityList();
-                this._renderEntityDetail(entity);
+                void this._renderEntityDetail(entity);
             };
         }
     }
@@ -585,7 +585,7 @@ export class UnifiedEntityManagerModal extends Modal {
         openBtn.addClass('nw-uem-detail-btn');
         openBtn.onclick = () => {
             const file = entity.file;
-            this.app.workspace.getLeaf().openFile(file);
+            void this.app.workspace.getLeaf().openFile(file);
         };
 
         const editBtn = actionRow.createEl('button', {
@@ -738,14 +738,14 @@ export class UnifiedEntityManagerModal extends Modal {
         this.activeCategory = category;
         this._updateAllTabStyles();
 
-        this._loadEntities().then(() => {
+        void this._loadEntities().then(() => {
             const found = this.filteredEntities.find(
                 (e) => e.name === name || e.file.basename === name,
             );
             if (found) {
                 this.selectedEntity = found;
                 this._renderEntityList();
-                this._renderEntityDetail(found);
+                void this._renderEntityDetail(found);
             } else {
                 new Notice(`🔍 未找到「${name}」实体`, 2000);
             }

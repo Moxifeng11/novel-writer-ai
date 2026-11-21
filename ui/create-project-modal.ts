@@ -345,7 +345,7 @@ ${preferredGenre
         };
         this.fanficOutsideDisposer = onNodeDoc(this.modalEl, 'click', this.fanficSettingsOutsideClickHandler);
 
-        loadSettingsLib();
+        void loadSettingsLib();
 
         originalBtn.addEventListener('click', () => {
             projectType = 'original';

@@ -237,7 +237,7 @@ export class GenerateItemModal extends Modal {
                 this._renderManagementPanel('物品功法');
             };
         };
-        populate();
+        void populate();
     }
 
     private _renderManagementPanel(entityLabel: string): void {

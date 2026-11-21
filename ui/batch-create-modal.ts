@@ -187,7 +187,7 @@ export class BatchCreateModal extends Modal {
                 retryBtn.onclick = () => {
                     errorEl.remove();
                     retryBtn.remove();
-                    populateProjects();
+                    void populateProjects();
                 };
                 return;
             }

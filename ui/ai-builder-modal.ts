@@ -129,7 +129,7 @@ export class AiBuilderModal extends Modal {
         modalEl.addClass('nw-modal-xl', 'nw-ai-builder-root');
 
         // 异步初始化：检测项目数量决定入口
-        (async () => {
+        void (async () => {
             const projects = await this.contextManager.detectProjects();
             this.projectCount = projects.length;
             if (projects.length === 0) {
@@ -138,10 +138,10 @@ export class AiBuilderModal extends Modal {
                 // 单项目：直接进入仪表盘
                 this.selectedProject = projects[0];
                 await this.loadWorldContent(projects[0]);
-                this.renderDashboard();
+                void this.renderDashboard();
             } else {
                 // 多项目：展示增强型项目矩阵
-                this.renderProjectMatrix(projects);
+                void this.renderProjectMatrix(projects);
             }
         })();
     }
@@ -224,7 +224,7 @@ export class AiBuilderModal extends Modal {
             });
             enterBtn.onclick = () => {
                 this.selectedProject = project;
-                this.loadWorldContent(project).then(() => this.renderDashboard());
+                void this.loadWorldContent(project).then(() => this.renderDashboard());
             };
 
             // 快速操作：如果没有世界观，显示生成世界观
@@ -256,7 +256,7 @@ export class AiBuilderModal extends Modal {
             card.addEventListener('click', (e) => {
                 if ((e.target as HTMLElement).tagName === 'BUTTON') return;
                 this.selectedProject = project;
-                this.loadWorldContent(project).then(() => this.renderDashboard());
+                void this.loadWorldContent(project).then(() => this.renderDashboard());
             });
         }
     }
@@ -314,7 +314,7 @@ export class AiBuilderModal extends Modal {
                 const projects = await this.contextManager.detectProjects();
                 this.projectCount = projects.length;
                 if (projects.length > 1) {
-                    this.renderProjectMatrix(projects);
+                    void this.renderProjectMatrix(projects);
                 } else {
                     new Notice(t("aiBuilder.flow.onlyOneProject"), 3000);
                 }
@@ -587,7 +587,7 @@ export class AiBuilderModal extends Modal {
 
                 // 刷新并返回仪表盘
                 await this.loadWorldContent(this.selectedProject);
-                this.renderDashboard();
+                void this.renderDashboard();
 
                 // 打开文件（使用重命名后的路径）
                 const openPath = pjWorldview(this.selectedProject);
@@ -754,7 +754,7 @@ export class AiBuilderModal extends Modal {
             genNotice.hide();
             // 刷新统计
             await this.loadWorldContent(this.selectedProject);
-            this.renderDashboard();
+            void this.renderDashboard();
         } catch (e) {
             genNotice.hide();
             showErrorNotice((e as { message?: string }).message || t("aiBuilder.flow.unknownError"), { title: t("aiBuilder.flow.generationFailedTitle", { label: cfg.label }), timeout: 8000 });

@@ -805,7 +805,7 @@ export class ChapterOutlineTreeModal extends Modal {
         const saveBtn = footer.createEl('button', {
             text: t('outlineTree.footer.save'), cls: 'nw-ot-save'
         });
-        saveBtn.addEventListener('click', () => this.saveAll());
+        saveBtn.addEventListener('click', () => { void this.saveAll(); });
     }
 
     /**

@@ -91,7 +91,7 @@ export class ContextPanel {
         const scopeLabel = scopeBtnRow.createSpan({ text: labelText, cls: 'novel-writer-scope-label' });
 
 
-        scopeLabel.addEventListener('click', async () => {
+        scopeLabel.addEventListener('click', () => { void (async () => {
             if (plugin.settings.contextScope === 'full') {
                 plugin.settings.contextScope = 'compact';
                 scopeLabel.setText('📌 上下文：紧凑模式');
@@ -106,7 +106,7 @@ export class ContextPanel {
             } catch (e) {
                 log.warn('[ContextPanel] 刷新上下文面板失败:', e);
             }
-        });
+        })(); });
 
         if (!context) {
             panel.createEl('p', { text: '上下文未加载' });
@@ -217,7 +217,7 @@ export class ContextPanel {
         });
 
         // ✨ 智能实体上下文（v5.0 新增）
-        this.renderCollapsibleCard(panel, '✨ 智能实体上下文', async (body) => {
+        this.renderCollapsibleCard(panel, '✨ 智能实体上下文', (body) => { void (async () => {
             try {
                 const smartCtx = (plugin as unknown as { _smartEntityContext?: SmartEntityContextView })
                     ._smartEntityContext;
@@ -334,7 +334,7 @@ export class ContextPanel {
                 body.createEl('p', { text: '智能上下文加载失败', cls: 'novel-writer-fw-muted' });
                 log.warn('[ContextPanel] 智能实体上下文渲染失败:', e);
             }
-        }, true);
+        })(); }, true);
 
         // 记忆碎片预览（仅在项目存在记忆碎片时展示）
         const allMemories = d.triggered_memories ?? [];
@@ -438,7 +438,7 @@ export class ContextPanel {
         });
 
         // 场景细纲摘要
-        this.renderCollapsibleCard(panel, '🎬 场景细纲', async (body) => {
+        this.renderCollapsibleCard(panel, '🎬 场景细纲', (body) => { void (async () => {
             try {
                 const sceneExpansion = d.scene_expansion as MarkdownContent | undefined;
 
@@ -513,7 +513,7 @@ export class ContextPanel {
                 body.createEl('p', { text: '加载场景数据失败', cls: 'novel-writer-fw-muted' });
                 log.warn('[ContextPanel] 场景细纲加载失败:', e);
             }
-        }, true);
+        })(); }, true);
 
         this.renderCollapsibleCard(panel, '🔮 伏笔库', (body) => {
             const foreshadows = d.foreshadows as ForeshadowData | undefined;
@@ -536,7 +536,7 @@ export class ContextPanel {
         });
 
         // 分卷大纲
-        this.renderCollapsibleCard(panel, '📋 分卷大纲', async (body) => {
+        this.renderCollapsibleCard(panel, '📋 分卷大纲', (body) => { void (async () => {
             // v4.0：分卷大纲按卷归档，合并读取
             const content = await readMergedVolumeOutline(this.app, project);
             if (!content.trim()) {
@@ -610,7 +610,7 @@ export class ContextPanel {
                     body.createEl('p', { text: '读取大纲失败', cls: 'novel-writer-fw-muted' });
                 }
             }
-        });
+        })(); });
 
         // 时间线
         this.renderCollapsibleCard(panel, '⏱️ 时间线', (body) => {
@@ -717,7 +717,7 @@ export class ContextPanel {
         }
 
         // 世界观
-        this.renderCollapsibleCard(panel, '🌍 世界观', async (body) => {
+        this.renderCollapsibleCard(panel, '🌍 世界观', (body) => { void (async () => {
             const wv = d.world_view as MarkdownContent | null;
             if (!wv || !wv.raw) {
                 body.createEl('p', { text: '无世界观数据', cls: 'novel-writer-fw-muted' });
@@ -725,7 +725,7 @@ export class ContextPanel {
             }
             const wvDiv = body.createDiv({ cls: 'novel-writer-fw-context-text' });
             await MarkdownRenderer.render(this.app, wv.raw.slice(0, 500), wvDiv, '', this.cachedComponent);
-        });
+        })(); });
 
         // 设定库
         this.renderCollapsibleCard(panel, '⚙️ 设定库', (body) => {
@@ -790,7 +790,7 @@ export class ContextPanel {
         });
 
         // 文笔风格（软参考）
-        this.renderCollapsibleCard(panel, '✒️ 文笔风格', async (body) => {
+        this.renderCollapsibleCard(panel, '✒️ 文笔风格', (body) => { void (async () => {
             const ws = d.writing_style as MarkdownContent | null;
             if (ws && ws.raw && ws.raw.trim()) {
                 const preview = ws.raw.substring(0, 300);
@@ -807,17 +807,17 @@ export class ContextPanel {
                     text: '编辑文笔风格',
                     cls: 'nw-cp-edit-link'
                  });
-                editLink.addEventListener('click', async () => {
+                editLink.addEventListener('click', () => { void (async () => {
                     const wsFile = await findWritingStyleFile(this.app, project, { allowPlaceholder: true });
                     if (wsFile) {
                         await plugin.safeOpenFile(wsFile);
                     }
-                });
+                })(); });
             } else if (project) {
                 body.createEl('p', { text: '暂无文笔风格', cls: 'novel-writer-fw-muted' });
                 const createBtn = body.createEl('button', { text: '创建文笔风格' });
                 createBtn.addClass('nw-ctx-create-btn');
-                createBtn.addEventListener('click', async () => {
+                createBtn.addEventListener('click', () => { void (async () => {
                     const templatePath = '元文件/00-系统模板/文笔风格模板.md';
                     const targetPath = getWritingStylePath(project);
                     const folderPath = targetPath.substring(0, targetPath.lastIndexOf('/'));
@@ -831,9 +831,9 @@ export class ContextPanel {
                     }
                     const wsFile = this.app.vault.getAbstractFileByPath(targetPath);
                     if (wsFile instanceof TFile) await plugin.safeOpenFile(wsFile);
-                });
+                })(); });
             }
-        });
+        })(); });
 
         // Token用量估算
         this.renderCollapsibleCard(panel, '📊 上下文使用进度', (body) => {

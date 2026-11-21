@@ -94,7 +94,7 @@ export class DiagnoseWriterModal extends Modal {
             };
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     /** 最近 prompt 预算：模型/输入/可用/丢弃片段，帮助定位本地小窗口被裁剪的原因 */

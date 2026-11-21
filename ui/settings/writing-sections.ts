@@ -119,10 +119,10 @@ export class CoWriteSection extends SettingsSection {
                     .setButtonText(t('common.refresh'))
                     .setTooltip(t('settings.writing.cowriteRefreshTooltip'))
                     .onClick(() => {
-                        loadLocalModels();
+                        void loadLocalModels();
                     });
             });
-        loadLocalModels();
+        void loadLocalModels();
 
         cloudProviderSetting = new Setting(section)
             .setName(t('settings.writing.cowriteProviderName'))

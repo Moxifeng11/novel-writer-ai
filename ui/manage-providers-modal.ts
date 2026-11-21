@@ -185,7 +185,7 @@ export class ManageProvidersModal extends Modal {
             value: raw.name,
             attr: { 'aria-label': '供应商名称' },
         });
-        nameInput.addEventListener('change', async () => {
+        nameInput.addEventListener('change', () => { void (async () => {
             const next = nameInput.value.trim();
             if (!next || next === raw.name) {
                 nameInput.value = raw.name;
@@ -194,14 +194,14 @@ export class ManageProvidersModal extends Modal {
             this.plugin.updateProvider(raw.id, { name: next });
             await this.plugin.saveSettings();
             rerender();
-        });
+        })(); });
 
         const isCurrent = providerId === this.plugin.getCurrentProviderId();
         const toggleLabel = head.createEl('label', { cls: 'nw-api-switch', attr: { title: '启用该供应商' } });
         const toggle = toggleLabel.createEl('input', { type: 'checkbox' });
         toggle.checked = isCurrent;
         toggleLabel.toggleClass('nw-is-active', toggle.checked);
-        toggle.addEventListener('change', async () => {
+        toggle.addEventListener('change', () => { void (async () => {
             toggleLabel.toggleClass('nw-is-active', toggle.checked);
             if (!toggle.checked) {
                 toggle.checked = true;
@@ -214,7 +214,7 @@ export class ManageProvidersModal extends Modal {
             showSuccessNotice(`已切换到「${raw.name}」`);
             this.onChanged();
             rerender();
-        });
+        })(); });
 
         const moreBtn = head.createEl('button', {
             cls: 'nw-api-icon-btn',
@@ -262,7 +262,7 @@ export class ManageProvidersModal extends Modal {
                 input.style.height = `${Math.max(34, input.scrollHeight)}px`;
             };
             window.setTimeout(autosize, 0);
-            input.addEventListener('change', async () => {
+            input.addEventListener('change', () => { void (async () => {
                 const next = input.value.trim();
                 if (!next) {
                     input.value = raw.endpoint;
@@ -275,7 +275,7 @@ export class ManageProvidersModal extends Modal {
                 await this.plugin.saveSettings();
                 if (raw.id === this.plugin.getCurrentProviderId()) this.plugin.updateStatusBarText();
                 rerender();
-            });
+            })(); });
         }, '可带也可不带 /v1，实际请求路径由「API 格式」推导');
 
         // API 格式
@@ -295,12 +295,12 @@ export class ManageProvidersModal extends Modal {
                 select.setAttr('title', active ? `${active.label}${active.path}` : '');
             };
             syncTitle();
-            select.addEventListener('change', async () => {
+            select.addEventListener('change', () => { void (async () => {
                 syncTitle();
                 this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
                 await this.plugin.saveSettings();
                 showSuccessNotice(`已切换为 ${API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value}`);
-            });
+            })(); });
         }, `请求路径：${API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('；')}。Anthropic 协议改用 x-api-key 发送密钥`);
 
         // API Key
@@ -318,7 +318,7 @@ export class ManageProvidersModal extends Modal {
                     title: describeSecretForInput(storedKey).title,
                 },
             });
-            input.addEventListener('change', async () => {
+            input.addEventListener('change', () => { void (async () => {
                 const typed = input.value.trim();
                 if (!typed && isStoredCiphertext(storedKey)) return;
                 this.plugin.settings.providerKeys = this.plugin.settings.providerKeys || {};
@@ -332,7 +332,7 @@ export class ManageProvidersModal extends Modal {
                 } else {
                     showSuccessNotice('密钥已保存');
                 }
-            });
+            })(); });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',
                 attr: { type: 'button', title: '显示/隐藏密钥' },
@@ -355,7 +355,7 @@ export class ManageProvidersModal extends Modal {
             attr: { type: 'button', title: '请求端点模型列表接口，勾选后写入' },
         });
         fetchBtn.setText('🔄 从 URL 获取');
-        fetchBtn.onclick = async () => {
+        fetchBtn.onclick = () => { void (async () => {
             if (fetchBtn.disabled) return;
             fetchBtn.disabled = true;
             fetchBtn.setText('⏳ 获取中…');
@@ -368,7 +368,7 @@ export class ManageProvidersModal extends Modal {
                     return;
                 }
                 const endpointChanged = (this.getRawProvider(raw.id)?.modelsEndpoint || '') !== listEndpoint;
-                new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
+                new ModelPickerModal(this.app, result.models, raw.models, ({ models, capacities }) => { void (async () => {
                     const meta = { ...(this.getRawProvider(raw.id)?.modelMeta || {}) };
                     for (const item of capacities) {
                         meta[item.id] = {
@@ -388,12 +388,12 @@ export class ManageProvidersModal extends Modal {
                     showSuccessNotice(`已更新模型列表（${models.length} 个）`, { timeout: 4000 });
                     this.onChanged();
                     rerender();
-                }, endpointChanged).open();
+                })(); }, endpointChanged).open();
             } finally {
                 fetchBtn.disabled = false;
                 fetchBtn.setText('🔄 从 URL 获取');
             }
-        };
+        })(); };
 
         const addModelBtn = modelsActions.createEl('button', {
             cls: 'nw-api-ghost-btn',
@@ -424,7 +424,7 @@ export class ManageProvidersModal extends Modal {
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
             enable.checked = !disabled.has(modelId);
             enableLabel.toggleClass('nw-is-active', enable.checked);
-            enable.addEventListener('change', async () => {
+            enable.addEventListener('change', () => { void (async () => {
                 enableLabel.toggleClass('nw-is-active', enable.checked);
                 const next = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
                 if (enable.checked) next.delete(modelId);
@@ -434,7 +434,7 @@ export class ManageProvidersModal extends Modal {
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 rerender();
-            });
+            })(); });
 
             const editBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',

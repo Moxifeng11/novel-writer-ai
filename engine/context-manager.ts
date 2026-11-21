@@ -479,7 +479,7 @@ export class ContextManager {
             log.debug(`[ContextManager] 项目缓存失效 | project=${project} | 失效条目=${evicted}`);
 
             if (this.multiLayerCache) {
-                this.multiLayerCache.invalidateByPrefix(`context:gatherAll:${project}::`);
+                void this.multiLayerCache.invalidateByPrefix(`context:gatherAll:${project}::`);
             }
         } else {
             const evicted = this.contextCache.size;
@@ -488,7 +488,7 @@ export class ContextManager {
             log.debug(`[ContextManager] 全部缓存失效 | 失效条目=${evicted}`);
 
             if (this.multiLayerCache) {
-                this.multiLayerCache.invalidateByPrefix('context:gatherAll:');
+                void this.multiLayerCache.invalidateByPrefix('context:gatherAll:');
             }
         }
     }
@@ -515,7 +515,7 @@ export class ContextManager {
                 const changeSet = this.diffDetector.createChangeSetFromPaths([filePath], project);
                 for (const section of changeSet.affectedSections) {
                     const sectionCacheKey = `context:section:${project}:${section}`;
-                    this.multiLayerCache.invalidate(sectionCacheKey);
+                    void this.multiLayerCache.invalidate(sectionCacheKey);
                 }
             }
 

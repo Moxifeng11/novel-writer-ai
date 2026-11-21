@@ -137,7 +137,7 @@ export class PluginCacheManager {
     }
 
     private save(): void {
-        this.writer.enqueueAutoClean(async () => {
+        void this.writer.enqueueAutoClean(async () => {
             await this.ensureDataDir();
             // write-entry-allow: 插件缓存 JSON，位于插件数据目录。
             await this.app.vault.adapter.write(cacheFilePath(), JSON.stringify(this.data, null, 2));

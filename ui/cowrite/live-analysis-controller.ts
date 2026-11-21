@@ -145,7 +145,7 @@ export class LiveAnalysisController {
     if (body.length < 100) return;
     const monitorPanelA = view.plugin.workspaceManager?.getMonitorPanelA?.();
     if (monitorPanelA) {
-      monitorPanelA.refreshWithBody(body);
+      void monitorPanelA.refreshWithBody(body);
     }
     await this.renderTractionPanel();
   }
@@ -279,12 +279,12 @@ export class LiveAnalysisController {
             item.createSpan({ cls: "nw-new-status", text: change.newStatus });
           }
           const confirmBtn = panel.createEl("button", { text: t("cowrite.live.sendToQueue"), cls: "novel-writer-cowrite-secondary-btn" });
-          confirmBtn.addEventListener("click", async () => {
+          confirmBtn.addEventListener("click", () => { void (async () => {
             const count = await view.engine.confirmStateChanges();
             new Notice(count > 0
               ? t('cowrite.live.queuedNotice', { count })
               : t("cowrite.live.nothingToConfirm"), 2e3);
-          });
+          })(); });
         }
       }
     } catch (e) { // silent-ok: 设定守卫是只读检查，失败只影响提示，不改正文

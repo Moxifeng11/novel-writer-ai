@@ -1272,7 +1272,7 @@ export default class NovelWriterPlugin extends Plugin {
             if (this._pendingReloadState?.project) {
                 const reopenTimer = window.setTimeout(() => {
                     if (this._isUnloaded) return;
-                    this.openFullWriterView();
+                    void this.openFullWriterView();
                 }, 300);
                 this.register(() => window.clearTimeout(reopenTimer));
             }
@@ -1568,7 +1568,7 @@ export default class NovelWriterPlugin extends Plugin {
 
     async activateView(): Promise<void> {
         // 重定向到完整写作工作台
-        this.openFullWriterView();
+        void this.openFullWriterView();
     }
 
     public async openFullWriterView(): Promise<void> {
@@ -3141,7 +3141,7 @@ export default class NovelWriterPlugin extends Plugin {
 
     openChapterInFullWriter(project: string, chapterPath: string) {
         // Open the full writer view with this chapter
-        this.activateFullWriterView(project, chapterPath);
+        void this.activateFullWriterView(project, chapterPath);
     }
 
     async activateFullWriterView(project: string, chapterPath?: string) {
@@ -3254,7 +3254,7 @@ export default class NovelWriterPlugin extends Plugin {
         if (this.settings.autoCheckUpdates) {
             const updateTimer = window.setTimeout(() => {
                 if (this._isUnloaded) return;
-                this.silentCheckForUpdates();
+                void this.silentCheckForUpdates();
             }, 3000);
             this.register(() => window.clearTimeout(updateTimer));
         }
@@ -3336,7 +3336,7 @@ export default class NovelWriterPlugin extends Plugin {
                 this.openPluginSettings();
             },
             onStartWriting: () => {
-                this.openFullWriterView();
+                void this.openFullWriterView();
             },
             onStartOnboarding: () => {
                 this.openOnboarding();
@@ -3372,7 +3372,12 @@ export default class NovelWriterPlugin extends Plugin {
      * 「flush → disposeAll」顺序在限时窗口内尽力完成（withUnloadDeadline）；
      * 超时或失败只告警不抛出，卸载流程永不失败。
      */
-    async onunload() {
+    onunload(): void {
+        // Obsidian 不 await 本方法；异步清理体自行兜住异常，宿主的 void 契约据此满足。
+        void this.runUnloadCleanup();
+    }
+
+    private async runUnloadCleanup(): Promise<void> {
         // L2-1：先进入卸载态，启动期 timer/onLayoutReady 回调据此短路；
         // onClose 内继续登记的保存仍允许 track，由下方 drain 有界等待。
         this._isUnloaded = true;

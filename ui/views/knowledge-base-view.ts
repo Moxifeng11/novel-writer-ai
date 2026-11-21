@@ -721,7 +721,7 @@ export class KnowledgeBaseView extends ItemView {
             this.completeRefreshTimer = window.setTimeout(() => {
                 this.completeRefreshPending = false;
                 this.completeRefreshTimer = undefined;
-                this.handleCompleteRefresh();
+                void this.handleCompleteRefresh();
             }, 0);
         });
     }
@@ -730,7 +730,7 @@ export class KnowledgeBaseView extends ItemView {
         if (this.viewClosed || !this.latestProgress) return;
         const progress = this.latestProgress;
         if (progress.bookId === this.selectedBookId && this.activeMainTab === 'books') {
-            this.refreshBookInfo();
+            void this.refreshBookInfo();
         }
         if (this.activeMainTab === 'tasks') {
             this.renderTasksTab();
@@ -2067,7 +2067,7 @@ export class KnowledgeBaseView extends ItemView {
             this.app,
             'create',
             defaultGenre,
-            async (genre) => {
+            (genre) => { void (async () => {
                 try {
                     await this.saveCustomGenre(genre);
                     this.renderRightPanel();
@@ -2075,7 +2075,7 @@ export class KnowledgeBaseView extends ItemView {
                     log.error('保存题材失败:', e);
                     showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.saveFailed') });
                 }
-            }
+            })(); }
         ).open();
     }
 
@@ -2127,7 +2127,7 @@ export class KnowledgeBaseView extends ItemView {
             cls: 'nw-kb-hidden-input',
             attr: { type: 'file', accept: '.json' }
         });
-        input.addEventListener('change', async (e) => {
+        input.addEventListener('change', (e) => { void (async () => {
             const file = (e.target as HTMLInputElement).files?.[0];
             if (!file) return;
             try {
@@ -2142,7 +2142,7 @@ export class KnowledgeBaseView extends ItemView {
             } catch {
                 showErrorNotice(t('knowledgebase.genre.badFormat'), { title: t('knowledgebase.genre.importFailed') });
             }
-        });
+        })(); });
         document.body.appendChild(input);
         input.click();
         document.body.removeChild(input);
@@ -2288,7 +2288,7 @@ export class KnowledgeBaseView extends ItemView {
             this.app,
             mode,
             genre,
-            async (updatedGenre) => {
+            (updatedGenre) => { void (async () => {
                 try {
                     if (mode === 'view') {
                         await this.saveCustomGenre(updatedGenre);
@@ -2300,15 +2300,15 @@ export class KnowledgeBaseView extends ItemView {
                     log.error('保存题材失败:', e);
                     showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.genre.saveFailed') });
                 }
-            },
-            async (id) => {
+            })(); },
+            (id) => { void (async () => {
                 try {
                     await this.handleDeleteGenre(id);
                 } catch (e) {
                     log.error('删除题材失败:', e);
                     showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.common.deleteFailed') });
                 }
-            }
+            })(); }
         ).open();
     }
 
@@ -2652,7 +2652,7 @@ export class KnowledgeBaseView extends ItemView {
                         this.activeMainTab = 'books';
                         this.renderLeftSidebar();
                         this.renderRightPanel();
-                        this.openBookDetail(book);
+                        void this.openBookDetail(book);
                     }
                 });
             }
@@ -2849,7 +2849,7 @@ export class KnowledgeBaseView extends ItemView {
 
     // ============== 操作方法 ==============
     private handleImportBooks(): void {
-        new ImportBookModal(this.app, this.kbManager, async (book) => {
+        new ImportBookModal(this.app, this.kbManager, (book) => { void (async () => {
             try {
                 await this.loadBooks();
                 this.renderRightPanel();
@@ -2859,7 +2859,7 @@ export class KnowledgeBaseView extends ItemView {
                 log.error('书籍导入后处理失败:', e);
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.importPostFailed') });
             }
-        }).open();
+        })(); }).open();
     }
 
     private handleBatchImport(): void {
@@ -2873,7 +2873,7 @@ export class KnowledgeBaseView extends ItemView {
             deconstructionScheduler: this.deconstructionScheduler,
             tagManager: this.plugin.knowledgeTagManager,
             batchImportManager: this.plugin.batchImportManager,
-            onComplete: async (result) => {
+            onComplete: (result) => { void (async () => {
                 try {
                     await this.loadBooks();
                     this.renderRightPanel();
@@ -2888,7 +2888,7 @@ export class KnowledgeBaseView extends ItemView {
                     log.error('批量导入后处理失败:', e);
                     showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.batchImportPostFailed') });
                 }
-            },
+            })(); },
             onViewDetail: (bookId, bookName) => {
                 // 旧实现只设 selectedBookId 就 renderBookDetail()：
                 // 列表态下没有 .nw-kb-detail-tab-content（直接 return），
@@ -2923,7 +2923,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private handleBatchOperations(): void {
-        new BatchOperationsModal(this.app, this.kbManager, async () => {
+        new BatchOperationsModal(this.app, this.kbManager, () => { void (async () => {
             try {
                 await this.loadBooks();
                 this.renderRightPanel();
@@ -2932,7 +2932,7 @@ export class KnowledgeBaseView extends ItemView {
                 log.error('批量操作后处理失败:', e);
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.opPostFailed') });
             }
-        }).open();
+        })(); }).open();
     }
 
     /**
@@ -3098,7 +3098,7 @@ export class KnowledgeBaseView extends ItemView {
     }
 
     private openEditModal(book: BookBasicInfo): void {
-        new EditBookModal(this.app, book, this.kbManager, this.kb, async (updated) => {
+        new EditBookModal(this.app, book, this.kbManager, this.kb, (updated) => { void (async () => {
             try {
                 await this.loadBooks();
                 await this.loadBookDetailData(book.id);
@@ -3108,7 +3108,7 @@ export class KnowledgeBaseView extends ItemView {
                 log.error('编辑书籍后处理失败:', e);
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgebase.books.editPostFailed') });
             }
-        }).open();
+        })(); }).open();
     }
 
     private async handleAddCustomTag(book: BookBasicInfo, tag: string): Promise<void> {

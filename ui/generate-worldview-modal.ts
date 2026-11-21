@@ -129,7 +129,7 @@ export class GenerateWorldviewModal extends Modal {
             };
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async generateWorldview(project: string, worldName: string, genre: string, theme: string, customPrompt: string): Promise<void> {

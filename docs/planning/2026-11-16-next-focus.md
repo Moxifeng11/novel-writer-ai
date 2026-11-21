@@ -4268,3 +4268,16 @@ ZC-25 `e0a772a3`（withButtonBusy）、ZC-26 `0e15c2a5`（悬浮面板自动保�
 - 门禁：tsc 0；preflight EXIT=0（1,013 文件 / 10,503 通过 + 3 跳过）；`.review-warn-baseline.json` 收为 1,232 条 / 27 类；`.bundle-baseline.json` main.js 6,239,638。
 - 教训：废弃 API 的替代项可能要求更高的 `minAppVersion`——先查 `obsidianmd/no-unsupported-api` 再换。
 
+
+## 第一百四十六轮：清社区审核扫描器 warn 第七批（Promise 语义 319 → 0）
+
+**范围**：`no-floating-promises` 147 + `no-misused-promises` 163 = 319 条（ui 275、engine 16、shared/main/services/core 等 44）。
+
+**改法**
+- 非 ui 44 条：语句级 fire-and-forget 前置 `void`；`core/command-registry.ts:438` 包 `async () => { await ... }`；`main.ts:3375` 的 `async onunload()` 拆 `onunload(): void { void this.runUnloadCleanup(); }`；两个 async Promise executor（heavy-task-worker-manager:238、deconstruction-worker-manager:599）改 async IIFE；reject 非 Error 统一包 `instanceof Error`；`genre-preference-memory.ts:344` 的 async 定时器回调改成 `await new Promise(setTimeout)`。
+- ui 275 条：`no-floating-promises` 用脚本按 eslint 行列插入 `void`（102 处）+ 15 处手改（case 分支、if 体内、事件回调）；`no-misused-promises` 用 TypeScript AST 定位回调箭头后改写 157 处为 `() => { void (async () => {...})(); }`，3 处手改（`chapter-version-modal` 的 onAction 条件、`book-detail-renderer:2128`、`volume-intro-modal` 的 `onClose` 拆私有异步体）。
+- 语义确认：`() => void` 回调在 ui/ 内没有被 await 调用，包裹不改变行为。
+
+**结果**：扫描器 warn 1,232 → **913**（Promise 两类规则双零）；`.review-warn-baseline.json` 收为 913 / 23 类；`.bundle-baseline.json` main.js 6,241,070（+1,432，大量 `void` 包裹与 IIFE）。tsc 0，全量单测 1,013 文件 / 10,503 通过 + 3 跳过。
+
+**文档**：`docs/DEVELOPMENT.md` 存量与「第七批落地手法」五条；`docs/planning/2026-11-21-quality-optimization-roadmap.md` 第 6/7 批状态与进度日志。

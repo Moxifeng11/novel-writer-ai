@@ -235,7 +235,7 @@ export class HeavyTaskWorkerManager {
     ): CancelablePromise<T> {
         let cancelled = false;
 
-        const promise = new Promise<T>(async (resolve, reject) => {
+        const promise = (async (): Promise<T> => {
             try {
                 const payload = input as { text: string; context?: unknown };
                 const taskMap: Record<string, () => unknown> = {
@@ -260,11 +260,11 @@ export class HeavyTaskWorkerManager {
                     throw new Error('Task cancelled');
                 }
 
-                resolve(result as T);
+                return result as T;
             } catch (error) {
-                reject(error);
+                throw error instanceof Error ? error : new Error(String(error));
             }
-        }) as CancelablePromise<T>;
+        })() as CancelablePromise<T>;
 
         promise.cancel = () => {
             cancelled = true;

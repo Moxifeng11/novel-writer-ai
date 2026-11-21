@@ -316,7 +316,7 @@ export class RefillModal extends Modal {
             });
             this.startBtn.addEventListener('click', () => {
                 if (!hasOptions) return;
-                this.startFingerprintRefill();
+                void this.startFingerprintRefill();
             });
         }
     }
@@ -492,7 +492,7 @@ export class RefillModal extends Modal {
             });
             this.startBtn.addEventListener('click', () => {
                 if (this.selectedDimensions.size === 0) return;
-                this.startDeconstruction();
+                void this.startDeconstruction();
             });
         }
     }
@@ -559,12 +559,12 @@ export class RefillModal extends Modal {
                     unsubscribe();
                     showSuccessNotice(`《${this.bookName}》拆解完成！`);
                     this.isRunning = false;
-                    this.loadDimensionStatus().then(() => this.render());
+                    void this.loadDimensionStatus().then(() => this.render());
                 } else if (progress.status === 'failed') {
                     unsubscribe();
                     showErrorNotice(progress.error || '未知错误', { title: `《${this.bookName}》拆解失败` });
                     this.isRunning = false;
-                    this.loadDimensionStatus().then(() => this.render());
+                    void this.loadDimensionStatus().then(() => this.render());
                 } else if (progress.status === 'cancelled') {
                     unsubscribe();
                     this.isRunning = false;

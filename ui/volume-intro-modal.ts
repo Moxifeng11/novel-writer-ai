@@ -129,7 +129,7 @@ export class VolumeIntroModal extends Modal {
                 this.selectedVersionId = version.id;
                 this.editorText = version.text;
                 this.selectedStyle = version.style;
-                this.render();
+                void this.render();
             };
             const adopt = row.createEl('button', { text: '采用', cls: 'nw-btn nw-btn-secondary' });
             adopt.onclick = async () => {
@@ -137,7 +137,7 @@ export class VolumeIntroModal extends Modal {
                     await this.store.setActive(this.currentProject, version.id);
                     this.snapshot = await this.store.load(this.currentProject);
                     new Notice(`✅ 已采用 ${version.id}`, 4000);
-                    this.render();
+                    void this.render();
                 } catch (e) {
                     showError(`采用失败：${e instanceof Error ? e.message : String(e)}`);
                 }
@@ -154,7 +154,7 @@ export class VolumeIntroModal extends Modal {
                 if (!confirmed) return;
                 await this.store.deleteVersion(this.currentProject, version.id);
                 this.snapshot = await this.store.load(this.currentProject);
-                this.render();
+                void this.render();
             };
         }
     }
@@ -442,7 +442,11 @@ export class VolumeIntroModal extends Modal {
     /**
      * onClose 方法。
      */
-    async onClose(): Promise<void> {
+    onClose(): void {
+        void this.flushDraftAndClear();
+    }
+
+    private async flushDraftAndClear(): Promise<void> {
         await this.flushDraft();
         this.contentEl.empty();
     }

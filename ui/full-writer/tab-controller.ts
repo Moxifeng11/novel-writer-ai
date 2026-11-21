@@ -94,9 +94,9 @@ export class TabController {
             prevTabId = this.deps.state.popNav();
         }
         if (prevTabId) {
-            this.activateTab(prevTabId);
+            void this.activateTab(prevTabId);
         } else {
-            this.activateTab('project-selector');
+            void this.activateTab('project-selector');
         }
     }
 
@@ -147,7 +147,7 @@ export class TabController {
             const targetIdx = Math.min(idx, newTabs.length - 1);
             this.deps.state.activeTabId = newTabs[targetIdx]?.id || 'project-selector';
             this.renderTabBar();
-            this.renderTabContent();
+            void this.renderTabContent();
         } else {
             this.renderTabBar();
         }
@@ -279,7 +279,7 @@ export class TabController {
             }
 
             tabEl.addEventListener('click', () => {
-                this.activateTab(tab.id);
+                void this.activateTab(tab.id);
             });
         }
 
@@ -296,7 +296,7 @@ export class TabController {
             }
         });
         addBtn.addEventListener('click', () => {
-            this.activateTab('project-selector');
+            void this.activateTab('project-selector');
         });
 
         const reloadBtn = tabBar.createEl('button', {

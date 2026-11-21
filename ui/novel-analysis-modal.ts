@@ -82,7 +82,7 @@ export class NovelAnalysisModal extends Modal {
         });
         closeBtn.addEventListener('click', () => this.close());
 
-        this.analyzeText();
+        void this.analyzeText();
     }
 
     /**

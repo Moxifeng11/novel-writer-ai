@@ -77,7 +77,7 @@ export class PlanBookModal extends Modal {
                 retryBtn.onclick = () => {
                     errorEl.remove();
                     retryBtn.remove();
-                    populateProjects();
+                    void populateProjects();
                 };
                 return;
             }
@@ -176,10 +176,10 @@ export class PlanBookModal extends Modal {
 
             // 异步加载上下文预览
             const selectedProject = projectSelect.value;
-            this.loadContextPreview(selectedProject, contextPreview);
+            void this.loadContextPreview(selectedProject, contextPreview);
 
             projectSelect.onchange = () => {
-                this.loadContextPreview(projectSelect.value, contextPreview);
+                void this.loadContextPreview(projectSelect.value, contextPreview);
             };
 
             const planButton = contentEl.createEl('button', { text: t('planBook.generateBtn'), cls: 'nw-btn nw-btn-primary novel-writer-primary-button', attr: { title: '生成全书规划（分卷大纲 + 章节分配）' } });
@@ -195,7 +195,7 @@ export class PlanBookModal extends Modal {
             });
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async generatePlan(project: string, totalChars: string, volumes: number, wordsPerChapter: number, customPrompt?: string): Promise<void> {

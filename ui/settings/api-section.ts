@@ -376,7 +376,7 @@ export class ApiSection extends SettingsSection {
             value: raw.name,
             attr: { 'aria-label': t('settings.api.providerNameAria') },
         });
-        nameInput.addEventListener('change', async () => {
+        nameInput.addEventListener('change', () => { void (async () => {
             const next = nameInput.value.trim();
             if (!next || next === raw.name) {
                 nameInput.value = raw.name;
@@ -385,7 +385,7 @@ export class ApiSection extends SettingsSection {
             this.plugin.updateProvider(raw.id, { name: next });
             await this.plugin.saveSettings();
             rerender();
-        });
+        })(); });
 
         // 「使用中」= 当前渠道（切换它）；「在其他模块显示」= 快切/工作台/协同是否列出该渠道（启用语义）
         const isCurrent = providerId === this.plugin.getCurrentProviderId();
@@ -415,13 +415,13 @@ export class ApiSection extends SettingsSection {
         visibleToggle.checked = visible;
         visibleLabel.toggleClass('nw-is-active', visible);
         visibleField.createSpan({ cls: 'nw-api-switch-text', text: t('settings.api.visibleLabel') });
-        visibleToggle.addEventListener('change', async () => {
+        visibleToggle.addEventListener('change', () => { void (async () => {
             visibleLabel.toggleClass('nw-is-active', visibleToggle.checked);
             this.plugin.setProviderEnabled(providerId, visibleToggle.checked);
             await this.plugin.saveSettings();
             this.plugin.updateStatusBarText();
             rerender();
-        });
+        })(); });
 
         const moreBtn = head.createEl('button', {
             cls: 'nw-api-icon-btn',
@@ -497,7 +497,7 @@ export class ApiSection extends SettingsSection {
                 input.style.height = `${Math.max(34, input.scrollHeight)}px`;
             };
             window.setTimeout(autosize, 0);
-            input.addEventListener('change', async () => {
+            input.addEventListener('change', () => { void (async () => {
                 const next = input.value.trim();
                 if (!next) {
                     input.value = raw.endpoint;
@@ -511,7 +511,7 @@ export class ApiSection extends SettingsSection {
                 await this.plugin.saveSettings();
                 if (raw.id === this.plugin.getCurrentProviderId()) this.plugin.updateStatusBarText();
                 rerender();
-            });
+            })(); });
         }, t('settings.api.fieldBaseUrlHint'));
 
         // ── API 格式 ──
@@ -532,12 +532,12 @@ export class ApiSection extends SettingsSection {
                 select.setAttr('title', active ? `${active.label}${active.path}` : '');
             };
             syncTitle();
-            select.addEventListener('change', async () => {
+            select.addEventListener('change', () => { void (async () => {
                 syncTitle();
                 this.plugin.updateProvider(raw.id, { apiFormat: normalizeApiFormat(select.value) });
                 await this.plugin.saveSettings();
                 showSuccessNotice(t('settings.api.formatSwitched', { label: API_FORMAT_OPTIONS.find(o => o.value === select.value)?.label ?? select.value }));
-            });
+            })(); });
         }, t('settings.api.formatHint', { list: API_FORMAT_OPTIONS.map(o => `${o.label} → ${o.path}`).join('; ') }));
 
         // ── 实际请求 URL（方案 C）──
@@ -565,14 +565,14 @@ export class ApiSection extends SettingsSection {
                         : t('settings.api.autoDerivedEmpty')));
             };
             syncHint();
-            input.addEventListener('change', async () => {
+            input.addEventListener('change', () => { void (async () => {
                 const next = input.value.trim();
                 this.plugin.updateProvider(raw.id, { requestUrlOverride: next || undefined });
                 await this.plugin.saveSettings();
                 override = next;
                 syncHint();
                 showSuccessNotice(next ? t('settings.api.urlFixed') : t('settings.api.urlAuto'), { timeout: 3000 });
-            });
+            })(); });
             const reset = field.createEl('button', {
                 cls: 'nw-api-ghost-btn',
                 text: t('settings.api.restoreAuto'),
@@ -602,7 +602,7 @@ export class ApiSection extends SettingsSection {
                 attr: { ...SECRET_INPUT_ATTRS, placeholder: display.placeholder, title: display.title },
             });
             const keySnapshotKey = `apiKey:${raw.id}`;
-            input.addEventListener('change', async () => {
+            input.addEventListener('change', () => { void (async () => {
                 const typed = input.value.trim();
                 // 密文未解锁时输入框是空的：留空失焦不写回，避免把密文清掉
                 if (!typed && isStoredCiphertext(storedKey)) return;
@@ -620,7 +620,7 @@ export class ApiSection extends SettingsSection {
                 } else {
                     showSuccessNotice(t('settings.api.keySaved'));
                 }
-            });
+            })(); });
             const eye = row.createEl('button', {
                 cls: 'nw-api-icon-btn',
                 attr: { type: 'button', title: t('settings.api.keyEyeTitle') },
@@ -673,7 +673,7 @@ export class ApiSection extends SettingsSection {
             attr: { type: 'button', title: t('settings.api.fetchModelsTitle') },
         });
         fetchBtn.setText(t('settings.api.fetchModels'));
-        fetchBtn.onclick = async () => {
+        fetchBtn.onclick = () => { void (async () => {
             if (fetchBtn.disabled) return;
             fetchBtn.disabled = true;
             fetchBtn.setText(t('settings.api.fetchingModels'));
@@ -688,7 +688,7 @@ export class ApiSection extends SettingsSection {
                 }
                 // 端点变了 → 旧模型在新端点通常不可用，用新列表替换
                 const endpointChanged = (this.getRawProvider(raw.id)?.modelsEndpoint || '') !== listEndpoint;
-                new ModelPickerModal(this.app, result.models, raw.models, async ({ models, capacities }) => {
+                new ModelPickerModal(this.app, result.models, raw.models, ({ models, capacities }) => { void (async () => {
                     const meta = { ...(this.getRawProvider(raw.id)?.modelMeta || {}) };
                     for (const item of capacities) {
                         meta[item.id] = {
@@ -707,12 +707,12 @@ export class ApiSection extends SettingsSection {
                     this.plugin.updateStatusBarText();
                     showSuccessNotice(t('settings.api.modelsUpdated', { count: models.length }), { timeout: 4000 });
                     rerender();
-                }, endpointChanged).open();
+                })(); }, endpointChanged).open();
             } finally {
                 fetchBtn.disabled = false;
                 fetchBtn.setText(t('settings.api.fetchModels'));
             }
-        };
+        })(); };
 
         const addModelBtn = modelsActions.createEl('button', {
             cls: 'nw-api-ghost-btn',
@@ -785,7 +785,7 @@ export class ApiSection extends SettingsSection {
             const enable = enableLabel.createEl('input', { type: 'checkbox' });
             enable.checked = !disabled.has(modelId);
             enableLabel.toggleClass('nw-is-active', enable.checked);
-            enable.addEventListener('change', async () => {
+            enable.addEventListener('change', () => { void (async () => {
                 enableLabel.toggleClass('nw-is-active', enable.checked);
                 const next = new Set(this.getRawProvider(raw.id)?.disabledModels || []);
                 if (enable.checked) next.delete(modelId);
@@ -795,7 +795,7 @@ export class ApiSection extends SettingsSection {
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 rerender();
-            });
+            })(); });
 
             const editBtn = rowActions.createEl('button', {
                 cls: 'nw-api-icon-btn',
@@ -954,11 +954,11 @@ export class ApiSection extends SettingsSection {
                     .onChange(async (value) => {
                         headerText = value;
                     });
-                text.inputEl.addEventListener('blur', async () => {
+                text.inputEl.addEventListener('blur', () => { void (async () => {
                     const headers = parseHeaderLines(headerText);
                     this.plugin.updateProvider(raw.id, { headers });
                     await this.plugin.saveSettings();
-                });
+                })(); });
             });
     }
 
@@ -1019,7 +1019,7 @@ export class ApiSection extends SettingsSection {
             outputPricePerM: meta.outputPricePerM,
             priceCurrency: meta.priceCurrency,
             vision: meta.vision,
-        }, async (value) => {
+        }, (value) => { void (async () => {
             const latest = this.getRawProvider(raw.id);
             if (!latest) return;
             const models = [...latest.models];
@@ -1046,7 +1046,7 @@ export class ApiSection extends SettingsSection {
             this.plugin.updateStatusBarText();
             showSuccessNotice(t('settings.api.modelSaved'), { timeout: 3000 });
             this.refresh();
-        }).open();
+        })(); }).open();
     }
 
     /**
@@ -1166,24 +1166,24 @@ export class ApiSection extends SettingsSection {
                         dropdown.onChange(onChange);
                     });
             };
-            addModelSelect(t('settings.api.assignmentDefault'), t('settings.api.assignmentDefaultDesc'), assignment.defaultModel, async (value) => {
+            addModelSelect(t('settings.api.assignmentDefault'), t('settings.api.assignmentDefaultDesc'), assignment.defaultModel, (value) => { void (async () => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, defaultModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.refresh();
-            });
-            addModelSelect(t('settings.api.assignmentFlash'), t('settings.api.assignmentFlashDesc'), assignment.flashModel, async (value) => {
+            })(); });
+            addModelSelect(t('settings.api.assignmentFlash'), t('settings.api.assignmentFlashDesc'), assignment.flashModel, (value) => { void (async () => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, flashModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.refresh();
-            });
-            addModelSelect(t('settings.api.assignmentPro'), t('settings.api.assignmentProDesc'), assignment.proModel, async (value) => {
+            })(); });
+            addModelSelect(t('settings.api.assignmentPro'), t('settings.api.assignmentProDesc'), assignment.proModel, (value) => { void (async () => {
                 this.plugin.setProviderAssignment(provider.id, { ...assignment, proModel: value });
                 await this.plugin.saveSettings();
                 this.plugin.updateStatusBarText();
                 this.refresh();
-            });
+            })(); });
 
             const currentModel = assignment.defaultModel;
             const rawProvider = this.getRawProvider(provider.id);

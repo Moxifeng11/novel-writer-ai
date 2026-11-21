@@ -126,7 +126,7 @@ export class MemoryManagerModal extends Modal {
         const keyInput = section.createEl('input', { cls: 'nw-input novel-writer-memory-input', type: 'text', placeholder: t('cowrite.mem.keyPlaceholder') });
         const valueInput = section.createEl('textarea', { cls: 'novel-writer-memory-textarea', placeholder: t('cowrite.mem.valuePlaceholder') });
         const addBtn = section.createEl('button', { cls: 'novel-writer-cowrite-primary-btn', text: t('cowrite.mem.addBtn') });
-        addBtn.addEventListener('click', async () => {
+        addBtn.addEventListener('click', () => { void (async () => {
             if (addBtn.disabled) return;
             const key = keyInput.value.trim();
             const value = valueInput.value.trim();
@@ -143,7 +143,7 @@ export class MemoryManagerModal extends Modal {
                 new Notice(t('cowrite.mem.writeFailed', { msg: e instanceof Error ? e.message : String(e) }), 6000);
                 addBtn.disabled = false;
             }
-        });
+        })(); });
     }
 
     /**

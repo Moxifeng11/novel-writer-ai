@@ -441,7 +441,7 @@ function renderPresetManager(
             text: preset.id === activeId ? t('settings.appearance.presets.inUse') : t('settings.appearance.presets.apply'),
             attr: { type: 'button' },
         });
-        applyBtn.addEventListener('click', async () => {
+        applyBtn.addEventListener('click', () => { void (async () => {
             const { theme, themeColors } = presetToSettings(preset);
             plugin.settings.theme = theme;
             // presetToSettings 已带 activePresetId，且不含 textPrimary/panelBg，
@@ -451,14 +451,14 @@ function renderPresetManager(
             plugin.injectThemeVariables();
             showSuccessNotice(t('settings.appearance.presets.applied', { name: preset.name }));
             rerender();
-        });
+        })(); });
 
         const delBtn = actions.createEl('button', {
             cls: 'nw-preset-delete',
             text: t('settings.appearance.presets.delete'),
             attr: { type: 'button', title: t('settings.appearance.presets.deleteTitle') },
         });
-        delBtn.addEventListener('click', async () => {
+        delBtn.addEventListener('click', () => { void (async () => {
             plugin.settings.themePresets = (plugin.settings.themePresets || []).filter(item => item.id !== preset.id);
             if (plugin.settings.themeColors?.activePresetId === preset.id) {
                 delete plugin.settings.themeColors.activePresetId;
@@ -466,7 +466,7 @@ function renderPresetManager(
             await plugin.saveSettings();
             showSuccessNotice(t('settings.appearance.presets.deleted', { name: preset.name }));
             rerender();
-        });
+        })(); });
     }
 
     const actionsRow = section.createDiv({ cls: 'nw-preset-toolbar' });
@@ -526,7 +526,7 @@ function renderPresetManager(
         text: t('settings.appearance.presets.export'),
         attr: { type: 'button', title: t('settings.appearance.presets.exportTitle') },
     });
-    exportBtn.addEventListener('click', async () => {
+    exportBtn.addEventListener('click', () => { void (async () => {
         const data: ThemePreset[] = plugin.settings.themePresets || [];
         if (data.length === 0) {
             new Notice(t('settings.appearance.presets.exportEmpty'));
@@ -551,7 +551,7 @@ function renderPresetManager(
             onClose(): void { this.contentEl.empty(); }
         })(plugin.app);
         modal.open();
-    });
+    })(); });
 
     const importBtn = actionsRow.createEl('button', {
         cls: 'nw-btn nw-btn-secondary',

@@ -241,16 +241,16 @@ export class ChapterVersionModal extends Modal {
                 cls: 'nw-version-rollback-btn',
                 text: '⏪ 回滚到此版本',
             });
-            rollbackBtn.addEventListener('click', async (e) => {
+            rollbackBtn.addEventListener('click', (e) => { void (async () => {
                 e.stopPropagation();
                 await this.confirmRollback(version);
-            });
+            })(); });
 
             item.addEventListener('click', () => {
                 this.selectedVersion = version;
                 this.selectedLineIndices.clear();
                 this.renderVersionList();
-                this.renderDiff();
+                void this.renderDiff();
             });
         });
     }
@@ -472,7 +472,7 @@ export class ChapterVersionModal extends Modal {
     // ============================================================
 
     private async confirmRollback(version: VersionMeta): Promise<void> {
-        const confirmModal = new RollbackConfirmModal(this.app, version, this.diffStats, async (confirmed) => {
+        const confirmModal = new RollbackConfirmModal(this.app, version, this.diffStats, (confirmed) => { void (async () => {
             if (confirmed) {
                 if (this.options.onRollback) {
                     await this.options.onRollback(version);
@@ -480,7 +480,7 @@ export class ChapterVersionModal extends Modal {
                     this.close();
                 }
             }
-        });
+        })(); });
         confirmModal.open();
     }
 
@@ -496,15 +496,17 @@ export class ChapterVersionModal extends Modal {
             description: '选择左侧的版本查看对比，或先保存当前版本开始记录历史。',
             actionText: this.options.onSaveVersion ? '保存当前版本' : undefined,
             onAction: this.options.onSaveVersion
-                ? async () => {
-                    const newVersion = await this.options.onSaveVersion!();
-                    if (newVersion) {
-                        await this.loadVersions();
-                        this.selectedVersion = newVersion;
-                        this.renderVersionList();
-                        await this.renderDiff();
-                        new Notice(`✅ 已保存 v${newVersion.version}`);
-                    }
+                ? () => {
+                    void (async () => {
+                        const newVersion = await this.options.onSaveVersion!();
+                        if (newVersion) {
+                            await this.loadVersions();
+                            this.selectedVersion = newVersion;
+                            this.renderVersionList();
+                            await this.renderDiff();
+                            new Notice(`✅ 已保存 v${newVersion.version}`);
+                        }
+                    })();
                 }
                 : undefined,
         }));

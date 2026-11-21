@@ -100,7 +100,7 @@ function abortable<T>(
         }
         task.then(
             (value) => finish(() => resolve(value)),
-            (error) => finish(() => reject(error)),
+            (error) => finish(() => reject(error instanceof Error ? error : new Error(String(error)))),
         );
     });
 }

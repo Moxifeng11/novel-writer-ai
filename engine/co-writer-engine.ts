@@ -2163,7 +2163,7 @@ ${directions.map((d, i) => `${i + 1}. ${d}`).join('\n')}
             this.promptBuilder.setReferenceBooks(this.referenceBookIds);
         }
         if (this.knowledgeInjector && this.knowledgeManager) {
-            this.syncReferenceBooksToInjector();
+            void this.syncReferenceBooksToInjector();
         }
     }
 

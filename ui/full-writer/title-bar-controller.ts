@@ -58,7 +58,7 @@ export class TitleBarController {
             }
         });
         backBtn.onclick = () => {
-            this.deps.activateTab('project-selector');
+            void this.deps.activateTab('project-selector');
         };
 
         const projectSelect = titleRow.createEl('select', { cls: 'nw-select novel-writer-fw-title' });
@@ -77,14 +77,14 @@ export class TitleBarController {
             }
         }
 
-        projectSelect.addEventListener('change', async () => {
+        projectSelect.addEventListener('change', () => { void (async () => {
             const rawText = projectSelect.value;
             const selected = rawText.replace('📖 ', '');
             if (selected !== this.deps.state.project && selected !== '无项目') {
                 this.deps.state.project = selected;
                 await this.deps.switchProjectQuick();
             }
-        });
+        })(); });
 
         if (this.deps.state.project) {
             titleRow.createSpan({ text: ' · ', cls: 'novel-writer-fw-title-sep' });

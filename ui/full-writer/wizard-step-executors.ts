@@ -285,7 +285,7 @@ export class WizardStepExecutors {
             const modal = new WritingStyleModal(this.app, this.plugin, tab.project, () => {
                 saved = true;
             });
-            modal.onClose = async () => {
+            modal.onClose = () => { void (async () => {
                 const result = await validateWizardStepContent(this.app, tab.project, 'writing_style');
                 if (result.valid) {
                     step.status = 'done';
@@ -296,7 +296,7 @@ export class WizardStepExecutors {
                     showWarningNotice(t('cowrite.wiz.styleMissingFields', { fields: result.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
                 }
                 resolve();
-            };
+            })(); };
             modal.open();
         });
     }
@@ -306,7 +306,7 @@ export class WizardStepExecutors {
             // 必须把向导绑定的项目传进去：旧实现不传，弹窗默认选中「检测到的第一个项目」，
             // 从项目 B 的向导点执行时可能给项目 A 生成并覆盖分卷大纲。
             const modal = new PlanBookModal(this.app, this.plugin, tab.project);
-            modal.onClose = async () => {
+            modal.onClose = () => { void (async () => {
                 // v4.0：分卷大纲按卷归档，合并读取后判断是否非空
                 const outlineContent = await readMergedVolumeOutline(this.app, tab.project);
                 if (outlineContent.trim().length === 0) {
@@ -323,7 +323,7 @@ export class WizardStepExecutors {
                     }
                 }
                 resolve();
-            };
+            })(); };
             modal.open();
         });
     }
@@ -332,7 +332,7 @@ export class WizardStepExecutors {
         return new Promise<void>((resolve) => {
             // 同上：批量建章弹窗支持 preferredProject，必须传向导项目
             const modal = new BatchCreateModal(this.app, this.plugin, tab.project);
-            modal.onClose = async () => {
+            modal.onClose = () => { void (async () => {
                 // v4.0：章节正文位于 03-大纲与章节/正文/第N卷/，步骤结果分离在 步骤结果/
                 const ok = await this.checkChaptersComplete(tab.project);
                 if (ok) {
@@ -361,7 +361,7 @@ export class WizardStepExecutors {
                     showWarningNotice(t('cowrite.wiz.noChapterFiles'), { timeout: 5000 });
                 }
                 resolve();
-            };
+            })(); };
             modal.open();
         });
     }

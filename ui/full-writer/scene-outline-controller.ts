@@ -1008,7 +1008,7 @@ export class SceneOutlineController {
         }
         this.saveTimer = window.setTimeout(() => {
             this.saveTimer = null;
-            this.saveScenes();
+            void this.saveScenes();
         }, AUTOSAVE_DELAY_MS);
     }
 
@@ -1141,7 +1141,7 @@ export class SceneOutlineController {
         }
         const container = document.querySelector('.nw-scene-outline-container');
         if (container && container.parentElement) {
-            this.render(container.parentElement as HTMLElement);
+            void this.render(container.parentElement as HTMLElement);
         }
     }
 

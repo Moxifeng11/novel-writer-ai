@@ -90,7 +90,7 @@ export class StepResultViewerModal extends Modal {
         });
         this.projectSelectEl.addEventListener('change', () => {
             this.selectedProject = this.projectSelectEl!.value;
-            this.loadVolumes();
+            void this.loadVolumes();
         });
 
         const volumeWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 110px;' } });
@@ -104,7 +104,7 @@ export class StepResultViewerModal extends Modal {
         });
         this.volumeSelectEl.addEventListener('change', () => {
             this.selectedVolume = this.volumeSelectEl!.value;
-            this.loadChapters();
+            void this.loadChapters();
         });
 
         const chapterWrap = selectorArea.createDiv({ attr: { style: 'flex: 1; min-width: 110px;' } });
@@ -118,7 +118,7 @@ export class StepResultViewerModal extends Modal {
         });
         this.chapterSelectEl.addEventListener('change', () => {
             this.selectedChapter = this.chapterSelectEl!.value;
-            this.loadStepFiles();
+            void this.loadStepFiles();
         });
 
         const listContainer = contentEl.createDiv({
@@ -417,7 +417,7 @@ export class StepResultViewerModal extends Modal {
     }
 
     private openFile(file: TFile): void {
-        this.app.workspace.openLinkText(file.path, '');
+        void this.app.workspace.openLinkText(file.path, '');
     }
 
     /**

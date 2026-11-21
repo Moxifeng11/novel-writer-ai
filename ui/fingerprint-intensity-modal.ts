@@ -179,7 +179,7 @@ export class FingerprintIntensityModal extends Modal {
                     style: 'margin-top:4px;padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;background:transparent;color:var(--text-muted);'
                 }
             });
-            resetBtn.addEventListener('click', async () => {
+            resetBtn.addEventListener('click', () => { void (async () => {
                 try {
                     await this.options.library.removeIntensityConfig(fp.id, this.options.project);
                     new Notice('已移除本项目的强度覆盖，改为跟随全局默认');
@@ -193,7 +193,7 @@ export class FingerprintIntensityModal extends Modal {
                     log.warn('[FingerprintIntensityModal] 移除项目覆盖失败:', e);
                     new Notice('移除项目覆盖失败，请查看控制台');
                 }
-            });
+            })(); });
         }
     }
 
@@ -452,7 +452,7 @@ export class FingerprintIntensityModal extends Modal {
                 style: 'padding:6px 14px;cursor:pointer;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;font-size:12px;'
             }
         });
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => { void (async () => {
             // 强度配置按项目落盘（projectFingerprintIntensityFile）。
             // 没有项目时引擎会静默返回，这里必须先拦住，
             // 否则会弹「已保存」，重启后配置却不存在。
@@ -483,7 +483,7 @@ export class FingerprintIntensityModal extends Modal {
                 log.warn('[FingerprintIntensityModal] 保存失败:', e);
                 new Notice('保存强度配置失败，请查看控制台');
             }
-        });
+        })(); });
 
         const closeBtn = btnRow.createEl('button', {
             text: '关闭',

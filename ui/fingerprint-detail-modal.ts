@@ -500,7 +500,7 @@ export class FingerprintDetailModal extends Modal {
                 cls: 'nw-fp-btn',
                 attr: { type: 'button' },
             });
-            toggleBtn.addEventListener('click', async () => {
+            toggleBtn.addEventListener('click', () => { void (async () => {
                 if (toggleBtn.disabled) return;
                 toggleBtn.disabled = true;
                 try {
@@ -513,7 +513,7 @@ export class FingerprintDetailModal extends Modal {
                 } finally {
                     toggleBtn.disabled = false;
                 }
-            });
+            })(); });
         }
 
         if (canEdit && this.options.onReextract) {
@@ -522,7 +522,7 @@ export class FingerprintDetailModal extends Modal {
                 cls: 'nw-fp-btn',
                 attr: { type: 'button' },
             });
-            reextractBtn.addEventListener('click', async () => {
+            reextractBtn.addEventListener('click', () => { void (async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
                     title: t('fingerprint.detail.reextractTitle'),
                     description: t('fingerprint.detail.reextractDesc'),
@@ -531,7 +531,7 @@ export class FingerprintDetailModal extends Modal {
                 });
                 if (!confirmed) return;
                 this.options.onReextract?.(fp);
-            });
+            })(); });
         }
 
         // 强度调节入口（V2 Task 7）
@@ -552,7 +552,7 @@ export class FingerprintDetailModal extends Modal {
                 cls: 'nw-fp-btn nw-fp-btn--danger',
                 attr: { type: 'button' },
             });
-            deleteBtn.addEventListener('click', async () => {
+            deleteBtn.addEventListener('click', () => { void (async () => {
                 const confirmed = await OperationConfirmModal.confirm(this.app, {
                     title: t('fingerprint.detail.deleteTitle'),
                     description: t('fingerprint.detail.deleteDesc', { name: fp.name }),
@@ -563,7 +563,7 @@ export class FingerprintDetailModal extends Modal {
                 if (!confirmed) return;
                 this.options.onDelete?.(fp);
                 this.close();
-            });
+            })(); });
         }
 
         const closeBtn = btnRow.createEl('button', {

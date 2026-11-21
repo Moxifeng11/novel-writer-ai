@@ -130,7 +130,7 @@ export class KnowledgeSection extends SettingsSection {
                 title: t('settings.knowledge.rebuildTitle')
             }
         });
-        rebuildBtn.addEventListener('click', () => rebuildKnowledgeIndexWithConfirm(this.app, this.plugin));
+        rebuildBtn.addEventListener('click', () => { void rebuildKnowledgeIndexWithConfirm(this.app, this.plugin); });
 
         const revectorizeBtn = actionRow.createEl('button', {
             text: t('settings.knowledge.revectorizeBtn'),
@@ -140,7 +140,7 @@ export class KnowledgeSection extends SettingsSection {
                 title: t('settings.knowledge.revectorizeTitle')
             }
         });
-        revectorizeBtn.addEventListener('click', () => rebuildAllVectorsWithConfirm(this.app, this.plugin));
+        revectorizeBtn.addEventListener('click', () => { void rebuildAllVectorsWithConfirm(this.app, this.plugin); });
 
         const filterBar = section.createDiv({
             cls: 'nw-st-kb-filters'
@@ -310,7 +310,7 @@ export class KnowledgeSection extends SettingsSection {
                 title: t('settings.knowledge.deleteTitle')
             }
         });
-        deleteBtn.addEventListener('click', async (e) => {
+        deleteBtn.addEventListener('click', (e) => { void (async () => {
             e.stopPropagation();
             const confirmed = await OperationConfirmModal.confirm(this.app, {
                 title: t('settings.knowledge.deleteConfirmTitle'),
@@ -328,7 +328,7 @@ export class KnowledgeSection extends SettingsSection {
                 this.refresh();
                 showSuccessNotice(t('settings.knowledge.deletedNotice', { name: book.name }));
             }
-        });
+        })(); });
 
         const titleRow = card.createDiv({ cls: 'nw-st-kb-card-title-row' });
         titleRow.createDiv({
@@ -422,10 +422,10 @@ export class KnowledgeSection extends SettingsSection {
             deconstructionScheduler: this.deconstructionScheduler,
             tagManager: this.knowledgeTagManager,
             engineRegistry: this.plugin.engineRegistry,
-            onComplete: async () => {
+            onComplete: () => { void (async () => {
                 await this.loadKnowledgeBooks();
                 this.refresh();
-            },
+            })(); },
             onViewDetail: (bookId, bookName) => {
                 const book = this.knowledgeBooks?.find(b => b.id === bookId || b.name === bookName);
                 if (book) {

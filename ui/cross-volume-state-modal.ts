@@ -76,7 +76,7 @@ export class CrossVolumeStateModal extends Modal {
             await this.populateVolumes(preferred, volSelect);
         };
 
-        populateProjects();
+        void populateProjects();
     }
 
     private async populateVolumes(project: string, volSelect: HTMLSelectElement): Promise<void> {

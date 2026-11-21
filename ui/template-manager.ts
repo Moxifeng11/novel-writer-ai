@@ -136,7 +136,7 @@ export class TemplateManager {
             btn.style.cssText = `padding:4px 12px;cursor:pointer;border:1px solid ${this.filter === cat.key ? 'var(--interactive-accent)' : 'var(--background-modifier-border)'};background:${this.filter === cat.key ? 'var(--interactive-accent)' : 'transparent'};color:${this.filter === cat.key ? 'var(--text-on-accent)' : 'var(--text-normal)'};border-radius:4px;font-size:12px;`;
             btn.onclick = () => {
                 this.filter = cat.key;
-                this.renderTemplateList(container);
+                void this.renderTemplateList(container);
             };
         }
 
@@ -309,7 +309,7 @@ export class TemplateManager {
     showImportModal(container: HTMLElement): void {
         new TemplateImportModal(this.app, () => {
             // 导入成功后刷新列表
-            this.renderTemplateList(container);
+            void this.renderTemplateList(container);
         }).open();
     }
 
@@ -388,7 +388,7 @@ export class TemplateManager {
             }
 
             showSuccessNotice(`已删除 ${count} 个自定义模板`);
-            this.renderTemplateList(container);
+            void this.renderTemplateList(container);
         } catch (e) {
             log.error('[TemplateManager] 重置全部模板失败:', e);
             showErrorNotice((e as Error).message, { title: '重置失败' });

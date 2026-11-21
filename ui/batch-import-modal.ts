@@ -1277,11 +1277,11 @@ export class BatchImportModal extends Modal {
                 text: t('batchImport.footer.done'),
                 cls: 'nw-btn nw-btn-primary',
             });
-            doneBtn.addEventListener('click', async () => {
+            doneBtn.addEventListener('click', () => { void (async () => {
                 this.completionReported = true;
                 await this.reportCompletion();
                 this.close();
-            });
+            })(); });
         }
     }
 
@@ -1446,7 +1446,7 @@ export class BatchImportModal extends Modal {
             text: t('batchImport.picker.confirmAdd'),
             cls: 'nw-btn nw-btn-primary',
         });
-        confirmBtn.addEventListener('click', async () => {
+        confirmBtn.addEventListener('click', () => { void (async () => {
             if (selectedPaths.size === 0) {
                 new Notice(t('batchImport.notice.needSelectFile'));
                 return;
@@ -1477,7 +1477,7 @@ export class BatchImportModal extends Modal {
             if (addedCount > 0) {
                 showSuccessNotice(t('batchImport.notice.added', { count: addedCount }));
             }
-        });
+        })(); });
 
         pickerModal.open();
     }
@@ -1592,7 +1592,7 @@ export class BatchImportModal extends Modal {
             text: t('batchImport.picker.confirmImport'),
             cls: 'nw-btn nw-btn-primary',
         });
-        confirmBtn.addEventListener('click', async () => {
+        confirmBtn.addEventListener('click', () => { void (async () => {
             if (!selectedFolderPath) {
                 new Notice(t('batchImport.notice.needSelectFolder'));
                 return;
@@ -1630,7 +1630,7 @@ export class BatchImportModal extends Modal {
             } else {
                 new Notice(t('batchImport.notice.noNewFiles'));
             }
-        });
+        })(); });
 
         pickerModal.open();
     }

@@ -520,7 +520,7 @@ export class OutlineExpandModal extends Modal {
             });
             expandBtn.onclick = (e) => {
                 e.stopPropagation();
-                this.expandSingleScene(i);
+                void this.expandSingleScene(i);
             };
 
             // P-15：逐段采纳 —— 已扩写的场景可以单独跳过，不影响其它场景

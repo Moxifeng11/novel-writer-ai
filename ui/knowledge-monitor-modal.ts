@@ -280,10 +280,10 @@ export class KnowledgeMonitorModal extends Modal {
                 attr: {
                     style: 'padding:6px 16px;cursor:pointer;border:1px solid var(--background-modifier-error);border-radius:4px;color:var(--text-error);background:transparent;font-size:13px;'
                 }
-            }).addEventListener('click', async () => {
+            }).addEventListener('click', () => { void (async () => {
                 await this.scheduler.cancelTask(currentTask.id);
                 new Notice('任务已取消');
-            });
+            })(); });
         }
     }
 
@@ -414,7 +414,7 @@ export class KnowledgeMonitorModal extends Modal {
                 style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:12px;background:var(--background-primary);color:var(--text-normal);'
             }
         }).addEventListener('click', () => {
-            this.navigateToBook(task.bookId);
+            void this.navigateToBook(task.bookId);
         });
 
         if (isFailed) {
@@ -424,7 +424,7 @@ export class KnowledgeMonitorModal extends Modal {
                     style: 'padding:4px 10px;cursor:pointer;border:1px solid var(--interactive-accent);border-radius:4px;font-size:12px;background:var(--interactive-accent);color:var(--text-on-accent);'
                 }
             }).addEventListener('click', () => {
-                this.retryTask(task);
+                void this.retryTask(task);
             });
         }
 

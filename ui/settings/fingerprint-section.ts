@@ -182,7 +182,7 @@ export class FingerprintSection extends SettingsSection {
                     style: 'padding:2px 8px;cursor:pointer;border:1px solid var(--background-modifier-border);border-radius:4px;font-size:11px;background:transparent;'
                 }
             });
-            syncBtn.addEventListener('click', async () => {
+            syncBtn.addEventListener('click', () => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 try {
                     const result = await this.fingerprintLibrary.syncFromTemplate(activeProject);
@@ -196,7 +196,7 @@ export class FingerprintSection extends SettingsSection {
                     log.warn('[SettingsTab] 同步失败:', e);
                     new Notice(t('settings.fingerprint.syncFailedNotice'));
                 }
-            });
+            })(); });
         }
 
         if (isProjectWithoutProject) {
@@ -210,7 +210,7 @@ export class FingerprintSection extends SettingsSection {
         const listContainer = container.createDiv();
         renderFingerprintList(listContainer, fingerprints, {
             showDelete: true,
-            onToggle: async (fp) => {
+            onToggle: (fp) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 // 模板层不参与注入，列表已隐藏其开关；这里只处理 global / project
                 if (fp.scope === 'template') return;
@@ -223,7 +223,7 @@ export class FingerprintSection extends SettingsSection {
                     await this.loadProjectFingerprints();
                 }
                 this.refresh();
-            },
+            })(); },
             onDetail: (fp) => {
                 if (scope === 'template') {
                     this.showTemplateFingerprintDetail(fp);
@@ -233,7 +233,7 @@ export class FingerprintSection extends SettingsSection {
                     this.showProjectFingerprintDetail(fp);
                 }
             },
-            onDelete: async (fp) => {
+            onDelete: (fp) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 const scopeLabel = scope === 'template'
                     ? t('settings.fingerprint.scopeTemplate')
@@ -258,7 +258,7 @@ export class FingerprintSection extends SettingsSection {
                 }
                 this.refresh();
                 new Notice(t('settings.fingerprint.deletedNotice', { name: fp.name }));
-            },
+            })(); },
         });
     }
 
@@ -292,13 +292,13 @@ export class FingerprintSection extends SettingsSection {
                     embeddingSettings: this.plugin.settings,
                 }).open();
             },
-            onDelete: async (fingerprint) => {
+            onDelete: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.deleteTemplate(fingerprint.id);
                 await this.loadTemplateFingerprints();
                 this.refresh();
                 new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
-            },
+            })(); },
         }).open();
     }
 
@@ -311,12 +311,12 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'template',
             extractor,
-            onCompleted: async (fingerprint) => {
+            onCompleted: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.addTemplate(fingerprint);
                 await this.loadTemplateFingerprints();
                 this.refresh();
-            }
+            })(); }
         }).open();
     }
 
@@ -362,13 +362,13 @@ export class FingerprintSection extends SettingsSection {
                     embeddingSettings: this.plugin.settings,
                 }).open();
             },
-            onDelete: async (fingerprint) => {
+            onDelete: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.deleteGlobal(fingerprint.id);
                 await this.loadGlobalFingerprints();
                 this.refresh();
                 new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
-            },
+            })(); },
         }).open();
     }
 
@@ -381,12 +381,12 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'global',
             extractor,
-            onCompleted: async (fingerprint) => {
+            onCompleted: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.addGlobal(fingerprint);
                 await this.loadGlobalFingerprints();
                 this.refresh();
-            }
+            })(); }
         }).open();
     }
 
@@ -404,12 +404,12 @@ export class FingerprintSection extends SettingsSection {
         new AddFingerprintModal(this.app, {
             scope: 'project',
             extractor,
-            onCompleted: async (fingerprint) => {
+            onCompleted: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.addProject(fingerprint);
                 await this.loadProjectFingerprints();
                 this.refresh();
-            }
+            })(); }
         }).open();
     }
 
@@ -434,13 +434,13 @@ export class FingerprintSection extends SettingsSection {
                     embeddingSettings: this.plugin.settings,
                 }).open();
             },
-            onDelete: async (fingerprint) => {
+            onDelete: (fingerprint) => { void (async () => {
                 if (!this.fingerprintLibrary) return;
                 await this.fingerprintLibrary.deleteProject(fingerprint.id);
                 await this.loadProjectFingerprints();
                 this.refresh();
                 new Notice(t('settings.fingerprint.deletedNotice', { name: fingerprint.name }));
-            },
+            })(); },
         }).open();
     }
 }

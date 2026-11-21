@@ -92,7 +92,7 @@ export function renderMetrics(host: MetricsRenderHost, metrics: PlotCompletionMe
             saveStateText: host.saveStateText,
             directionText,
         },
-        () => host.refreshMetrics(true),
+        () => { void host.refreshMetrics(true); },
     );
 }
 
@@ -162,6 +162,6 @@ export function renderMetricsInto(
         metrics,
         state,
         directionText,
-        () => host.refreshMetrics(true),
+        () => { void host.refreshMetrics(true); },
     );
 }

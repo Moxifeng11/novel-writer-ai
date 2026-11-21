@@ -256,7 +256,7 @@ export class AgentWorkbenchView extends ItemView {
         const left = layout.createDiv({ cls: 'nw-awb-left' });
         const center = layout.createDiv({ cls: 'nw-awb-center' });
         const right = layout.createDiv({ cls: 'nw-awb-right' });
-        this.renderLeftPanel(left);
+        void this.renderLeftPanel(left);
         this.renderCenter(center);
         this.renderRightPanel(right);
         this.initLayoutResizers(layout, left, center, right);
@@ -354,7 +354,7 @@ export class AgentWorkbenchView extends ItemView {
         // 关视图前把节流中的快照写完（最多 1s 未落盘）
         // L2-1：登记进卸载屏障，onunload 在 disposeAll 前有界等待
         const flushPromise = this.sessionStore?.flush();
-        if (flushPromise) this.plugin?._unloadBarrier?.track(flushPromise);
+        if (flushPromise) void this.plugin?._unloadBarrier?.track(flushPromise);
         void flushPromise;
         this.sessionStore = null;
         this.contentEl.empty();
@@ -642,7 +642,7 @@ export class AgentWorkbenchView extends ItemView {
             this.previewEl?.empty();
             this.previewEl?.createDiv({ cls: 'nw-awb-preview-empty', text: t('agentWorkbench.file.fromTree') });
         }
-        this.refreshProjectList();
+        void this.refreshProjectList();
         this.refreshProjectChip();
         this.refreshFileTree();
         void this.refreshStagePanel();
@@ -1594,7 +1594,7 @@ export class AgentWorkbenchView extends ItemView {
             && (this.agentCtx?.projects.includes(picked) ?? false)) {
             this.setActiveProject(picked);
         }
-        this.refreshProjectList();
+        void this.refreshProjectList();
         this.refreshProjectChip();
         this.refreshModelBadge();
         this.refreshFileTree();
@@ -1608,7 +1608,7 @@ export class AgentWorkbenchView extends ItemView {
         this.renderChips(turn.messages[turn.messages.length - 1]?.chips || []);
         this.renderTelemetry();
         this.renderPlan();
-        this.refreshProjectList();
+        void this.refreshProjectList();
         this.refreshProjectChip();
         this.refreshFileTree();
         this.scrollToEnd();

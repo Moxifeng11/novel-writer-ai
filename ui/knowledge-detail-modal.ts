@@ -542,7 +542,7 @@ export class KnowledgeDetailModal extends Modal {
             attr: { type: 'button' },
             cls: 'nw-kd-btn',
         });
-        convertFingerprintBtn.addEventListener('click', () => this.onConvertToFingerprint(convertFingerprintBtn));
+        convertFingerprintBtn.addEventListener('click', () => { void this.onConvertToFingerprint(convertFingerprintBtn); });
 
         // A5: 向量化失败时给出唯一可恢复入口，复用 revectorizeBook，不必重新拆解
         if (book.vectorStatus === 'failed') {
@@ -551,7 +551,7 @@ export class KnowledgeDetailModal extends Modal {
                 attr: { type: 'button', title: book.vectorError || t('knowledgeDetail.actions.retryVectorTip') },
                 cls: 'nw-kd-btn',
             });
-            retryVectorBtn.addEventListener('click', async () => {
+            retryVectorBtn.addEventListener('click', () => { void (async () => {
                 const scheduler = this.ensureScheduler();
                 if (!scheduler) return;
                 retryVectorBtn.disabled = true;
@@ -567,7 +567,7 @@ export class KnowledgeDetailModal extends Modal {
                     retryVectorBtn.disabled = false;
                     retryVectorBtn.textContent = t('knowledgeDetail.actions.retryVector');
                 }
-            });
+            })(); });
         }
 
         const openFolderBtn = btnRow.createEl('button', {
@@ -586,7 +586,7 @@ export class KnowledgeDetailModal extends Modal {
             attr: { type: 'button' },
             cls: 'nw-kd-btn nw-kd-btn--danger',
         });
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', () => { void (async () => {
             const confirmed = await OperationConfirmModal.confirm(this.app, {
                 title: t('knowledgeDetail.delete.title'),
                 description: t('knowledgeDetail.delete.desc', { book: book.name }),
@@ -605,7 +605,7 @@ export class KnowledgeDetailModal extends Modal {
                 log.error('[KnowledgeDetailModal] 删除书籍失败:', e);
                 showErrorNotice(e instanceof Error ? e.message : String(e), { title: t('knowledgeDetail.delete.failed') });
             }
-        });
+        })(); });
 
         const descSection = container.createDiv({
             cls: 'nw-kd-synopsis'
@@ -1622,7 +1622,7 @@ export class KnowledgeDetailModal extends Modal {
             attr: { type: 'button' },
             cls: 'nw-kd-start-btn',
         });
-        btn.addEventListener('click', async () => {
+        btn.addEventListener('click', () => { void (async () => {
             if (this.deconstructionScheduler) {
                 try {
                     await this.deconstructionScheduler.rerunBook(this.bookId);
@@ -1637,7 +1637,7 @@ export class KnowledgeDetailModal extends Modal {
             } else {
                 new Notice(t('knowledgeDetail.empty.useMonitor'));
             }
-        });
+        })(); });
     }
 
     private renderInfoRow(container: HTMLElement, label: string, value: string): void {

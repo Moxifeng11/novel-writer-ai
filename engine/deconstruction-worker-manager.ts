@@ -596,7 +596,7 @@ export class DeconstructionWorkerManager {
     ): CancelablePromise<T> {
         let cancelled = false;
 
-        const promise = new Promise<T>(async (resolve, reject) => {
+        const promise = (async (): Promise<T> => {
             try {
                 const taskMap: Record<string, () => unknown> = {
                     'deconstruct:style': () => this.styleDeconstructor!.analyze(text),
@@ -635,11 +635,11 @@ export class DeconstructionWorkerManager {
                 }
 
                 onProgress?.(100, '分析完成');
-                resolve(result as T);
+                return result as T;
             } catch (error) {
-                reject(error);
+                throw error instanceof Error ? error : new Error(String(error));
             }
-        }) as CancelablePromise<T>;
+        })() as CancelablePromise<T>;
 
         promise.cancel = () => {
             cancelled = true;

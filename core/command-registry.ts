@@ -435,7 +435,7 @@ export class CommandRegistry {
         // 这里补进 registry，保证 tool-catalog 的每个入口都能命中统一路由。
         r.register(CommandIds.NARRATIVE_OVERVIEW, async () => { await this.openNarrativeOverview(); });
         r.register(CommandIds.SWITCH_PROVIDER, async () => this.deps.openProviderSwitcher());
-        r.register(CommandIds.EXTRACT_ELEMENTS, async () => { this.extractElementsCommand(); });
+        r.register(CommandIds.EXTRACT_ELEMENTS, async () => { await this.extractElementsCommand(); });
         r.register(CommandIds.POPULATE_SETTING_LIB_INTERNAL, () => this.deps.populateSettingLib());
         // v4.72.0（用户拍板）：这三个调色板命令此前「Agent 可见不可执行」（调色板 id 未进
         // InternalRegistry）；口径统一后（list_commands = run_command 可执行集合）把它们

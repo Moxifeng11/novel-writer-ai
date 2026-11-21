@@ -331,7 +331,7 @@ export class GenerateCharacterModal extends Modal {
                 this._renderManagementPanel(t('characterGen.entityLabel'));
             };
         };
-        populate();
+        void populate();
     }
 
     private _renderManagementPanel(entityLabel: string): void {

@@ -149,7 +149,7 @@ export class FileCache {
         const writePromise = this.doWrite(key, content);
         this.writeQueue.set(key, writePromise);
 
-        writePromise.finally(() => {
+        void writePromise.finally(() => {
             this.writeQueue.delete(key);
             const duration = Date.now() - startTime;
             if (duration > this.options.slowWarnThresholdMs) {

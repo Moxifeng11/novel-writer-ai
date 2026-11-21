@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 355 | 146868 | 1953 | 1547 | 79% |
-| `services/` | 65 | 19531 | 296 | 204 | 69% |
+| `services/` | 65 | 19532 | 296 | 204 | 69% |
 | `shared/` | 265 | 52993 | 2246 | 1757 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113863 | 1182 | 945 | 80% |
+| `ui/` | 307 | 113869 | 1182 | 945 | 80% |
 
 ## 文件清单
 
@@ -412,7 +412,7 @@
 | `services/file-tx.ts` | 190 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
 | `services/genre-classifier.ts` | 858 | 2 | 2 |
-| `services/genre-preference-memory.ts` | 377 | 3 | 3 |
+| `services/genre-preference-memory.ts` | 376 | 3 | 3 |
 | `services/goal-service.ts` | 73 | 1 | 1 |
 | `services/id-migration-service.ts` | 123 | 2 | 1 |
 | `services/id-registry-service.ts` | 138 | 1 | 1 |
@@ -452,7 +452,7 @@
 | `services/update-checker.ts` | 610 | 9 | 2 |
 | `services/usage-ledger.ts` | 476 | 16 | 7 |
 | `services/vector-rebuild-service.ts` | 141 | 8 | 8 |
-| `services/worker-manager.ts` | 569 | 1 | 1 |
+| `services/worker-manager.ts` | 571 | 1 | 1 |
 | `services/worker-protocol.ts` | 121 | 12 | 12 |
 | `services/worker-runtime.ts` | 269 | 8 | 8 |
 | `services/worldview-cache-service.ts` | 627 | 4 | 4 |
@@ -740,7 +740,7 @@
 | `ui/changelog-modal.ts` | 207 | 1 | 1 |
 | `ui/chapter-outline-tree-modal.ts` | 1397 | 1 | 1 |
 | `ui/chapter-settlement-modal.ts` | 430 | 1 | 1 |
-| `ui/chapter-version-modal.ts` | 651 | 2 | 2 |
+| `ui/chapter-version-modal.ts` | 653 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
 | `ui/co-writing-view.ts` | 3987 | 3 | 2 |
@@ -1021,7 +1021,7 @@
 | `ui/views/memory-graph-view.ts` | 290 | 3 | 2 |
 | `ui/views/planning-canvas-view.ts` | 955 | 4 | 3 |
 | `ui/views/writing-fingerprint-view.ts` | 2019 | 3 | 3 |
-| `ui/volume-intro-modal.ts` | 449 | 1 | 1 |
+| `ui/volume-intro-modal.ts` | 453 | 1 | 1 |
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 572 | 2 | 1 |
 | `ui/workspace-manager.ts` | 139 | 2 | 2 |

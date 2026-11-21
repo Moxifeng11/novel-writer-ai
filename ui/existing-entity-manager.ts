@@ -63,7 +63,7 @@ export class ExistingEntityManagerModal extends Modal {
     this.modalEl.addClass('nw-scope');
         const { modalEl } = this;
         modalEl.addClass('nw-modal-form');
-        this._loadAndRender();
+        void this._loadAndRender();
     }
 
     /**
@@ -191,8 +191,8 @@ export class ExistingEntityManagerModal extends Modal {
         };
         styleBtn(allBtn, this.filterMode === 'all');
         styleBtn(unnamedBtn, this.filterMode === 'unnamed');
-        allBtn.onclick = () => { this.filterMode = 'all'; this._loadAndRender(); };
-        unnamedBtn.onclick = () => { this.filterMode = 'unnamed'; this._loadAndRender(); };
+        allBtn.onclick = () => { this.filterMode = 'all'; void this._loadAndRender(); };
+        unnamedBtn.onclick = () => { this.filterMode = 'unnamed'; void this._loadAndRender(); };
     }
 
     private _renderEntityList(): void {
@@ -282,7 +282,7 @@ export class ExistingEntityManagerModal extends Modal {
                     } else {
                         this.renameMap.set(ent.path, safeName);
                     }
-                    this._loadAndRender();
+                    void this._loadAndRender();
                 };
                 
                 const cancelBtn = inline.createEl('button', { text: '取消' });
@@ -312,7 +312,7 @@ export class ExistingEntityManagerModal extends Modal {
                     const safeName = guess.replace(/[<>:"/\\|?*]/g, '·').slice(0, 60);
                     this.renameMap.set(ent.path, safeName);
                     new Notice(`✅ 已建议名称：${safeName}`, 3000);
-                    this._loadAndRender();
+                    void this._loadAndRender();
                 };
             }
 
@@ -339,7 +339,7 @@ export class ExistingEntityManagerModal extends Modal {
                     } else {
                         this.modifiedContent.set(ent.path, v);
                     }
-                    this._loadAndRender();
+                    void this._loadAndRender();
                 };
                 const cb = br.createEl('button', { text: '取消' });
                 cb.addClass('nw-gen-modal-editor-btn');
@@ -353,7 +353,7 @@ export class ExistingEntityManagerModal extends Modal {
             delBtn.addClass('nw-ee-sm-btn', 'nw-ee-sm-btn-danger');
             delBtn.onclick = () => {
                 this.deletedSet.add(ent.path);
-                this._loadAndRender();
+                void this._loadAndRender();
             };
         } else {
             // 已删除 → 恢复按钮
@@ -361,7 +361,7 @@ export class ExistingEntityManagerModal extends Modal {
             rst.addClass('nw-ee-sm-btn');
             rst.onclick = () => {
                 this.deletedSet.delete(ent.path);
-                this._loadAndRender();
+                void this._loadAndRender();
             };
         }
 

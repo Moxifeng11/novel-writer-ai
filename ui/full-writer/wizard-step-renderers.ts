@@ -217,7 +217,7 @@ export class WizardStepRenderers {
             text: t('cowrite.wiz.saveFanficBtn'), 
             cls: 'nw-wizard-secondary-btn nw-wizard-secondary-btn--mt12' 
         });
-        saveBtn.addEventListener('click', async () => {
+        saveBtn.addEventListener('click', () => { void (async () => {
             const values = collectFanficValues();
             const missing = missingFanficValueLabels(values);
             if (missing.length > 0) {
@@ -231,7 +231,7 @@ export class WizardStepRenderers {
             this.wizardStepResults[fanficResultKey] = content;
             showSuccessNotice(t('cowrite.wiz.fanficSaved', { path }), { timeout: 3000 });
             this.renderTab(tab, true);
-        });
+        })(); });
         
         if (saved) {
             container.createEl('p', { text: t('cowrite.wiz.draftExists'), cls: 'nw-wizard-hint nw-wizard-hint--accent' });
@@ -253,7 +253,7 @@ export class WizardStepRenderers {
                 text: t('cowrite.wiz.bindBtn'),
                 cls: 'nw-wizard-secondary-btn nw-wizard-secondary-btn--mt8'
             });
-            bindBtn.addEventListener('click', async () => {
+            bindBtn.addEventListener('click', () => { void (async () => {
                 const path = select.value;
                 const file = this.app.vault.getAbstractFileByPath(path);
                 if (!(file instanceof TFile)) {
@@ -280,7 +280,7 @@ export class WizardStepRenderers {
                     showWarningNotice(t('cowrite.wiz.boundMissing', { path, fields: check.missingFields.slice(0, 5).join('、') }), { timeout: 8000 });
                 }
                 this.renderTab(tab, true);
-            });
+            })(); });
         }
     }
 
@@ -392,7 +392,7 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, getSettingLibPath(tab.project), t('cowrite.wiz.settingLibTitle'));
+                void this.showFileContentInline(container, getSettingLibPath(tab.project), t('cowrite.wiz.settingLibTitle'));
             });
             return viewBtn;
         };
@@ -405,7 +405,7 @@ export class WizardStepRenderers {
             if (isExecuting) {
                 regenBtn.addClass('nw-disabled-look');
             } else {
-                regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+                regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
             }
             return regenBtn;
         };
@@ -477,13 +477,13 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn' 
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
+                void this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
             });
             const regenBtn = container.createEl('button', { 
                 text: t('cowrite.wiz.resetStyleBtn'), 
                 cls: 'nw-wizard-warn-btn' 
             });
-            regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+            regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
         }
         else if (hasContent) {
             // v4.1: 文件已存在但内容未填写完整（仍是模板）。此前按钮被 isDone 门控导致完全不显示，
@@ -494,13 +494,13 @@ export class WizardStepRenderers {
                 cls: 'nw-wizard-file-btn'
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
+                void this.showFileContentInline(container, wsPath, t('cowrite.wiz.styleTitle'));
             });
             const editBtn = container.createEl('button', {
                 text: t('cowrite.wiz.setStyleBtn'),
                 cls: 'nw-wizard-primary-btn'
             });
-            editBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+            editBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
         }
         
         container.createEl('p', { text: t('cowrite.wiz.targetProject', { project: tab.project }), cls: 'nw-wizard-target' });
@@ -535,7 +535,7 @@ export class WizardStepRenderers {
                 text: t('cowrite.wiz.replanBtn'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline' 
             });
-            regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+            regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
             // v4.1.0: 统一入口 — 大纲树状预览（含全文查看，替代旧的双按钮）
             const treeBtn = container.createEl('button', { 
                 text: t('cowrite.wiz.outlinePreviewBtn'), 
@@ -605,7 +605,7 @@ export class WizardStepRenderers {
                 text: t('cowrite.wiz.recreateChaptersBtn'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline' 
             });
-            regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+            regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
             // v3.4.6: 内联"下一步"按钮已下线 — 保留右下角 nav bar 唯一下一步入口
         } else {
             container.createEl('p', { text: t('cowrite.wiz.chaptersActionHint'), cls: 'nw-wizard-action-hint' });
@@ -784,7 +784,7 @@ export class WizardStepRenderers {
                         this.entitiesExecuting.delete(cfg.id);
                         this.renderTab(tab, true);
                     }, 5000);
-                    this.plugin._entityModalCloseCallbacks.push(async () => {
+                    this.plugin._entityModalCloseCallbacks.push(() => { void (async () => {
                         this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成
                         if (subStep) {
@@ -798,7 +798,7 @@ export class WizardStepRenderers {
                             }
                         }
                         this.renderTab(tab, true);
-                    });
+                    })(); });
                 });
             } else {
                 const isOpening = this.entitiesExecuting.has(cfg.id);
@@ -832,7 +832,7 @@ export class WizardStepRenderers {
                         this.entitiesExecuting.delete(cfg.id);
                         this.renderTab(tab, true);
                     }, 5000);
-                    this.plugin._entityModalCloseCallbacks.push(async () => {
+                    this.plugin._entityModalCloseCallbacks.push(() => { void (async () => {
                         this.entitiesExecuting.delete(cfg.id);
                         // 检测磁盘文件是否已生成
                         if (subStep) {
@@ -846,7 +846,7 @@ export class WizardStepRenderers {
                             }
                         }
                         this.renderTab(tab, true);
-                    });
+                    })(); });
                 });
             }
         }
@@ -903,14 +903,14 @@ export class WizardStepRenderers {
                 text: t('cowrite.wiz.regenerateWorldview'), 
                 cls: 'nw-wizard-warn-btn nw-wizard-warn-btn--inline nw-wizard-warn-btn--lg' 
             });
-            regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+            regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
             
             const viewBtn = container.createEl('button', { 
                 text: t('cowrite.wiz.openWorldviewFile'), 
                 cls: 'nw-wizard-file-btn nw-wizard-file-btn--start' 
             });
             viewBtn.addEventListener('click', () => {
-                this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
+                void this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
             });
             
             // Show module summary (only if we have content)
@@ -933,13 +933,13 @@ export class WizardStepRenderers {
                     cls: 'nw-wizard-file-btn'
                 });
                 viewBtn.addEventListener('click', () => {
-                    this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
+                    void this.showFileContentInline(container, getWorldviewPath(tab.project), t('cowrite.wiz.worldviewTitle'));
                 });
                 const regenBtn = container.createEl('button', {
                     text: t('cowrite.wiz.regenerateWorldview'),
                     cls: 'nw-wizard-warn-btn'
                 });
-                regenBtn.addEventListener('click', () => this.executeWizardStep(tab, step));
+                regenBtn.addEventListener('click', () => { void this.executeWizardStep(tab, step); });
             }
         }
     }

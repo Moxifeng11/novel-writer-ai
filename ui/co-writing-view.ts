@@ -502,7 +502,7 @@ export class CoWritingView extends ItemView {
    */
   async onClose() {
     const closing = this.performClose();
-    this.plugin?._unloadBarrier?.track(closing);
+    void this.plugin?._unloadBarrier?.track(closing);
     await closing;
   }
 
@@ -839,7 +839,7 @@ export class CoWritingView extends ItemView {
           new Notice(t("cowrite.needProjectChapter"), 3000);
         }
       },
-      togglePrecisionMode: () => { this.togglePrecisionMode(); },
+      togglePrecisionMode: () => { void this.togglePrecisionMode(); },
       renderAssetStatus: () => { void this.renderAssetStatusBar(); },
       renderModelSwitcher: (el) => renderModelQuickSwitcher(el, this.plugin),
     });
@@ -922,13 +922,13 @@ export class CoWritingView extends ItemView {
   private buildRightPanel(rightPanel: HTMLElement): ControlPanelHandles {
     return renderControlPanelAssembly(rightPanel, {
       switchRightTab: (tab) => this.switchRightTab(tab),
-      handleModelToggle: () => this.handleModelToggle(),
-      handleAdvanceNextNode: () => this.handleAdvanceNextNode(),
-      handleTabSuggest: () => this.handleTabSuggest(true),
-      handleComplete: () => this.handleComplete(),
-      handleAssociationSuggest: () => this.handleAssociationSuggest(),
+      handleModelToggle: () => { void this.handleModelToggle(); },
+      handleAdvanceNextNode: () => { void this.handleAdvanceNextNode(); },
+      handleTabSuggest: () => { void this.handleTabSuggest(true); },
+      handleComplete: () => { void this.handleComplete(); },
+      handleAssociationSuggest: () => { void this.handleAssociationSuggest(); },
       handleOutlineExpand: () => this.handleOutlineExpand(),
-      handleRewriteSelection: () => this.handleRewriteSelection(),
+      handleRewriteSelection: () => { void this.handleRewriteSelection(); },
       runToolAction: (action) => this.runControlToolAction(action),
       applySceneHint: (hint) => {
         this.hintInput.value = hint;
@@ -977,10 +977,10 @@ export class CoWritingView extends ItemView {
       case 'batch-import': this.openBatchImportModal(); return;
       case 'monitor': this.openKnowledgeMonitorModal(); return;
       case 'analysis': this.openAnalysisModal(); return;
-      case 'guard': this.liveAnalysis.inspectSettingGuard('manual'); return;
-      case 'quality': this.loadQualityReport(); return;
-      case 'save': this.saveBody(true); return;
-      case 'written': this.markAsWritten(); return;
+      case 'guard': void this.liveAnalysis.inspectSettingGuard('manual'); return;
+      case 'quality': void this.loadQualityReport(); return;
+      case 'save': void this.saveBody(true); return;
+      case 'written': void this.markAsWritten(); return;
     }
   }
   /** v6.4: 创建浮窗监控面板 */
@@ -1066,7 +1066,7 @@ export class CoWritingView extends ItemView {
    * 绑定编辑器与面板事件（含 IME 守卫）。
    */
   bindEvents() {
-    this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => this.handleEditorKeydown(event));
+    this.rightEditor.addEventListener("keydown", (event: KeyboardEvent) => { void this.handleEditorKeydown(event); });
     // Ctrl+S 兜底（审计 A-2）：焦点在工具条按钮/侧栏控件时事件不会到编辑器，
     // 挂在视图容器上保证「视图内按 Ctrl+S 就保存」的承诺成立（编辑器层已处理的不重复）。
     this.contentEl.addEventListener("keydown", (event: KeyboardEvent) => this.handleViewSaveShortcut(event));
@@ -1771,7 +1771,7 @@ export class CoWritingView extends ItemView {
         this.handleOpenHistory();
         return;
       case 'rewrite':
-        this.handleRewriteSelection();
+        void this.handleRewriteSelection();
         return;
       case 'save':
         await this.saveFromShortcut();
@@ -2035,9 +2035,9 @@ export class CoWritingView extends ItemView {
   /** 组装建议卡动作宿主（采纳互斥锁仍由视图持有）。 */
   private suggestionCardActions(): SuggestionCardActions {
     return {
-      onAccept: suggestion => this.handleAcceptSuggestion(suggestion),
+      onAccept: suggestion => { void this.handleAcceptSuggestion(suggestion); },
       onEdit: (suggestion, initialText) => this.handleEditSuggestion(suggestion, initialText),
-      onIterate: suggestion => this.handleIterateSuggestion(suggestion),
+      onIterate: suggestion => { void this.handleIterateSuggestion(suggestion); },
       onReject: suggestionId => this.rejectSuggestion(suggestionId),
       onContinue: async (modifiedText, suggestion, validation, editDurationMs) => {
         await this.insertTextAndRecord(modifiedText, suggestion, validation, editDurationMs);
@@ -3721,7 +3721,7 @@ ${text}`;
       this.renderFloatingQuality();
       const count = this.qualityIssues.filter(i => i.severity === '\u274C').length;
       showSuccessNotice(`\u8D28\u68C0\u5B8C\u6210\uFF1A\u53D1\u73B0 ${count} \u4E2A\u95EE\u9898, ${this.qualityIssues.length} \u9879\u5F85\u5904\u7406`, { timeout: 3000 });
-      this.refreshPreview(true);
+      void this.refreshPreview(true);
     } catch (e) {
       log.warn('[CoWritingView] \u52A0\u8F7D\u8D28\u91CF\u63A7\u5236\u62A5\u544A\u5931\u8D25:', e);
       showErrorNotice("\u52A0\u8F7D\u8D28\u91CF\u63A7\u5236\u62A5\u544A\u5931\u8D25", { timeout: 3000 });

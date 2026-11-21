@@ -264,7 +264,7 @@ export class SceneConfirmModal extends Modal {
         const resumeBtn = contentEl.createEl('button', { text: '▶ 从断点继续生成', cls: 'nw-btn nw-btn-primary novel-writer-primary-button' });
         resumeBtn.onclick = () => {
             this.resumeMap = new Map(doneCps.map((c) => [c.sceneNum, c]));
-            this.runGeneration(contentEl);
+            void this.runGeneration(contentEl);
         };
 
         const viewBtn = contentEl.createEl('button', { text: '✏️ 使用已有结果', cls: 'nw-btn nw-btn-secondary novel-writer-button' });

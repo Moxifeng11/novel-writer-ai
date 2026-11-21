@@ -74,7 +74,7 @@ export class SuggestionEditModal {
             cls: 'nw-suggestion-drawer-btn nw-suggestion-drawer-btn-primary',
             text: t('cowrite.edit.submitBtn')
         });
-        submitBtn.addEventListener('click', () => this.handleSubmit(textarea));
+        submitBtn.addEventListener('click', () => { void this.handleSubmit(textarea); });
         this.submitBtn = submitBtn;
 
         // 滑入动画：先挂载（translateX(100%) 由 CSS 默认值提供），下一帧添加 is-open

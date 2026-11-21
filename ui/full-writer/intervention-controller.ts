@@ -114,7 +114,7 @@ export class InterventionController {
             text: t('fullwriter.iv.understandBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; font-size: 0.85em;' }
         });
-        understandBtn.addEventListener('click', () => this.onUnderstand());
+        understandBtn.addEventListener('click', () => { void this.onUnderstand(); });
 
         const clearBtn = btnRow.createEl('button', {
             text: t('fullwriter.iv.clearBtn'),
@@ -285,7 +285,7 @@ ${userInput}
             text: t('fullwriter.iv.confirmExecBtn'),
             attr: { style: 'padding: 6px 16px; cursor: pointer; background: var(--interactive-accent); color: var(--text-on-accent); border: none; border-radius: 6px; font-size: 0.85em;' }
         });
-        confirmBtn.addEventListener('click', () => this.executeIntervention());
+        confirmBtn.addEventListener('click', () => { void this.executeIntervention(); });
 
         const modifyBtn = btnRow.createEl('button', {
             text: t('fullwriter.iv.editOpinionBtn'),

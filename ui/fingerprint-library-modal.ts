@@ -201,7 +201,7 @@ export class AddFingerprintModal extends Modal {
                 text: '🔍 提取指纹',
                 attr: { style: 'padding:6px 16px;background:var(--interactive-accent);color:var(--text-on-accent);border:none;border-radius:4px;cursor:pointer;' }
             });
-            extractBtn.addEventListener('click', () => this.startExtraction());
+            extractBtn.addEventListener('click', () => { void this.startExtraction(); });
         }
     }
 

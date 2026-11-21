@@ -237,7 +237,7 @@ export class GenerateLocationModal extends Modal {
                 this._renderManagementPanel('地点');
             };
         };
-        populate();
+        void populate();
     }
 
     private _renderManagementPanel(entityLabel: string): void {

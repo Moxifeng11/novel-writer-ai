@@ -266,7 +266,7 @@ export class StyleDistillerModal extends Modal {
                 this.hideLoadingOverlay();
                 this.setButtonLoading(false);
                 this.isAnalyzing = false;
-                this.showSaveTargetModal(input.label, styleContent, activeProject);
+                void this.showSaveTargetModal(input.label, styleContent, activeProject);
             } else {
                 this.progressEmitter.setStepProgress(70, '正在保存到文笔风格库...');
                 await this.saveToStyleLib(input.label, styleContent);
@@ -347,7 +347,7 @@ ${analysis}
                 this.progressEmitter = undefined;
                 this.isAnalyzing = false;
                 this.setButtonLoading(false);
-                this.distillStyle(this.analyzeInput);
+                void this.distillStyle(this.analyzeInput);
             }
         } else if (state.status === 'running') {
             this.progressEmitter.cancel();

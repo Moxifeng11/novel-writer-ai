@@ -108,7 +108,7 @@ export class QualityDashboardModal extends Modal {
                 title: '无法定位章节',
                 description: '请先在工作台打开一个章节，或打开章节正文文件；也可以先新建项目与章节。',
                 actionText: '打开写作工作台',
-                onAction: () => { this.close(); this.plugin.openFullWriterView(); },
+                onAction: () => { this.close(); void this.plugin.openFullWriterView(); },
             }));
             return;
         }
@@ -122,7 +122,7 @@ export class QualityDashboardModal extends Modal {
                 title: '项目下未找到章节正文',
                 description: '当前项目还没有正文文件。请先在工作台批量建章或导入大纲，再回来查看质量评分。',
                 actionText: '打开写作工作台',
-                onAction: () => { this.close(); this.plugin.openFullWriterView(); },
+                onAction: () => { this.close(); void this.plugin.openFullWriterView(); },
             }));
             return;
         }

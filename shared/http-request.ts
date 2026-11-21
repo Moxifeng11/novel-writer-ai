@@ -72,9 +72,9 @@ function withTimeout<T>(
                 window.clearTimeout(timer);
                 resolve(value);
             },
-            (error) => {
+            (error: unknown) => {
                 window.clearTimeout(timer);
-                reject(error);
+                reject(error instanceof Error ? error : new Error(String(error)));
             },
         );
     });

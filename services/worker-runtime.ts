@@ -109,7 +109,7 @@ function handleMessage(event: MessageEvent<WorkerMessage>): void {
 
     switch (type) {
         case 'task:start':
-            handleTaskStart(payload as TaskStartPayload);
+            void handleTaskStart(payload as TaskStartPayload);
             break;
         case 'task:cancel':
             if (taskId) {
