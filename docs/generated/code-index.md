@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 355 | 147286 | 1954 | 1548 | 79% |
+| `engine/` | 356 | 147393 | 1958 | 1550 | 79% |
 | `services/` | 65 | 19514 | 296 | 204 | 69% |
 | `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
@@ -224,7 +224,7 @@
 | `engine/heavy-task-worker-manager.ts` | 315 | 2 | 2 |
 | `engine/incremental-result-aggregator.ts` | 1707 | 3 | 3 |
 | `engine/knowledge-base-config.ts` | 524 | 5 | 5 |
-| `engine/knowledge-injector.ts` | 2214 | 13 | 7 |
+| `engine/knowledge-injector.ts` | 2261 | 13 | 7 |
 | `engine/knowledge-tags.ts` | 629 | 2 | 2 |
 | `engine/knowledge-to-fingerprint-converter.ts` | 345 | 1 | 1 |
 | `engine/knowledge-usage.ts` | 132 | 4 | 4 |
@@ -370,7 +370,7 @@
 | `engine/style-learner.ts` | 346 | 0 | 0 |
 | `engine/style-similarity-scorer.ts` | 193 | 2 | 2 |
 | `engine/style-vector-store.ts` | 705 | 11 | 10 |
-| `engine/style/dynamic-injection-engine.ts` | 838 | 10 | 5 |
+| `engine/style/dynamic-injection-engine.ts` | 767 | 10 | 5 |
 | `engine/style/fingerprint-blender-v2.ts` | 645 | 6 | 1 |
 | `engine/style/fingerprint-migrator.ts` | 637 | 13 | 13 |
 | `engine/style/fingerprint-selection.ts` | 101 | 5 | 5 |
@@ -380,6 +380,7 @@
 | `engine/style/style-intensity-engine.ts` | 365 | 9 | 3 |
 | `engine/style/style-sample-service.ts` | 227 | 8 | 7 |
 | `engine/style/style-vector-store-v2.ts` | 1085 | 6 | 1 |
+| `engine/style/v2-feature-section.ts` | 131 | 4 | 2 |
 | `engine/style/v2-quantitative-extractor.ts` | 171 | 2 | 2 |
 | `engine/suggestion-manager.ts` | 285 | 1 | 1 |
 | `engine/template-service.ts` | 795 | 2 | 2 |
