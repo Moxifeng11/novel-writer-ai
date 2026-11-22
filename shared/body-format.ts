@@ -190,6 +190,88 @@ export function normalizeBodyText(
 }
 
 /**
+ * 格式偏离明细。
+ *
+ * 用途：落盘前 normalizeBodyText 会把偏离静默修好，用户和流程都看不见
+ * 「模型到底偏离了多少」。analyzeBodyFormat 按契约数一遍偏离行，供
+ * 「四项校验」软视图决定是否提示；阈值判断交给调用方
+ * （shared/chapter-four-checks-model.ts）。
+ */
+export interface BodyFormatDeviation {
+    /** 非空行总数 */
+    totalLines: number;
+    /** 缺契约段首缩进的行数 */
+    indentMissing: number;
+    /** 段间多余空行数（单换行契约下每个空行都算一处） */
+    blankLineBreaks: number;
+    /** 被契约剥离的章节标题行数 */
+    titleStripped: number;
+    /** 被剥离的模型元叙述行数 */
+    metaStripped: number;
+    /** 偏离行占比 0–1 */
+    ratio: number;
+}
+
+/**
+ * 统计正文相对格式契约的偏离程度。
+ *
+ * @param raw - 原始文本
+ * @param contract - 正文契约
+ * @returns 偏离明细
+ *
+ * @example
+ * ```ts
+ * analyzeBodyFormat('# 第3章 试炼\n\n正文第一段', DEFAULT_BODY_FORMAT);
+ * // { titleStripped: 1, blankLineBreaks: 1, indentMissing: 1, ... }
+ * ```
+ */
+export function analyzeBodyFormat(
+    raw: string,
+    contract: BodyFormatContract = DEFAULT_BODY_FORMAT,
+): BodyFormatDeviation {
+    const empty: BodyFormatDeviation = {
+        totalLines: 0, indentMissing: 0, blankLineBreaks: 0, titleStripped: 0, metaStripped: 0, ratio: 0,
+    };
+    if (!raw) return empty;
+
+    // 只统一换行符：这里统计的是「模型原始输出相对契约偏离多少」，
+    // 不能先 stripModelMeta/stripThinkingBlock —— 那会把标题行整段摘掉、
+    // 用 \n\n 重新拼接段落、并用 trim 吃掉首行的全角缩进，
+    // 导致 titleStripped 恒为 0、首行恒缺缩进、空行数被改写。
+    const text = raw.replace(/\r\n?/g, '\n');
+    let totalLines = 0;
+    let indentMissing = 0;
+    let blankLineBreaks = 0;
+    let titleStripped = 0;
+    let metaStripped = 0;
+    // 首部空行不算偏离（模型常在正文前留白）
+    let started = false;
+
+    for (const rawLine of text.split('\n')) {
+        const trimmed = rawLine.trim();
+        if (!trimmed) {
+            if (started && contract.separator === '\n') blankLineBreaks++;
+            continue;
+        }
+        started = true;
+        totalLines++;
+        if (contract.indent && !rawLine.startsWith(contract.indent)) indentMissing++;
+        if (MD_HEADING.test(trimmed) || (PLAIN_CHAPTER_TITLE.test(trimmed) && trimmed.length <= 40)) titleStripped++;
+        if (trimmed.length <= 200 && META_LEAD.test(trimmed) && META_HINT.test(trimmed)) metaStripped++;
+    }
+
+    const deviated = indentMissing + titleStripped + metaStripped + blankLineBreaks;
+    return {
+        totalLines,
+        indentMissing,
+        blankLineBreaks,
+        titleStripped,
+        metaStripped,
+        ratio: totalLines > 0 ? Math.min(1, deviated / totalLines) : 0,
+    };
+}
+
+/**
  * 生成 prompt 中的输出格式说明。所有正文类调用点都应使用它，
  * 禁止再手写「空两格/Tab/空行」等互相矛盾的条目。
  *

@@ -8,6 +8,7 @@
  * 字段缺失一律给安全默认值（空数组/空串），门禁按「无信息」处理而不是报错。
  */
 import type { ChapterStateSnapshot, CharacterStateBrief, StoryBeat } from '@/engine/story-state-types';
+import { parseInfoPlanFields } from '@/shared/info-plan-fields';
 
 /**
  * 从 `${allChars}` 行抽「- 名字：…」并读取若干字段
@@ -52,7 +53,27 @@ function parseCharacterStates(charBlock: string | undefined): CharacterStateBrie
  * @returns 必做节拍
  */
 export function buildGateBeatsFromVars(vars: Record<string, string>): StoryBeat[] {
-    return parseRequiredBeats(vars?.distilledContent);
+    const beats = parseRequiredBeats(vars?.distilledContent);
+    const hook = buildHookBeatFromVars(vars);
+    if (hook) beats.push(hook);
+    return beats;
+}
+
+/**
+ * 章末钩子节拍 —— 来自信息规划「章末钩子 → 钩子内容」。
+ *
+ * 旧实现只把情节节点解析成 type:'event'（且从不产生 hook），而 QualityGate
+ * 的结尾钩子检测只认 type==='hook'，于是「钩子校验」长期是死代码：无输入即恒判通过。
+ * 这里把章纲声明的钩子补成一条 required:false 的 hook 节拍——
+ * 只参与结尾钩子检测，不进入必做覆盖校验，因此不改变 BeatVerifier 的阻断语义。
+ *
+ * @param vars - 模板变量
+ * @returns 钩子节拍；章纲未声明钩子内容时返回 null
+ */
+export function buildHookBeatFromVars(vars: Record<string, string>): StoryBeat | null {
+    const content = parseInfoPlanFields(vars?.infoPlan || '').hookContent.trim();
+    if (!content) return null;
+    return { id: 'beat-chapter-hook', description: content, type: 'hook', required: false };
 }
 
 function parseRequiredBeats(distilled: string | undefined): StoryBeat[] {

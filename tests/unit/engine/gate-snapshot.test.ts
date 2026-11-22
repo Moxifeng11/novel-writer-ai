@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildGateSnapshotFromVars } from '../../../engine/quality/gate-snapshot';
+import { buildGateBeatsFromVars, buildGateSnapshotFromVars, buildHookBeatFromVars } from '../../../engine/quality/gate-snapshot';
 
 /**
  * QualityGate 的章节快照装配（审计维度④ C-6）。
@@ -91,5 +91,44 @@ describe('buildGateSnapshotFromVars', () => {
 
         expect(snapshot.chapterNumber).toBe(0);
         expect(snapshot.mainGoal).toBe('一封没有署名的信');
+    });
+});
+
+describe('钩子节拍（buildHookBeatFromVars）', () => {
+    it('章纲声明钩子内容时产出一条 required:false 的 hook 节拍', () => {
+        const beat = buildHookBeatFromVars({
+            infoPlan: '## 章末钩子\n- 钩子类型：悬念\n- 钩子内容：黑袍人抬手，山门炸裂',
+        });
+        expect(beat).toEqual({
+            id: 'beat-chapter-hook',
+            description: '黑袍人抬手，山门炸裂',
+            type: 'hook',
+            required: false,
+        });
+    });
+
+    it('未声明钩子内容时返回 null', () => {
+        expect(buildHookBeatFromVars({})).toBeNull();
+        expect(buildHookBeatFromVars({ infoPlan: '## 章末钩子\n- 钩子类型：悬念' })).toBeNull();
+    });
+
+    it('buildGateBeatsFromVars 在情节节点之后追加钩子节拍', () => {
+        const beats = buildGateBeatsFromVars({
+            distilledContent: '- 节点1：林玄在演武台击败王虎',
+            infoPlan: '## 章末钩子\n- 钩子内容：山门炸裂',
+        });
+        expect(beats.map(b => b.type)).toEqual(['event', 'hook']);
+        expect(beats[1].required).toBe(false);
+    });
+
+    it('钩子节拍不进必做列表（snapshot.requiredBeats 只收情节节点）', () => {
+        const snapshot = buildGateSnapshotFromVars({
+            chapterNum: 1,
+            vars: {
+                distilledContent: '- 节点1：林玄在演武台击败王虎',
+                infoPlan: '## 章末钩子\n- 钩子内容：山门炸裂',
+            },
+        });
+        expect(snapshot.requiredBeats).toEqual(['林玄在演武台击败王虎']);
     });
 });

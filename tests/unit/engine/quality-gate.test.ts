@@ -99,6 +99,32 @@ describe('QualityGate — TR-9.3 结构层（复用 BeatVerifier + 钩子/重复
     });
 });
 
+describe('QualityGate — 章末钩子检测口径', () => {
+    it('required:false 的钩子节拍同样参与检测（章节钩子来自章纲，不是必做节点）', async () => {
+        const gate = new QualityGate();
+        const beats: StoryBeat[] = [{ id: 'h1', description: '山门炸裂', type: 'hook', required: false }];
+        const ok = await gate.run('他抬头，山门炸裂。', makeSnapshot(), { beats });
+        expect(ok.layers.structure.endingHookPresent).toBe(true);
+        const missing = await gate.run('他抬头，夜风很凉。', makeSnapshot(), { beats });
+        expect(missing.layers.structure.endingHookPresent).toBe(false);
+    });
+
+    it('自然语言钩子按子短语命中，不要求正文原样复述整句', async () => {
+        const gate = new QualityGate();
+        const beats: StoryBeat[] = [{
+            id: 'h1', description: '黑袍人抬手，山门在雷光里炸裂', type: 'hook', required: false,
+        }];
+        const report = await gate.run('雨幕尽头，黑袍人抬起手。山门在雷光里炸裂。', makeSnapshot(), { beats });
+        expect(report.layers.structure.endingHookPresent).toBe(true);
+    });
+
+    it('没有钩子节拍时不判失（章纲未声明钩子）', async () => {
+        const gate = new QualityGate();
+        const report = await gate.run('他转身离开。', makeSnapshot(), { beats: [] });
+        expect(report.layers.structure.endingHookPresent).toBe(true);
+    });
+});
+
 describe('QualityGate — TR-9.4 逐层可独立跳过', () => {
     it('skipLayers 跳过 rule 与 model，仅执行 structure', async () => {
         const modelReviewer = vi.fn(async () => ({ overallScore: 1 }));

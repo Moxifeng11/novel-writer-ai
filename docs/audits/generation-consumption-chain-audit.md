@@ -162,9 +162,9 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 | 校验项 | 实际落点 | 是否阻断 | 备注 |
 |---|---|---|---|
 | 字数 | `engine/step-definitions.ts:140-151` `postCheckWordCount`，挂在 `:190` 第 7 步 `postValidation` | ✅ 阻断（低于 `floor(defaultWordCount × wordMinRatio)` 判 `passed:false`） | 唯一真正进了第 7 步门禁的项 |
-| 格式 | 无门禁；写盘前由 `engine/body-writer.ts` → `shared/body-format.ts#normalizeBodyText` 直接规整（`deriveBodyFormat` 解析「写作规则.md」） | ❌ 不阻断，也不产出信号 | 规整是「静默修正」，用户看不到原文偏离了什么 |
+| 格式 | 无门禁；写盘前由 `engine/body-writer.ts` → `shared/body-format.ts#normalizeBodyText` 直接规整（`deriveBodyFormat` 解析「写作规则.md」）；偏离统计由 `analyzeBodyFormat`（同文件）产出 | ❌ 不阻断 | 已补可读信号：偏离行占比 ≥ 0.15 时质量面板给 warning |
 | 视角 | `engine/consistency/extended-rules.ts:222-244`（`FIRST_PERSON` 于 `:53`、`THIRD_PERSON` 于 `:54`，阈值 first≥3 && third≥3 且 min/max≥0.25）；调用链 `pairExtended` ← `engine/consistency/pairing-rules.ts:294` ← `engine/consistency/audit-pipeline.ts` | ❌ 不阻断 | 只在「一致性审核」入口跑，不随正文生成自动出结果；不剔除对话引号，「他说」会计入第三人称 |
-| 钩子 | `engine/quality-gate.ts:155-160` `checkEndingHook`（`ENDING_HOOK_WINDOW = 200`，只认 `type==='hook' && required` 的 beat，无 beat 即通过）；由 `engine/step-runner.ts:1639-1684` 在正文保存后触发 | ❌ 不阻断（仅事件+诊断；`autoRevisionAfterQC` 打开时才定向修订） | `buildGateBeatsFromVars(ctx.vars)` 提供 beat 依据 |
+| 钩子 | `engine/quality-gate.ts:154-168` `checkEndingHook`（`ENDING_HOOK_WINDOW = 200`，认 `type==='hook'` 的 beat，无 beat 即通过；命中口径复用 `BeatVerifier` 的整串/子短语匹配）；由 `engine/step-runner.ts:1639-1684` 在正文保存后触发 | ❌ 不阻断（仅事件+诊断；`autoRevisionAfterQC` 打开时才定向修订） | `buildGateBeatsFromVars(ctx.vars)` 已追加 `buildHookBeatFromVars` 的钩子节拍（`required:false`，不改变 BeatVerifier 阻断语义） |
 
 ### 为什么第 7 步补不了这三项
 
@@ -182,6 +182,29 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 
 **建议**（不增加误报、不改链路）：第 7 步完成后，把三项软结果聚合进质量面板一份视图；
 格式项改为「规整前后差异 > 阈值时给 warning」，而不是直接静默。是否落地待产品决策。
+
+**用户裁定（2026-11-22，逐字）**：「按推荐做」——即采用上面的软聚合方案。
+
+### 落地（2026-11-22，已实现）
+
+| 环节 | 落点 |
+|---|---|
+| 聚合模型 | `shared/chapter-four-checks-model.ts`（`buildFourCheckReport` / `renderFourCheckReport` / `fourCheckAttentionItems`；格式阈值 `FORMAT_DEVIATION_WARN_RATIO = 0.15`） |
+| 格式偏离 | `shared/body-format.ts#analyzeBodyFormat`：只统一换行后逐行统计缩进缺失、空行分段、残留标题、元叙述，`ratio = min(1, deviated/totalLines)` |
+| 视角混用 | `engine/consistency/extended-rules.ts#detectPerspectiveMix`（从既有 perspective 规则抽取，判据 first≥3 && third≥3 且 min/max≥0.25，未改口径） |
+| 钩子依据 | `engine/quality/gate-snapshot.ts#buildHookBeatFromVars`：从 `parseInfoPlanFields(vars.infoPlan).hookContent` 造 `type:'hook', required:false` 节拍；`checkEndingHook` 改为按 `type` 取节拍并用 `BeatVerifier` 匹配 |
+| 接线 | `engine/step-runner.ts#runFourChecks`：正文保存 + QualityGate 之后调用，发诊断事件（`{ detail: renderFourCheckReport(report) }`）并写盘，全程 try/catch 不影响正文 |
+| 持久化 | `services/four-check-store.ts` → `<项目>/04-项目总控/质量面板/四项校验.json`（`{ version:1, chapters:{ 章名: FourCheckReport } }`，按章覆盖、`MAX_CHAPTERS=500` 按 `checkedAt` 淘汰，损坏降级为空） |
+| 展示 | `ui/quality-loop-modal.ts` 新增「本章四项校验」区块（标题/说明/占位文案放 shared，避开 `ui/**` 中文棘轮） |
+
+**验收口径**：字数仍由第 7 步 `postCheckWordCount` 硬门禁阻断；其余三项只进报告与诊断，
+`report.warnCount > 0` 时诊断级别为 warning，**不触发修订、不改 passed**。
+测试：`tests/unit/shared/chapter-four-checks-model.test.ts`（18）、
+`tests/unit/services/four-check-store.test.ts`（6）、
+`tests/unit/shared/body-format-deviation.test.ts`（6）、
+`tests/unit/engine/consistency/perspective-mix.test.ts`（4），并扩展
+`gate-snapshot.test.ts`（9）、`quality-gate.test.ts`（11）——钩子用例覆盖「`required:false` 仍检测」
+「自然语言钩子子短语命中」「无钩子节拍→通过」。
 
 ### 复现命令
 

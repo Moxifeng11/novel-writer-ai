@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 356 | 147393 | 1958 | 1550 | 79% |
-| `services/` | 65 | 19514 | 296 | 204 | 69% |
-| `shared/` | 267 | 53176 | 2255 | 1763 | 78% |
+| `engine/` | 356 | 147526 | 1961 | 1552 | 79% |
+| `services/` | 66 | 19682 | 298 | 206 | 69% |
+| `shared/` | 268 | 53514 | 2273 | 1773 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 113945 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114000 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -132,7 +132,7 @@
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
 | `engine/consistency/consistency-service.ts` | 268 | 9 | 3 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
-| `engine/consistency/extended-rules.ts` | 317 | 5 | 3 |
+| `engine/consistency/extended-rules.ts` | 346 | 7 | 4 |
 | `engine/consistency/fact-maintenance.ts` | 163 | 6 | 2 |
 | `engine/consistency/fact-store.ts` | 215 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 306 | 10 | 6 |
@@ -283,10 +283,10 @@
 | `engine/prompts/template-utils.ts` | 177 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 206 | 5 | 4 |
+| `engine/quality-gate.ts` | 213 | 5 | 4 |
 | `engine/quality-scorer.ts` | 388 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
-| `engine/quality/gate-snapshot.ts` | 131 | 3 | 3 |
+| `engine/quality/gate-snapshot.ts` | 152 | 4 | 4 |
 | `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
 | `engine/quality/quality-worker.ts` | 87 | 0 | 0 |
@@ -354,7 +354,7 @@
 | `engine/step-result-saver.ts` | 575 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 228 | 6 | 5 |
-| `engine/step-runner.ts` | 2381 | 2 | 1 |
+| `engine/step-runner.ts` | 2457 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -412,6 +412,7 @@
 | `services/fanfic-knowledge-draft.ts` | 226 | 10 | 7 |
 | `services/file-tx.ts` | 191 | 2 | 1 |
 | `services/font-manager.ts` | 248 | 15 | 13 |
+| `services/four-check-store.ts` | 168 | 2 | 2 |
 | `services/genre-classifier.ts` | 856 | 2 | 2 |
 | `services/genre-preference-memory.ts` | 376 | 3 | 3 |
 | `services/goal-service.ts` | 73 | 1 | 1 |
@@ -472,11 +473,12 @@
 | `shared/attachment-model.ts` | 81 | 7 | 5 |
 | `shared/auto-context-block.ts` | 87 | 5 | 5 |
 | `shared/behavior-log.ts` | 132 | 7 | 7 |
-| `shared/body-format.ts` | 224 | 9 | 6 |
+| `shared/body-format.ts` | 306 | 11 | 8 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
 | `shared/changelog-data.ts` | 233 | 3 | 3 |
+| `shared/chapter-four-checks-model.ts` | 256 | 16 | 8 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -934,7 +936,7 @@
 | `ui/prompt-manager-settings.ts` | 1361 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
-| `ui/quality-loop-modal.ts` | 294 | 1 | 1 |
+| `ui/quality-loop-modal.ts` | 349 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |

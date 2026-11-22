@@ -358,6 +358,12 @@
       "allowedInstances": 3
     },
     {
+      "className": "FourCheckStore",
+      "reason": "本章四项校验结果存储：正文保存后（step-runner）写、质量面板（ui）读，无状态、只封装 vault 读写，随调用方注入 app",
+      "category": "service",
+      "allowedInstances": 2
+    },
+    {
       "className": "SceneLoopBodyService",
       "reason": "A1 正文步场景循环（插件入口）",
       "category": "service",

@@ -76,6 +76,16 @@ import { createLogger } from '@/shared/logger';
 import { getExecutionLedger, summarizeSettlement } from '@/services/execution-ledger';
 import { pushUsageScope } from '@/services/usage-ledger';
 import { QualityGate } from './quality-gate';
+import { BodyWriter } from './body-writer';
+import { analyzeBodyFormat } from '@/shared/body-format';
+import { detectPerspectiveMix } from './consistency/extended-rules';
+import {
+    buildFourCheckReport,
+    renderFourCheckReport,
+    type FourCheckReport,
+} from '@/shared/chapter-four-checks-model';
+import { parseInfoPlanFields } from '@/shared/info-plan-fields';
+import { FourCheckStore } from '@/services/four-check-store';
 import './context/state-advice-wiring';
 import { buildGateBeatsFromVars, buildGateSnapshotFromVars } from './quality/gate-snapshot';
 import { runProjectCharacterConsistency, writeConsistencyReport } from './character-consistency-service';
@@ -698,6 +708,64 @@ export class StepRunner {
             this.vaultMeta = new ObsidianVaultMeta(this.app);
         }
         return this.vaultMeta;
+    }
+
+    /**
+     * 正文保存后聚合「本章四项校验」（字数 / 格式 / 视角 / 钩子）。
+     *
+     * 不新增判定规则：四项输入分别来自既有链路——
+     *  - 字数：与第 7 步硬门禁 postCheckWordCount 同口径（finalContent.length vs
+     *    defaultWordCount × getBusinessThreshold('wordMinRatio')）；
+     *  - 格式：落盘契约（BodyWriter#resolveContract）+ analyzeBodyFormat 的偏离统计；
+     *  - 视角：一致性审核共用的 detectPerspectiveMix；
+     *  - 钩子：QualityGate 结构层 endingHookPresent（章纲来自 parseInfoPlanFields）。
+     *
+     * 只发诊断事件 + 写四校验结果文件，不阻断、不触发修订。
+     *
+     * @param body - 已保存的正文
+     * @param ctx - 步骤运行上下文
+     * @param endingHookPresent - QualityGate 结尾钩子检测结果
+     * @param stepKey - 步骤 key
+     * @param stepLabel - 步骤名
+     * @returns 聚合报告
+     */
+    private async runFourChecks(
+        body: string,
+        ctx: StepRunCtx,
+        endingHookPresent: boolean,
+        stepKey: string,
+        stepLabel: string,
+    ): Promise<FourCheckReport> {
+        const contract = await new BodyWriter({ app: this.app, fs: this.getFS() }).resolveContract(ctx.project);
+        const planFields = parseInfoPlanFields(ctx.vars.infoPlan || '');
+        const hookDeclared = planFields.hookContent.trim();
+        const report = buildFourCheckReport({
+            chapterName: ctx.chapterName,
+            wordCount: body.length,
+            targetWords: ctx.defaultWordCount || 3000,
+            wordMinRatio: getBusinessThreshold('wordMinRatio'),
+            format: analyzeBodyFormat(body, contract),
+            perspective: detectPerspectiveMix(body),
+            hook: {
+                required: hookDeclared ? 1 : 0,
+                hookType: planFields.hookType.trim() || undefined,
+                present: hookDeclared ? endingHookPresent : null,
+            },
+        });
+        this.emitDiagnostic(
+            report.warnCount > 0 ? 'warning' : 'info',
+            'step',
+            report.summary,
+            stepKey,
+            stepLabel,
+            { detail: renderFourCheckReport(report) },
+        );
+        try {
+            await new FourCheckStore(this.app).record(ctx.project, report);
+        } catch (e) {
+            log.warn('[StepRunner] 四项校验结果写入失败（不影响正文）:', e);
+        }
+        return report;
     }
 
     // ============================================================
@@ -1663,6 +1731,14 @@ ${userPrompt}`),
                             source: 'ui',
                             detail: summary.slice(0, 200),
                         });
+                        // 四项校验软聚合：字数/格式/视角/钩子合成一条结论进时间线与质量面板
+                        try {
+                            await this.runFourChecks(
+                                finalContent, ctx, report.layers.structure.endingHookPresent, stepKey, currentStep.label,
+                            );
+                        } catch (e) {
+                            log.warn('[StepRunner] 四项校验失败（不影响正文）:', e);
+                        }
                         // 高严重度 OOC / 结构缺口：复用既有定向修订，不硬中断生成
                         if (!report.passed && this.plugin.settings.autoRevisionAfterQC) {
                             try {

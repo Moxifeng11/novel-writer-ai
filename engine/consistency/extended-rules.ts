@@ -53,6 +53,36 @@ const FACT_DURATION = /([\u4e00-\u9fa5]{2,10}?)(?:持续|历时|耗时|为期)([
 const FIRST_PERSON = /(?:^|[。！？\n])\s*我[\u4e00-\u9fa5]/g;
 const THIRD_PERSON = /(?:^|[。！？\n])\s*(?:他|她)[\u4e00-\u9fa5]/g;
 
+/** 人称混用统计 */
+export interface PerspectiveMix {
+    /** 第一人称标记数 */
+    first: number;
+    /** 第三人称标记数 */
+    third: number;
+    /** 是否达到混用判定（两侧都 ≥3 且比例 ≥0.25） */
+    mixed: boolean;
+    /** min(first, third) / max(first, third)，单侧为 0 时记 0 */
+    ratio: number;
+}
+
+/**
+ * 统计一章正文的人称混用程度。
+ *
+ * 一致性审核（本文件的 perspective 规则）与「四项校验」软视图共用同一口径，
+ * 避免出现「审核说没混用、面板说混用」的两套判定。
+ *
+ * 口径限制：不剔除对话引号里的「我/他」，引号内互称会一并计入。
+ *
+ * @param text - 章节正文
+ * @returns 统计结果
+ */
+export function detectPerspectiveMix(text: string): PerspectiveMix {
+    const first = (text.match(FIRST_PERSON) ?? []).length;
+    const third = (text.match(THIRD_PERSON) ?? []).length;
+    const ratio = first === 0 || third === 0 ? 0 : Math.min(first, third) / Math.max(first, third);
+    return { first, third, mixed: first >= 3 && third >= 3 && ratio >= 0.25, ratio };
+}
+
 /**
  * 从章节摘要事实中抽取扩展类断言。
  *
@@ -221,12 +251,11 @@ export function pairExtended(
 
     // ── perspective：同章人称混用 ────────────────────────────
     for (const chapter of bodies) {
-        const first = (chapter.body.match(FIRST_PERSON) ?? []).length;
-        const third = (chapter.body.match(THIRD_PERSON) ?? []).length;
+        const mix = detectPerspectiveMix(chapter.body);
         // 只有两种人称都达到一定密度才算混用（零星一次可能是有意为之）
-        if (first < 3 || third < 3) continue;
-        const ratio = Math.min(first, third) / Math.max(first, third);
-        if (ratio < 0.25) continue;
+        if (!mix.mixed) continue;
+        const first = mix.first;
+        const third = mix.third;
         const a = make('perspective', chapter.chapterKey, '第一人称', String(first), `第一人称 ${first} 处`, chapter.chapterKey, null, 0);
         const b = make('perspective', chapter.chapterKey, '第三人称', String(third), `第三人称 ${third} 处`, chapter.chapterKey, null, 0);
         emit({

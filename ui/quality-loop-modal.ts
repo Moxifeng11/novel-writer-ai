@@ -8,12 +8,21 @@
  */
 
 import { Modal, Notice, Setting } from 'obsidian';
+import { createLogger } from '@/shared/logger';
 import type NovelWriterPlugin from '@/main';
 import { getChaptersForProject } from '@/ui/project-utils';
 import { listProjectIds } from '@/shared/project-catalog';
 import { OperationConfirmModal } from '@/ui/components/progress/operation-confirm-modal';
 import type { QualityPanelView } from '@/services/quality-panel-service';
 import type { PostGenerationCheckReport } from '@/shared/post-generation-check-model';
+import { FourCheckStore } from '@/services/four-check-store';
+import {
+    FOUR_CHECK_SECTION_HINT,
+    FOUR_CHECK_SECTION_TITLE,
+    describeFourCheckEmpty,
+    describeFourCheckHeader,
+} from '@/shared/chapter-four-checks-model';
+import type { FourCheckReport, FourCheckStatus } from '@/shared/chapter-four-checks-model';
 import {
     describeQualitySummary,
     describeRecordResult,
@@ -23,8 +32,15 @@ import {
     pickQualityChapter,
 } from '@/shared/quality-loop-model';
 
+const log = createLogger('QualityLoopModal');
+
 /** 定向修订默认轮次上限 */
 const DEFAULT_MAX_ROUNDS = 2;
+
+/** 四项校验状态图标（与模型内措辞保持一致） */
+const FOUR_CHECK_ICON: Record<FourCheckStatus, string> = {
+    pass: '✅', warn: '⚠️', fail: '❌', skip: '⏭',
+};
 
 /**
  * 质量闭环面板。
@@ -37,9 +53,11 @@ export class QualityLoopModal extends Modal {
     private maxRounds = DEFAULT_MAX_ROUNDS;
     private panel: QualityPanelView | null = null;
     private lastReport: PostGenerationCheckReport | null = null;
+    private fourChecks: Record<string, FourCheckReport> = {};
     private busy: '' | 'check' | 'revise' | 'load' = '';
     private statusEl: HTMLElement | null = null;
     private reportEl: HTMLElement | null = null;
+    private fourChecksEl: HTMLElement | null = null;
     private historyEl: HTMLElement | null = null;
 
     /**
@@ -74,6 +92,7 @@ export class QualityLoopModal extends Modal {
         this.chapter = pickQualityChapter(this.chapters, null);
         this.lastReport = null;
         this.panel = null;
+        this.fourChecks = {};
         this.render();
         void this.loadHistory();
     }
@@ -97,10 +116,17 @@ export class QualityLoopModal extends Modal {
         } catch (error) {
             this.panel = null;
             new Notice(`读取质量历史失败：${error instanceof Error ? error.message : String(error)}`, 8000);
-        } finally {
-            this.busy = '';
-            this.renderHistory();
         }
+        try {
+            this.fourChecks = await new FourCheckStore(this.plugin.app).view(this.project);
+        } catch (error) {
+            // 四校验结果缺失/损坏只影响该区块展示，不打断质量历史
+            this.fourChecks = {};
+            log.warn('读取四项校验失败（只影响该区块展示）:', error);
+        }
+        this.busy = '';
+        this.renderHistory();
+        this.renderFourChecks();
     }
 
     /** 运行生成后校验（本地检查，不调用 AI） */
@@ -189,6 +215,7 @@ export class QualityLoopModal extends Modal {
                     this.chapter = value;
                     this.lastReport = null;
                     this.render();
+                    this.renderFourChecks();
                 });
             });
 
@@ -226,6 +253,14 @@ export class QualityLoopModal extends Modal {
         this.reportEl = contentEl.createDiv({ cls: 'nw-quality-loop-report' });
         this.renderReport();
 
+        contentEl.createEl('h4', { text: FOUR_CHECK_SECTION_TITLE });
+        contentEl.createEl('p', {
+            text: FOUR_CHECK_SECTION_HINT,
+            cls: 'setting-item-description',
+        });
+        this.fourChecksEl = contentEl.createDiv({ cls: 'nw-quality-loop-four-checks' });
+        this.renderFourChecks();
+
         contentEl.createEl('h4', { text: '质量历史' });
         this.historyEl = contentEl.createDiv({ cls: 'nw-quality-loop-history' });
         this.renderHistory();
@@ -252,6 +287,26 @@ export class QualityLoopModal extends Modal {
         }
         if (report.items.length > 30) {
             this.reportEl.createEl('p', { text: `另有 ${report.items.length - 30} 条未展示`, cls: 'setting-item-description' });
+        }
+    }
+
+    /** 渲染「本章四项校验」（正文保存后落盘，按章覆盖） */
+    private renderFourChecks(): void {
+        const el = this.fourChecksEl;
+        if (!el) return;
+        el.empty();
+        const report = this.fourChecks[this.chapter];
+        if (!report) {
+            el.createEl('p', {
+                text: describeFourCheckEmpty(this.chapter),
+                cls: 'setting-item-description',
+            });
+            return;
+        }
+        el.createEl('p', { text: describeFourCheckHeader(report, formatCheckedAt(report.checkedAt)) });
+        const list = el.createEl('ul', { cls: 'nw-quality-loop-items' });
+        for (const item of report.items) {
+            list.createEl('li', { text: `${FOUR_CHECK_ICON[item.status]} [${item.label}] ${item.message}` });
         }
     }
 

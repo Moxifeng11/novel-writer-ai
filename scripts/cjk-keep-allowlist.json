@@ -115,6 +115,11 @@
       "path": "shared/changelog-data.ts",
       "reason": "内置更新日志条目（历史发布记录），属文档数据；随发版新增条目，界面外壳已双语",
       "reclassifiedAs": "cross-layer"
+    },
+    {
+      "path": "shared/chapter-four-checks-model.ts",
+      "reason": "「本章四项校验」的判定措辞（模型/诊断/质量面板共用同一份）：step-runner 的诊断事件 detail 与 UI 面板渲染的是同一批字符串，写成 {code,params} 会让两处各拼一遍且易漂移；放 shared 而不放 ui 是因为 ui/** 有中文棘轮（新增文案只许降），面板只做排版不持有文案",
+      "reclassifiedAs": "cross-layer"
     }
   ],
   "triage": [

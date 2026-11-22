@@ -151,12 +151,19 @@ export class QualityGate {
         };
     }
 
-    /** 结尾钩子检测：存在必做 hook beat 时，正文尾段须覆盖其描述 */
+    /**
+     * 结尾钩子检测：存在 hook beat 时，正文尾段须覆盖其描述。
+     *
+     * 判定复用 BeatVerifier 的「整串或子短语命中」口径，而不是整串 includes：
+     * 章纲钩子是一句自然语言（「黑袍人抬手，山门炸裂」），正文几乎不会原样复述，
+     * 整串匹配会让每条钩子都误判缺失。required 不再作为过滤条件——
+     * 钩子节拍只用于本项检测，不参与必做覆盖校验（见 gate-snapshot#buildHookBeatFromVars）。
+     */
     private checkEndingHook(body: string, beats: StoryBeat[], windowLen: number = ENDING_HOOK_WINDOW): boolean {
-        const hookBeats = beats.filter((b) => b.type === 'hook' && b.required);
-        if (hookBeats.length === 0) return true; // 无要求则不判失
+        const hookBeats = beats.filter((b) => b.type === 'hook');
+        if (hookBeats.length === 0) return true; // 章纲未声明钩子 → 不判失
         const tail = body.trim().slice(-windowLen);
-        return hookBeats.every((b) => tail.includes(b.description) || body.includes(b.description));
+        return hookBeats.every((b) => this.verifier.verify(tail, [b]).results[0]?.completed === true);
     }
 
     /** 相邻段落开头高度重复检测（空行分段） */
