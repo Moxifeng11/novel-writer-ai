@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 356 | 147526 | 1961 | 1552 | 79% |
+| `engine/` | 357 | 147726 | 1965 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53514 | 2273 | 1773 | 78% |
+| `shared/` | 268 | 53553 | 2279 | 1776 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114000 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114033 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -283,9 +283,10 @@
 | `engine/prompts/template-utils.ts` | 177 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 213 | 5 | 4 |
+| `engine/quality-gate.ts` | 240 | 6 | 5 |
 | `engine/quality-scorer.ts` | 388 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
+| `engine/quality/four-check-refresh.ts` | 173 | 3 | 3 |
 | `engine/quality/gate-snapshot.ts` | 152 | 4 | 4 |
 | `engine/quality/quality-engine-factory.ts` | 113 | 5 | 4 |
 | `engine/quality/quality-score-engine.ts` | 2037 | 15 | 12 |
@@ -478,7 +479,7 @@
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
 | `shared/changelog-data.ts` | 233 | 3 | 3 |
-| `shared/chapter-four-checks-model.ts` | 256 | 16 | 8 |
+| `shared/chapter-four-checks-model.ts` | 295 | 22 | 11 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -936,7 +937,7 @@
 | `ui/prompt-manager-settings.ts` | 1361 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
-| `ui/quality-loop-modal.ts` | 349 | 1 | 1 |
+| `ui/quality-loop-modal.ts` | 382 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |

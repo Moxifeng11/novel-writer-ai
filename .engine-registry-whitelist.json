@@ -359,9 +359,15 @@
     },
     {
       "className": "FourCheckStore",
-      "reason": "本章四项校验结果存储：正文保存后（step-runner）写、质量面板（ui）读，无状态、只封装 vault 读写，随调用方注入 app",
+      "reason": "本章四项校验结果存储：正文保存后（step-runner）写、质量面板（ui）读、按需重算（FourCheckService）写，无状态、只封装 vault 读写，随调用方注入 app",
       "category": "service",
-      "allowedInstances": 2
+      "allowedInstances": 3
+    },
+    {
+      "className": "FourCheckService",
+      "reason": "四项校验按需重算：质量面板对非步骤 7 正文路径（协同写作/场景循环/续写/修订）按磁盘事实重算，判定口径复用 shared 模型与既有校验器",
+      "category": "service",
+      "allowedInstances": 1
     },
     {
       "className": "SceneLoopBodyService",

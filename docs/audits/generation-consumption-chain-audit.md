@@ -195,7 +195,7 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 | 钩子依据 | `engine/quality/gate-snapshot.ts#buildHookBeatFromVars`：从 `parseInfoPlanFields(vars.infoPlan).hookContent` 造 `type:'hook', required:false` 节拍；`checkEndingHook` 改为按 `type` 取节拍并用 `BeatVerifier` 匹配 |
 | 接线 | `engine/step-runner.ts#runFourChecks`：正文保存 + QualityGate 之后调用，发诊断事件（`{ detail: renderFourCheckReport(report) }`）并写盘，全程 try/catch 不影响正文 |
 | 持久化 | `services/four-check-store.ts` → `<项目>/04-项目总控/质量面板/四项校验.json`（`{ version:1, chapters:{ 章名: FourCheckReport } }`，按章覆盖、`MAX_CHAPTERS=500` 按 `checkedAt` 淘汰，损坏降级为空） |
-| 展示 | `ui/quality-loop-modal.ts` 新增「本章四项校验」区块（标题/说明/占位文案放 shared，避开 `ui/**` 中文棘轮） |
+| 展示 | `ui/quality-loop-modal.ts` 新增「本章四项校验」区块 + 「按磁盘正文重算」按钮（标题/说明/占位文案放 shared，避开 `ui/**` 中文棘轮） |
 
 **验收口径**：字数仍由第 7 步 `postCheckWordCount` 硬门禁阻断；其余三项只进报告与诊断，
 `report.warnCount > 0` 时诊断级别为 warning，**不触发修订、不改 passed**。
@@ -205,6 +205,29 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 `tests/unit/engine/consistency/perspective-mix.test.ts`（4），并扩展
 `gate-snapshot.test.ts`（9）、`quality-gate.test.ts`（11）——钩子用例覆盖「`required:false` 仍检测」
 「自然语言钩子子短语命中」「无钩子节拍→通过」。
+
+### 按需重算：覆盖不经过步骤 7 的正文路径（2026-11-23）
+
+步骤 7 的自动记录只覆盖 `StepRunner` 写正文这一条路径，其余路径此前没有四项校验结论：
+`ui/cowrite/body-save-controller.ts:177`（协同写作自动保存）、`main.ts:1982`
+（`generateChapterBySceneLoop` 场景循环）、`main.ts:2051`（`autoReviseChapter` 定向修订写回）、
+`ui/continue-chapters-modal.ts:412`（续写）。
+
+处理方式：**不在协同每次自动保存时自动记录**（2 秒一条、编辑中途的半章正文会把报告刷成噪音，
+且保存时拿不到 `settings.defaultWordCount`），改为「按磁盘事实按需重算」——质量面板一键对任意章节重算。
+
+| 环节 | 落点 |
+|---|---|
+| 重算服务 | `engine/quality/four-check-refresh.ts`：`refresh({ project, chapterName, bodyPath, body?, targetWords?, now? })`；正文优先取传入的 `body`，否则按 `bodyPath` 读盘；空正文抛「正文为空，无法校验：…」，项目不存在抛「项目不存在或不是作品目录：…」 |
+| 判定口径 | 全部复用既有实现：`shared/body-format.ts#analyzeBodyFormat`、`engine/consistency/extended-rules.ts#detectPerspectiveMix`、`engine/quality-gate.ts#detectHookCoverage`、`shared/chapter-four-checks-model.ts#buildFourCheckReport`；不新增规则 |
+| 钩子依据 | 由正文路径 `/03-大纲与章节/正文/第N卷/第M章[^/]*_正文.md` 推导本章步骤文件 `pjStepFile(project, N, M, '信息规划')`，读 `parseInfoPlanFields` 的「章末钩子」；无步骤文件或未声明 → `{ required:0, present:null }`（skip） |
+| 钩子判定抽取 | `engine/quality-gate.ts#detectHookCoverage(body, hookDescription, windowLen = ENDING_HOOK_WINDOW)`：空描述返回 true，取结尾窗口后用 `BeatVerifier` 子短语口径；`checkEndingHook` 与重算服务共用，避免两套判据 |
+| 插件入口 | `main.ts#refreshFourChecks(project, chapterName)`：`assertProjectExists` + 既有 `findChapterBodyPath`（找不到抛「找不到「X」的正文文件」）+ `new FourCheckService(this.app).refresh({ …, targetWords: this.settings.defaultWordCount })` |
+| 面板入口 | `ui/quality-loop-modal.ts`「按磁盘正文重算」按钮（`busy='fourcheck'`，成功写回 `this.fourChecks[chapter]` 并刷新区块）；按钮与提示文案放 `shared/chapter-four-checks-model.ts` |
+| 归档 | 仍写 `<项目>/04-项目总控/质量面板/四项校验.json`，与步骤 7 自动记录同一份文件、按章覆盖；写失败只 `log.warn`，不影响本次结论 |
+
+测试：`tests/unit/engine/quality/four-check-refresh.test.ts`（7）——钩子落末段 pass / 声明但缺失 warn /
+无信息规划 skip / 字数低于硬门禁 fail / 格式偏离 warn / 人称混用 warn / 空正文与不存在项目抛错。
 
 ### 复现命令
 

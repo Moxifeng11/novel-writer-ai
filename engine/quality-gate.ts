@@ -162,8 +162,7 @@ export class QualityGate {
     private checkEndingHook(body: string, beats: StoryBeat[], windowLen: number = ENDING_HOOK_WINDOW): boolean {
         const hookBeats = beats.filter((b) => b.type === 'hook');
         if (hookBeats.length === 0) return true; // 章纲未声明钩子 → 不判失
-        const tail = body.trim().slice(-windowLen);
-        return hookBeats.every((b) => this.verifier.verify(tail, [b]).results[0]?.completed === true);
+        return hookBeats.every((b) => detectHookCoverage(body, b.description, windowLen));
     }
 
     /** 相邻段落开头高度重复检测（空行分段） */
@@ -209,4 +208,32 @@ export class QualityGate {
         }
         return `未通过：${parts.join('；')}`;
     }
+}
+
+/** 钩子覆盖判定复用同一个无状态校验器（BeatVerifier 无内部状态） */
+const hookCoverageVerifier = new BeatVerifier();
+
+/**
+ * 判断正文结尾窗口是否覆盖章纲声明的钩子。
+ *
+ * QualityGate 结构层与「四项校验」按需重算共用这一处口径：
+ * 章纲钩子是一句自然语言，正文几乎不会原样复述，所以用 BeatVerifier
+ * 的「整串或子短语命中」判定；只看结尾 windowLen 字，避免钩子词在正文
+ * 中段出现就被当成已落笔。
+ *
+ * @param body - 正文
+ * @param hookDescription - 章纲钩子内容（空串视为未声明）
+ * @param windowLen - 结尾窗口字数（默认 ENDING_HOOK_WINDOW）
+ * @returns 是否在结尾窗口落笔
+ */
+export function detectHookCoverage(
+    body: string,
+    hookDescription: string,
+    windowLen: number = ENDING_HOOK_WINDOW,
+): boolean {
+    const desc = String(hookDescription || '').trim();
+    if (!desc) return true;
+    const tail = String(body || '').trim().slice(-Math.max(1, windowLen));
+    const beat: StoryBeat = { id: 'hook-coverage', description: desc, type: 'hook', required: false };
+    return hookCoverageVerifier.verify(tail, [beat]).results[0]?.completed === true;
 }

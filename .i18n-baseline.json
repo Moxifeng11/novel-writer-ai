@@ -149,7 +149,7 @@
     "ui/prompt-manager-logic.ts": 5,
     "ui/protect-yuan-modal.ts": 12,
     "ui/quality-dashboard-modal.ts": 33,
-    "ui/quality-loop-modal.ts": 52,
+    "ui/quality-loop-modal.ts": 53,
     "ui/rebuild-chapters-modal.ts": 41,
     "ui/refill-modal.ts": 73,
     "ui/rename-project-modal.ts": 11,

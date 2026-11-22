@@ -119,6 +119,45 @@ export function describeFourCheckHeader(report: FourCheckReport, checkedAtText: 
     return `${report.summary}（${checkedAtText}）`;
 }
 
+/** 质量面板「按磁盘正文重算」按钮文案 */
+export const FOUR_CHECK_REFRESH_LABEL = '按磁盘正文重算';
+
+/** 「按磁盘正文重算」进行中的按钮文案 */
+export const FOUR_CHECK_REFRESH_BUSY_LABEL = '重算中…';
+
+/** 「按磁盘正文重算」按钮说明 */
+export const FOUR_CHECK_REFRESH_HINT =
+    '协同写作、场景循环、续写、定向修订写出的正文不经过步骤 7，可在这里按磁盘正文重算；口径与自动记录一致。';
+
+/**
+ * 重算进行中的状态文案。
+ *
+ * @returns 单行状态提示
+ */
+export function describeFourCheckRefreshStarted(): string {
+    return '⌛ 正在按磁盘正文重算四项校验…';
+}
+
+/**
+ * 重算成功的提示文案。
+ *
+ * @param report - 重算后的报告
+ * @returns 单行提示
+ */
+export function describeFourCheckRefreshed(report: FourCheckReport): string {
+    return `${report.chapterName} 四项校验已重算：${report.summary}`;
+}
+
+/**
+ * 重算失败的提示文案。
+ *
+ * @param reason - 失败原因
+ * @returns 单行提示
+ */
+export function describeFourCheckRefreshFailed(reason: string): string {
+    return `四项校验重算失败：${reason}`;
+}
+
 const STATUS_ICON: Record<FourCheckStatus, string> = {
     pass: '✅',
     warn: '⚠️',

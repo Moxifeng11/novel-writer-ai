@@ -17,10 +17,16 @@ import type { QualityPanelView } from '@/services/quality-panel-service';
 import type { PostGenerationCheckReport } from '@/shared/post-generation-check-model';
 import { FourCheckStore } from '@/services/four-check-store';
 import {
+    FOUR_CHECK_REFRESH_BUSY_LABEL,
+    FOUR_CHECK_REFRESH_HINT,
+    FOUR_CHECK_REFRESH_LABEL,
     FOUR_CHECK_SECTION_HINT,
     FOUR_CHECK_SECTION_TITLE,
     describeFourCheckEmpty,
     describeFourCheckHeader,
+    describeFourCheckRefreshFailed,
+    describeFourCheckRefreshed,
+    describeFourCheckRefreshStarted,
 } from '@/shared/chapter-four-checks-model';
 import type { FourCheckReport, FourCheckStatus } from '@/shared/chapter-four-checks-model';
 import {
@@ -54,7 +60,7 @@ export class QualityLoopModal extends Modal {
     private panel: QualityPanelView | null = null;
     private lastReport: PostGenerationCheckReport | null = null;
     private fourChecks: Record<string, FourCheckReport> = {};
-    private busy: '' | 'check' | 'revise' | 'load' = '';
+    private busy: '' | 'check' | 'revise' | 'load' | 'fourcheck' = '';
     private statusEl: HTMLElement | null = null;
     private reportEl: HTMLElement | null = null;
     private fourChecksEl: HTMLElement | null = null;
@@ -177,6 +183,25 @@ export class QualityLoopModal extends Modal {
         }
     }
 
+    /** Recompute four checks from on-disk body (paths outside step 7). */
+    private async runFourCheckRefresh(): Promise<void> {
+        if (this.busy || !this.chapter) return;
+        this.busy = 'fourcheck';
+        this.render();
+        try {
+            const report = await this.plugin.refreshFourChecks(this.project, this.chapter);
+            this.fourChecks[this.chapter] = report;
+            new Notice(describeFourCheckRefreshed(report), 8000);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            new Notice(describeFourCheckRefreshFailed(reason), 8000);
+        } finally {
+            this.busy = '';
+            this.render();
+            this.renderFourChecks();
+        }
+    }
+
     /** 渲染 */
     private render(): void {
         const { contentEl } = this;
@@ -247,7 +272,8 @@ export class QualityLoopModal extends Modal {
             this.busy === 'check' ? '⌛ 正在运行生成后校验…'
                 : this.busy === 'revise' ? '⌛ 正在定向修订（会调用模型，可能需要几十秒）…'
                     : this.busy === 'load' ? '⌛ 正在读取质量历史…'
-                        : '',
+                        : this.busy === 'fourcheck' ? describeFourCheckRefreshStarted()
+                            : '',
         );
 
         this.reportEl = contentEl.createDiv({ cls: 'nw-quality-loop-report' });
@@ -258,6 +284,13 @@ export class QualityLoopModal extends Modal {
             text: FOUR_CHECK_SECTION_HINT,
             cls: 'setting-item-description',
         });
+        new Setting(contentEl)
+            .setName(FOUR_CHECK_REFRESH_LABEL)
+            .setDesc(FOUR_CHECK_REFRESH_HINT)
+            .addButton(button => button
+                .setButtonText(this.busy === 'fourcheck' ? FOUR_CHECK_REFRESH_BUSY_LABEL : FOUR_CHECK_REFRESH_LABEL)
+                .setDisabled(Boolean(this.busy) || !this.chapter)
+                .onClick(() => void this.runFourCheckRefresh()));
         this.fourChecksEl = contentEl.createDiv({ cls: 'nw-quality-loop-four-checks' });
         this.renderFourChecks();
 

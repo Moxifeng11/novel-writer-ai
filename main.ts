@@ -95,6 +95,7 @@ import { PostGenerationCheckService } from './services/post-generation-check-ser
 import { TargetedRevisionService } from './services/targeted-revision-service';
 import { ConstraintBlockService, createVaultConstraintDeps } from './services/constraint-block-service';
 import { QualityPanelService } from './services/quality-panel-service';
+import { FourCheckService } from './engine/quality/four-check-refresh';
 import { SceneLoopBodyService } from './services/scene-loop-body-service';
 import { SceneRetrievalService } from './services/scene-retrieval-service';
 import type { SceneTask } from './engine/scene-generation-loop';
@@ -2078,6 +2079,28 @@ export default class NovelWriterPlugin extends Plugin {
             }
         }
         return null;
+    }
+
+    /**
+     * 按磁盘正文重算一章的「四项校验」并归档。
+     *
+     * 覆盖不经过步骤 7 的正文路径（协同写作保存、场景循环生成、续写、定向修订），
+     * 判定口径与步骤 7 自动记录完全一致（同一套 buildFourCheckReport）。
+     *
+     * @param project - 项目路径
+     * @param chapterName - 章节名
+     * @returns 聚合报告
+     */
+    public async refreshFourChecks(project: string, chapterName: string) {
+        this.assertProjectExists(project);
+        const bodyPath = await this.findChapterBodyPath(project, chapterName);
+        if (!bodyPath) throw new Error(`找不到「${chapterName}」的正文文件`);
+        return new FourCheckService(this.app).refresh({
+            project,
+            chapterName,
+            bodyPath,
+            targetWords: this.settings.defaultWordCount,
+        });
     }
 
     public async runPostGenerationCheck(project: string, chapterName: string) {
