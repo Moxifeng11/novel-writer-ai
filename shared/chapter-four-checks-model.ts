@@ -12,6 +12,8 @@
  *  - 输出只用于诊断事件与质量面板展示。
  */
 
+import type { BodyFormatDeviationSample } from './body-format';
+
 /** 单项校验结论：pass 通过 / warn 待关注 / fail 硬门禁未过 / skip 缺依据 */
 export type FourCheckStatus = 'pass' | 'warn' | 'fail' | 'skip';
 
@@ -38,6 +40,8 @@ export interface FourCheckFormatInput {
     blankLineBreaks: number;
     titleStripped: number;
     metaStripped: number;
+    /** 偏离行定位（shared/body-format.ts#analyzeBodyFormat 产出，可选） */
+    samples?: BodyFormatDeviationSample[];
 }
 
 /** 视角输入（由 engine/consistency/extended-rules.ts#detectPerspectiveMix 产出） */
@@ -188,6 +192,19 @@ function wordCountItem(input: FourCheckInput): FourCheckItem {
     };
 }
 
+const FORMAT_SAMPLE_LABEL: Record<BodyFormatDeviationSample['kind'], string> = {
+    indent: '缺缩进',
+    blank: '多余空行',
+    title: '标题行',
+    meta: '元叙述',
+};
+
+function describeFormatSamples(samples: BodyFormatDeviationSample[] | undefined): string {
+    if (!samples || samples.length === 0) return '';
+    const located = samples.map(sample => `第 ${sample.line} 行（${FORMAT_SAMPLE_LABEL[sample.kind]}）`);
+    return `；偏离定位：${located.join('、')}`;
+}
+
 function formatItem(format: FourCheckFormatInput | null | undefined): FourCheckItem {
     if (!format) {
         return { id: 'format', label: '格式', status: 'skip', message: '未取得格式分析结果' };
@@ -198,15 +215,16 @@ function formatItem(format: FourCheckFormatInput | null | undefined): FourCheckI
     if (format.titleStripped > 0) details.push(`剥离标题 ${format.titleStripped} 行`);
     if (format.metaStripped > 0) details.push(`剥离模型元叙述 ${format.metaStripped} 行`);
     const suffix = details.length > 0 ? `（${details.join('、')}）` : '';
+    const sampleText = describeFormatSamples(format.samples);
     if (format.ratio >= FORMAT_DEVIATION_WARN_RATIO) {
         return {
             id: 'format', label: '格式', status: 'warn',
-            message: `${pct(format.ratio)} 的行偏离格式契约${suffix}；落盘已按契约自动规整`,
+            message: `${pct(format.ratio)} 的行偏离格式契约${suffix}；落盘已按契约自动规整${sampleText}`,
         };
     }
     return {
         id: 'format', label: '格式', status: 'pass',
-        message: `符合格式契约（偏离 ${pct(format.ratio)}）${suffix}`,
+        message: `符合格式契约（偏离 ${pct(format.ratio)}）${suffix}${sampleText}`,
     };
 }
 
@@ -214,7 +232,7 @@ function perspectiveItem(mix: FourCheckPerspectiveInput | null | undefined): Fou
     if (!mix) {
         return { id: 'perspective', label: '视角', status: 'skip', message: '未取得人称统计' };
     }
-    const detail = `第一人称 ${mix.first} 处 / 第三人称 ${mix.third} 处（比例 ${pct(mix.ratio)}）`;
+    const detail = `第一人称 ${mix.first} 处 / 第三人称 ${mix.third} 处（比例 ${pct(mix.ratio)}，已剔除对话）`;
     if (mix.mixed) {
         return {
             id: 'perspective', label: '视角', status: 'warn',

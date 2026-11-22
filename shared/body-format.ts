@@ -189,6 +189,26 @@ export function normalizeBodyText(
     return out.join('\n');
 }
 
+/** 单条格式偏离定位（行号 1-based，对应原始正文换行后的行序） */
+export interface BodyFormatDeviationSample {
+    /** 行号（1-based） */
+    line: number;
+    /** 偏离类型：缺缩进 / 多余空行 / 标题行 / 模型元叙述 */
+    kind: 'indent' | 'blank' | 'title' | 'meta';
+    /** 该行前 24 字的摘要（空行记空串） */
+    preview: string;
+}
+
+/**
+ * 偏离样例行数上限：够定位问题又不把报告刷成噪音。
+ *
+ * @example
+ * ```ts
+ * MAX_FORMAT_DEVIATION_SAMPLES; // 8
+ * ```
+ */
+export const MAX_FORMAT_DEVIATION_SAMPLES = 8;
+
 /**
  * 格式偏离明细。
  *
@@ -210,6 +230,8 @@ export interface BodyFormatDeviation {
     metaStripped: number;
     /** 偏离行占比 0–1 */
     ratio: number;
+    /** 前若干处偏离的位置（最多 MAX_FORMAT_DEVIATION_SAMPLES 条），用于「哪几行」定位 */
+    samples: BodyFormatDeviationSample[];
 }
 
 /**
@@ -230,7 +252,7 @@ export function analyzeBodyFormat(
     contract: BodyFormatContract = DEFAULT_BODY_FORMAT,
 ): BodyFormatDeviation {
     const empty: BodyFormatDeviation = {
-        totalLines: 0, indentMissing: 0, blankLineBreaks: 0, titleStripped: 0, metaStripped: 0, ratio: 0,
+        totalLines: 0, indentMissing: 0, blankLineBreaks: 0, titleStripped: 0, metaStripped: 0, ratio: 0, samples: [],
     };
     if (!raw) return empty;
 
@@ -244,20 +266,38 @@ export function analyzeBodyFormat(
     let blankLineBreaks = 0;
     let titleStripped = 0;
     let metaStripped = 0;
+    const samples: BodyFormatDeviationSample[] = [];
+    const addSample = (line: number, kind: BodyFormatDeviationSample['kind'], trimmed: string): void => {
+        if (samples.length >= MAX_FORMAT_DEVIATION_SAMPLES) return;
+        samples.push({ line, kind, preview: trimmed.slice(0, 24) });
+    };
     // 首部空行不算偏离（模型常在正文前留白）
     let started = false;
 
-    for (const rawLine of text.split('\n')) {
+    const lines = text.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+        const rawLine = lines[i];
+        const lineNo = i + 1;
         const trimmed = rawLine.trim();
         if (!trimmed) {
-            if (started && contract.separator === '\n') blankLineBreaks++;
+            if (started && contract.separator === '\n') {
+                blankLineBreaks++;
+                addSample(lineNo, 'blank', '');
+            }
             continue;
         }
         started = true;
         totalLines++;
-        if (contract.indent && !rawLine.startsWith(contract.indent)) indentMissing++;
-        if (MD_HEADING.test(trimmed) || (PLAIN_CHAPTER_TITLE.test(trimmed) && trimmed.length <= 40)) titleStripped++;
-        if (trimmed.length <= 200 && META_LEAD.test(trimmed) && META_HINT.test(trimmed)) metaStripped++;
+        const indentMissingHere = Boolean(contract.indent) && !rawLine.startsWith(contract.indent);
+        const titleHere = MD_HEADING.test(trimmed) || (PLAIN_CHAPTER_TITLE.test(trimmed) && trimmed.length <= 40);
+        const metaHere = trimmed.length <= 200 && META_LEAD.test(trimmed) && META_HINT.test(trimmed);
+        if (indentMissingHere) indentMissing++;
+        if (titleHere) titleStripped++;
+        if (metaHere) metaStripped++;
+        // 每行只记一条定位：标题/元叙述更说明问题，缺缩进是它们的连带表现
+        if (titleHere) addSample(lineNo, 'title', trimmed);
+        else if (metaHere) addSample(lineNo, 'meta', trimmed);
+        else if (indentMissingHere) addSample(lineNo, 'indent', trimmed);
     }
 
     const deviated = indentMissing + titleStripped + metaStripped + blankLineBreaks;
@@ -268,6 +308,7 @@ export function analyzeBodyFormat(
         titleStripped,
         metaStripped,
         ratio: totalLines > 0 ? Math.min(1, deviated / totalLines) : 0,
+        samples,
     };
 }
 

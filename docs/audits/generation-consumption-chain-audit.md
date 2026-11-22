@@ -162,8 +162,8 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 | 校验项 | 实际落点 | 是否阻断 | 备注 |
 |---|---|---|---|
 | 字数 | `engine/step-definitions.ts:140-151` `postCheckWordCount`，挂在 `:190` 第 7 步 `postValidation` | ✅ 阻断（低于 `floor(defaultWordCount × wordMinRatio)` 判 `passed:false`） | 唯一真正进了第 7 步门禁的项 |
-| 格式 | 无门禁；写盘前由 `engine/body-writer.ts` → `shared/body-format.ts#normalizeBodyText` 直接规整（`deriveBodyFormat` 解析「写作规则.md」）；偏离统计由 `analyzeBodyFormat`（同文件）产出 | ❌ 不阻断 | 已补可读信号：偏离行占比 ≥ 0.15 时质量面板给 warning |
-| 视角 | `engine/consistency/extended-rules.ts:222-244`（`FIRST_PERSON` 于 `:53`、`THIRD_PERSON` 于 `:54`，阈值 first≥3 && third≥3 且 min/max≥0.25）；调用链 `pairExtended` ← `engine/consistency/pairing-rules.ts:294` ← `engine/consistency/audit-pipeline.ts` | ❌ 不阻断 | 只在「一致性审核」入口跑，不随正文生成自动出结果；不剔除对话引号，「他说」会计入第三人称 |
+| 格式 | 无门禁；写盘前由 `engine/body-writer.ts` → `shared/body-format.ts#normalizeBodyText` 直接规整（`deriveBodyFormat` 解析「写作规则.md」）；偏离统计由 `analyzeBodyFormat`（同文件）产出，并带最多 8 条行号定位（`samples`） | ❌ 不阻断 | 已补可读信号：偏离行占比 ≥ 0.15 时质量面板给 warning，并列出「第 N 行（缺缩进/空行/标题/元叙述）」 |
+| 视角 | `engine/consistency/extended-rules.ts:222-244`（`FIRST_PERSON` 于 `:53`、`THIRD_PERSON` 于 `:54`，阈值 first≥3 && third≥3 且 min/max≥0.25）；调用链 `pairExtended` ← `engine/consistency/pairing-rules.ts:294` ← `engine/consistency/audit-pipeline.ts` | ❌ 不阻断 | 只在「一致性审核」入口跑，不随正文生成自动出结果；已先剔除成对对话引号（“”「」『』）内容，「他说」这类叙述标签仍按第三人称计 |
 | 钩子 | `engine/quality-gate.ts:154-168` `checkEndingHook`（`ENDING_HOOK_WINDOW = 200`，认 `type==='hook'` 的 beat，无 beat 即通过；命中口径复用 `BeatVerifier` 的整串/子短语匹配）；由 `engine/step-runner.ts:1639-1684` 在正文保存后触发 | ❌ 不阻断（仅事件+诊断；`autoRevisionAfterQC` 打开时才定向修订） | `buildGateBeatsFromVars(ctx.vars)` 已追加 `buildHookBeatFromVars` 的钩子节拍（`required:false`，不改变 BeatVerifier 阻断语义） |
 
 ### 为什么第 7 步补不了这三项
@@ -190,7 +190,7 @@ Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintSco
 | 环节 | 落点 |
 |---|---|
 | 聚合模型 | `shared/chapter-four-checks-model.ts`（`buildFourCheckReport` / `renderFourCheckReport` / `fourCheckAttentionItems`；格式阈值 `FORMAT_DEVIATION_WARN_RATIO = 0.15`） |
-| 格式偏离 | `shared/body-format.ts#analyzeBodyFormat`：只统一换行后逐行统计缩进缺失、空行分段、残留标题、元叙述，`ratio = min(1, deviated/totalLines)` |
+| 格式偏离 | `shared/body-format.ts#analyzeBodyFormat`：只统一换行后逐行统计缩进缺失、空行分段、残留标题、元叙述，`ratio = min(1, deviated/totalLines)`；同时收集最多 8 条 `samples`（行号 + 类型 + 前 24 字），每行只记优先级最高的一条（标题 > 元叙述 > 缺缩进） |
 | 视角混用 | `engine/consistency/extended-rules.ts#detectPerspectiveMix`（从既有 perspective 规则抽取，判据 first≥3 && third≥3 且 min/max≥0.25，未改口径） |
 | 钩子依据 | `engine/quality/gate-snapshot.ts#buildHookBeatFromVars`：从 `parseInfoPlanFields(vars.infoPlan).hookContent` 造 `type:'hook', required:false` 节拍；`checkEndingHook` 改为按 `type` 取节拍并用 `BeatVerifier` 匹配 |
 | 接线 | `engine/step-runner.ts#runFourChecks`：正文保存 + QualityGate 之后调用，发诊断事件（`{ detail: renderFourCheckReport(report) }`）并写盘，全程 try/catch 不影响正文 |

@@ -53,6 +53,22 @@ const FACT_DURATION = /([\u4e00-\u9fa5]{2,10}?)(?:持续|历时|耗时|为期)([
 const FIRST_PERSON = /(?:^|[。！？\n])\s*我[\u4e00-\u9fa5]/g;
 const THIRD_PERSON = /(?:^|[。！？\n])\s*(?:他|她)[\u4e00-\u9fa5]/g;
 
+/** 成对的中文对话引号（含直角/双直角引号） */
+const DIALOGUE_QUOTED = /“[^”]*”|「[^」]*」|『[^』]*』/g;
+
+/**
+ * 剔除对话引号内的内容，只保留叙述文本。
+ *
+ * 引号不配对时保守处理：保留原文（宁可多算，也不静默吞掉整段叙述）。
+ *
+ * @param text - 原始正文
+ * @returns 去掉对话内容后的叙述文本
+ */
+function stripDialogueSegments(text: string): string {
+    if (!text) return '';
+    return text.replace(DIALOGUE_QUOTED, '');
+}
+
 /** 人称混用统计 */
 export interface PerspectiveMix {
     /** 第一人称标记数 */
@@ -71,14 +87,16 @@ export interface PerspectiveMix {
  * 一致性审核（本文件的 perspective 规则）与「四项校验」软视图共用同一口径，
  * 避免出现「审核说没混用、面板说混用」的两套判定。
  *
- * 口径限制：不剔除对话引号里的「我/他」，引号内互称会一并计入。
+ * 口径：先剔除对话引号（“”「」『』）内的内容，只统计叙述文本——
+ * 角色在对话里互称「我/他」不属于叙事视角，计入会把对话密集的章节误报成混用。
  *
  * @param text - 章节正文
  * @returns 统计结果
  */
 export function detectPerspectiveMix(text: string): PerspectiveMix {
-    const first = (text.match(FIRST_PERSON) ?? []).length;
-    const third = (text.match(THIRD_PERSON) ?? []).length;
+    const narration = stripDialogueSegments(text);
+    const first = (narration.match(FIRST_PERSON) ?? []).length;
+    const third = (narration.match(THIRD_PERSON) ?? []).length;
     const ratio = first === 0 || third === 0 ? 0 : Math.min(first, third) / Math.max(first, third);
     return { first, third, mixed: first >= 3 && third >= 3 && ratio >= 0.25, ratio };
 }

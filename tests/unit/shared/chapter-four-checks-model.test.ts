@@ -58,6 +58,21 @@ describe('格式', () => {
         expect(format.message).toContain('自动规整');
     });
 
+    it('带偏离样例时给出行号定位', () => {
+        const report = buildFourCheckReport({
+            ...base,
+            format: {
+                ratio: 0.3, indentMissing: 2, blankLineBreaks: 0, titleStripped: 0, metaStripped: 0,
+                samples: [
+                    { line: 2, kind: 'indent', preview: '正文一。' },
+                    { line: 5, kind: 'indent', preview: '正文二。' },
+                ],
+            },
+        });
+        const format = item(report, 'format');
+        expect(format.message).toContain('偏离定位：第 2 行（缺缩进）、第 5 行（缺缩进）');
+    });
+
     it('偏离比例低于阈值判 pass', () => {
         const report = buildFourCheckReport({
             ...base,

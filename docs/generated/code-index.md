@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 357 | 147726 | 1965 | 1556 | 79% |
+| `engine/` | 357 | 147744 | 1965 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53553 | 2279 | 1776 | 78% |
+| `shared/` | 268 | 53612 | 2281 | 1777 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
 | `ui/` | 308 | 114033 | 1183 | 946 | 80% |
@@ -132,7 +132,7 @@
 | `engine/consistency/consistency-metrics.ts` | 108 | 6 | 4 |
 | `engine/consistency/consistency-service.ts` | 268 | 9 | 3 |
 | `engine/consistency/evidence-locate.ts` | 109 | 3 | 2 |
-| `engine/consistency/extended-rules.ts` | 346 | 7 | 4 |
+| `engine/consistency/extended-rules.ts` | 364 | 7 | 4 |
 | `engine/consistency/fact-maintenance.ts` | 163 | 6 | 2 |
 | `engine/consistency/fact-store.ts` | 215 | 9 | 7 |
 | `engine/consistency/knowledge-decompose.ts` | 306 | 10 | 6 |
@@ -474,12 +474,12 @@
 | `shared/attachment-model.ts` | 81 | 7 | 5 |
 | `shared/auto-context-block.ts` | 87 | 5 | 5 |
 | `shared/behavior-log.ts` | 132 | 7 | 7 |
-| `shared/body-format.ts` | 306 | 11 | 8 |
+| `shared/body-format.ts` | 347 | 13 | 9 |
 | `shared/body-path.ts` | 63 | 3 | 3 |
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
 | `shared/changelog-data.ts` | 233 | 3 | 3 |
-| `shared/chapter-four-checks-model.ts` | 295 | 22 | 11 |
+| `shared/chapter-four-checks-model.ts` | 313 | 22 | 11 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
