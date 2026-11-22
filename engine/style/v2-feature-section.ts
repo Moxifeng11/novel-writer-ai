@@ -15,7 +15,7 @@
  *   - `status !== 'complete'` 的维度跳过（没分析完的维度不注入，避免 prompt 里出现半成品）。
  */
 
-import type { StyleFingerprint } from '../style-fingerprint-library';
+import type { StyleFingerprint } from '@/engine/style-fingerprint-library';
 import type {
     DescriptionStats,
     EmotionStats,
