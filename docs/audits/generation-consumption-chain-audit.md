@@ -151,3 +151,44 @@ Select-String -Path engine/*.ts,ui/**/*.ts -Pattern 'reloadIfChanged|getEnabledF
 # template 是 source-only 的设计依据
 Select-String -Path ui/fingerprint-utils.ts -Pattern 'isSourceOnlyFingerprintScope'
 ```
+
+---
+
+## 七、正文第 7 步「四项校验」落点复审（2026-11-22）
+
+规格来源：`docs/design/v4.21-workflow-ai/01-three-mode-workflow-spec.md` 第 7 步正文生成，
+要求交付前校验「字数 / 格式 / 视角 / 钩子」。逐项核对实际代码落点：
+
+| 校验项 | 实际落点 | 是否阻断 | 备注 |
+|---|---|---|---|
+| 字数 | `engine/step-definitions.ts:140-151` `postCheckWordCount`，挂在 `:190` 第 7 步 `postValidation` | ✅ 阻断（低于 `floor(defaultWordCount × wordMinRatio)` 判 `passed:false`） | 唯一真正进了第 7 步门禁的项 |
+| 格式 | 无门禁；写盘前由 `engine/body-writer.ts` → `shared/body-format.ts#normalizeBodyText` 直接规整（`deriveBodyFormat` 解析「写作规则.md」） | ❌ 不阻断，也不产出信号 | 规整是「静默修正」，用户看不到原文偏离了什么 |
+| 视角 | `engine/consistency/extended-rules.ts:222-244`（`FIRST_PERSON` 于 `:53`、`THIRD_PERSON` 于 `:54`，阈值 first≥3 && third≥3 且 min/max≥0.25）；调用链 `pairExtended` ← `engine/consistency/pairing-rules.ts:294` ← `engine/consistency/audit-pipeline.ts` | ❌ 不阻断 | 只在「一致性审核」入口跑，不随正文生成自动出结果；不剔除对话引号，「他说」会计入第三人称 |
+| 钩子 | `engine/quality-gate.ts:155-160` `checkEndingHook`（`ENDING_HOOK_WINDOW = 200`，只认 `type==='hook' && required` 的 beat，无 beat 即通过）；由 `engine/step-runner.ts:1639-1684` 在正文保存后触发 | ❌ 不阻断（仅事件+诊断；`autoRevisionAfterQC` 打开时才定向修订） | `buildGateBeatsFromVars(ctx.vars)` 提供 beat 依据 |
+
+### 为什么第 7 步补不了这三项
+
+`engine/step-definitions.ts:256-296` 的 `StepRunCtx` 只有 `defaultWordCount`，
+**没有 beats、没有写作规则**——`postValidation` 拿不到钩子清单和格式契约，
+硬写启发式只会制造误报。
+
+### 结论
+
+现状是「**一项硬门禁 + 三项事后软信号**」，与规格第 7 步「四项校验」的字面要求不完全一致。
+真正的缺口不是缺少校验代码，而是：
+1. 格式偏离被静默规整，没有任何可读反馈；
+2. 视角与钩子的结果分散在「一致性审核」和「正文保存后门禁」两个入口，
+   用户拿不到一份合并的「本章四项校验」结论。
+
+**建议**（不增加误报、不改链路）：第 7 步完成后，把三项软结果聚合进质量面板一份视图；
+格式项改为「规整前后差异 > 阈值时给 warning」，而不是直接静默。是否落地待产品决策。
+
+### 复现命令
+
+```powershell
+Select-String -Path engine/step-definitions.ts -Pattern 'postCheckWordCount|wordMinRatio|postValidation'
+Select-String -Path engine/quality-gate.ts -Pattern 'checkEndingHook|ENDING_HOOK_WINDOW'
+Select-String -Path engine/consistency/extended-rules.ts -Pattern 'FIRST_PERSON|THIRD_PERSON|视角混乱'
+Select-String -Path engine/step-runner.ts -Pattern 'new QualityGate|buildGateBeatsFromVars|autoRevisionAfterQC'
+Select-String -Path engine/body-writer.ts,shared/body-format.ts -Pattern 'normalizeBodyText|deriveBodyFormat'
+```
