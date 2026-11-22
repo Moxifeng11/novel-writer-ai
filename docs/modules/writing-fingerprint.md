@@ -122,8 +122,10 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
   - P2（已落地）：新建指纹统一走 `FingerprintExtractor.extractWithAnalysis()` —— 同一次抽取里 AI 写 7 维 prose、本地
     `StyleFeaturesAnalyzerV2` 产 12 维定量与 5 个新维文案，合并后 `add*(fp, analysis)` 落盘；加载期由
     `backfillV2Dimensions(scope)` 对「有 pending 维」的旧条目补 12 维（原文优先，无原文用样章拼接，写 `.v2backfill.bak`，每作用域每进程一次）；重抽（`refillFingerprint`）也会顺手补齐。
-  - P3（已落地）：V2 独有的 5 维（sentencePattern / emotion / tension / infoDensity / description）在全局层 7 段之后
+  - P3（已落地）：V2 独有的 5 维（sentencePattern / emotion / tension / infoDensity / description）在 7 段之后
     追加「V2 深化特征（量化）：」，**默认开启**，只受强度配置约束（`globalIntensity: 0` 时整段消失、描述长度按 `descriptionLength` 截断）。
+    两条正文入口都注入：11 步正文走 `engine/knowledge-injector.ts#buildFingerprintLines`（`buildV2Lines`），协同写作走
+    `engine/style/dynamic-injection-engine.ts#buildGlobalTier`，共用 `engine/style/v2-feature-section.ts`（2026-11-22 补齐，ADR §12）。
   - 相关类型标注已由 `@deprecated` 改为 `@legacy`（warn 第 11 批），不要再按「清弃用」的思路去删 V1 类型。
   - P4（已落地，2026-11-22）：内存直接持 V2 —— `load*` 先构建 `v2Fingerprints` 再 `refreshScopeProjection`，三张 V1 表成为派生投影（唯一写入口 `refreshScopeProjection`），`add*/update*` 走 `ensureV2FromEntry`，`copyFingerprint`/`syncFromTemplate` 也不再产生 5 维 pending。旧口径「加载即降级」已废弃。
 
@@ -137,8 +139,8 @@ view-project-nosample（无样本 → 黄条 + 空态）、modal-detail、modal-
 | 入库 | `addTemplate/addGlobal/addProject(fp, analysis?)` | 首行 `registerAnalysis`；无 analysis 的老调用仍可用（迁移兼容） |
 | 回填 | `backfillV2Dimensions(scope)` | 由 `migrateV1ToV2Dimensions` 每作用域末尾调用；`backfilledScopes` 保证每进程一次；备份后缀 `.v2backfill.bak` |
 | 重抽 | `refillFingerprint` | 重新提取 7 维后再跑分析器并 `registerAnalysis` |
-| 注入 | `engine/style/dynamic-injection-engine.ts#build(..., v2Features?)` | 只追加 `V2_NEW_DIMENSIONS` 且 `status==='complete'` 的维度；`summarizeV2Dimension` 产「倒装 1.2/千字 · 设问 3%」这类定量短句 |
-| 取数 | `getV2FeaturesMap(ids)` | `engine/prompt-builder.ts:339` 以 `typeof ... === 'function'` 守卫调用（兼容旧测试桩） |
+| 注入 | `engine/style/v2-feature-section.ts#buildV2FeatureSection` | 只追加 `V2_NEW_DIMENSIONS` 且 `status==='complete'` 的维度；`summarizeV2Dimension` 产「倒装 1.2/千字 · 设问 3%」这类定量短句。调用方：`dynamic-injection-engine.ts#buildGlobalTier`（协同写作）、`knowledge-injector.ts#buildV2Lines`（11 步正文） |
+| 取数 | `getV2FeaturesMap(ids)` | `engine/prompt-builder.ts:339` 与 `engine/knowledge-injector.ts:1455` 都以 `typeof ... === 'function'` 守卫调用（兼容旧测试桩） |
 
 ## 7.2 P4 内存投影（2026-11-22）
 

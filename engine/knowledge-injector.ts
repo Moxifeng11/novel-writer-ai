@@ -11,6 +11,7 @@ import { assemblePromptWithinBudget } from '@/shared/prompt-budget';
 import { recordBudgetSnapshot } from '@/shared/budget-telemetry';
 import { formatKnowledgeChunkLabel, dedupeAdjacentChunks } from '@/shared/knowledge-position';
 import { getStyleIntensityEngine } from './style/style-intensity-engine';
+import { buildV2FeatureSection } from './style/v2-feature-section';
 import {
     MAX_INJECTED_STYLE_FINGERPRINTS,
     selectFingerprintsForInjection,
@@ -1365,7 +1366,7 @@ export class KnowledgeInjector {
 
         // 指纹参考与「风格描述详略」无关：injectionStrength 默认 0.5 落在中间分支，
         // 旧实现把它写死在 >=0.7 分支里，等于默认配置下永远不注入。
-        lines.push(...await this.buildFingerprintLines(fingerprintQuery));
+        lines.push(...await this.buildFingerprintLines(fingerprintQuery, strength));
 
         return lines.join('\n');
     }
@@ -1375,8 +1376,18 @@ export class KnowledgeInjector {
         return (context.currentText || context.outline || context.sceneObjective || '').trim();
     }
 
-    /** 指纹风格参考（独立于风格描述详略；强度 0 已在取列表时过滤） */
-    private async buildFingerprintLines(query: string): Promise<string[]> {
+    /**
+     * 指纹风格参考（独立于风格描述详略；强度 0 已在取列表时过滤）。
+     *
+     * ADR R3（docs/design/2026-11-21-style-fingerprint-v2-canonical.md）：
+     * 7 段 V1 投影之后追加 V2 独有 5 维。正文生成的实际注入口是这里
+     * （TieredInjectionBuilder 只服务协同写作的全局层），所以 V2 段必须在这里拼，
+     * 否则 11 步正文永远吃不到 sentencePattern/emotion/tension/infoDensity/description。
+     *
+     * @param query - 指纹相关性检索文本
+     * @param strength - 画像注入强度（0.3 以下只保留定量摘要，不留维度描述）
+     */
+    private async buildFingerprintLines(query: string, strength = 0.5): Promise<string[]> {
         if (!this.fingerprintLibrary) return [];
 
         const enabledFingerprints = await this.getEnabledFingerprintsFromLibrary(query);
@@ -1411,6 +1422,12 @@ export class KnowledgeInjector {
             lines.push(`- 整体基调：${mergedFeatures.overallTone}`);
         }
 
+        const v2Lines = this.buildV2Lines(enabledFingerprints, strength);
+        if (v2Lines.length > 0) {
+            lines.push('');
+            lines.push(...v2Lines);
+        }
+
         if (enabledFingerprints.length <= 2) {
             lines.push('');
             lines.push('参考指纹来源：');
@@ -1420,6 +1437,36 @@ export class KnowledgeInjector {
         }
 
         return lines;
+    }
+
+    /**
+     * V2 独有 5 维（句式/情绪/张力/信息量/描写）段落。
+     *
+     * 与协同写作的 TieredInjectionBuilder 共用 style/v2-feature-section.ts 的摘要文案与段落格式；
+     * 强度 0 的指纹在 getEnabledFingerprintsFromLibrary 里已剔除，这里只按维度 status 过滤。
+     * 描述长度跟单指纹强度配置走（与 TieredBuilder 口径一致），画像强度 < 0.3 时只留定量摘要。
+     *
+     * @param enabledFingerprints - 本次参与注入的指纹
+     * @param strength - 画像注入强度
+     * @returns 段落行；没有可注入维度时为空数组
+     */
+    private buildV2Lines(enabledFingerprints: StyleFingerprint[], strength: number): string[] {
+        const library = this.fingerprintLibrary;
+        if (!library || typeof library.getV2FeaturesMap !== 'function') return [];
+
+        const v2Features = library.getV2FeaturesMap(enabledFingerprints.map(fp => fp.id));
+        if (v2Features.size === 0) return [];
+
+        const intensity = getStyleIntensityEngine();
+        return buildV2FeatureSection(enabledFingerprints, v2Features, {
+            descriptionLength: (fpId) => {
+                if (strength < 0.3) return 0;
+                const config = typeof library.getIntensityConfig === 'function'
+                    ? library.getIntensityConfig(fpId)
+                    : undefined;
+                return config ? intensity.previewIntensity(config).global.descriptionLength : 0;
+            },
+        });
     }
 
     /**

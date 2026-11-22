@@ -49,6 +49,10 @@
 
 - 现有 7 段注入（`buildGlobalTier`）继续读 V1 投影，投影只来自 `extractV1FeaturesFromV2`（`:2619`），不读磁盘上的 V1 字段。
 - V2 独有的 5 维（`sentencePattern / emotion / tension / infoDensity / description`）在 7 段之后追加一段「V2 深化特征（量化）：」，每维一行（标签 + 定量摘要 + 本地描述）。这是用户 2026-11-21 决定（「P2 和 P3 按效果最好的做，暂不考虑成本」）的落地：**默认开启**，只受现有强度配置约束（`globalIntensity: 0` 时整段随之消失，描述长度仍按 `descriptionLength` 截断）。
+- 正文有两条入口，两处都必须吃到同一段 V2 增量（2026-11-22 补齐，见 §12）：
+  - 11 步流水线正文：`engine/knowledge-injector.ts#buildFingerprintLines` → `buildV2Lines`（唯一指纹注入口）；
+  - 协同写作全局层：`engine/style/dynamic-injection-engine.ts#buildGlobalTier`。
+  两处共用 `engine/style/v2-feature-section.ts#buildV2FeatureSection`，文案与段落格式只有一份。
 - 只注入 V2 新增 5 维，不与 7 维投影重复；`status !== 'complete'` 的维度跳过（避免把「暂无数据」写进提示词）。
 
 ### R4 UI：V2 为主视图，V1 为「提示词视图」
@@ -99,6 +103,7 @@ P2（写路径统一，已满足）：
 P3（提示词增量，已落地）：
 
 8. V2 5 维在全局层 7 段之后追加「V2 深化特征（量化）：」，默认开启、受强度配置约束；`dynamic-injection-engine.test.ts` 契约用例覆盖「有/无 map」与「强度 0 全关」。
+9. 11 步正文同样注入 V2 5 维：`knowledge-injector-fingerprint.test.ts` 覆盖「V1 七维在前、V2 段在后」「pending 维度跳过」「库无 V2 数据不出现该段」「强度 0 连 V2 一起消失」「强度 < 0.3 只留定量摘要」（2026-11-22）。
 
 ## 6. 分阶段工作项
 
@@ -139,8 +144,8 @@ P3（提示词增量，已落地）：
 | 新建入口 | `addTemplate/addGlobal/addProject(fp, analysis?)` 首行 `registerAnalysis` |
 | 加载期回填 | `backfillV2Dimensions(scope)`，由 `migrateV1ToV2Dimensions` 每作用域末尾调用；`backfilledScopes` 保证每进程一次 |
 | 重抽补齐 | `refillFingerprint` 里 `StyleFeaturesAnalyzerV2.analyze(sourceText)` → `registerAnalysis` |
-| 提示词增量 | `engine/style/dynamic-injection-engine.ts`：`summarizeV2Dimension` + `v2Pct`；`build(..., v2Features?)` 第 7 参 |
-| 读取接口 | `getV2FeaturesMap(ids)`；`engine/prompt-builder.ts:339` 用 `typeof ... === 'function'` 守卫后传入（兼容旧测试桩） |
+| 提示词增量 | `engine/style/v2-feature-section.ts`：`summarizeV2Dimension` + `buildV2FeatureSection`（唯一实现）；`engine/style/dynamic-injection-engine.ts#buildGlobalTier` 调用它 |
+| 读取接口 | `getV2FeaturesMap(ids)`；`engine/prompt-builder.ts:339` 与 `engine/knowledge-injector.ts:1455` 都用 `typeof ... === 'function'` 守卫后传入（兼容旧测试桩） |
 | 测试 | `tests/unit/engine/style/fingerprint-analysis-merge.test.ts`（6 例：P2a 落盘 12 维 / P2b 回填 + 备份 / P3 注入段与强度联动）；`fingerprint-v2-canonical-write.test.ts`（3 例 P1） |
 | 实机 | 开发 vault 写指纹库首次加载：`fp_demo_partial` / `fp_demo_legacy` 由 5 维 pending → 全 complete，生成 `global-fingerprints.json.v2backfill.bak`（18,687 字节） |
 ## 11. 落地记录（P4 内存直接持 V2，2026-11-22）
@@ -157,3 +162,16 @@ P3（提示词增量，已落地）：
 | 验收 | `tests/unit/engine/style/fingerprint-v2-inmemory.test.ts` 5 例：加载后投影与 V2 一致 / update 改名+改文案不丢新维 / 启停不动维度 / copy 到项目层仍完整 / syncFromTemplate 只换 7 维文案 |
 
 结果：内存中 V2 是唯一真相，三张 V1 表由 V2 派生；不再存在「V1 表被改写、V2 没跟上」或「重载把 12 维丢弃」的分叉。磁盘格式与提示词注入顺序均未变。
+## 12. 落地记录（正文注入补齐，2026-11-22）
+
+P3 只把 V2 5 维接到了 `engine/prompt-builder.ts` / `TieredInjectionBuilder`，而 11 步流水线与协同写作的正文实际走的注入口是 `engine/knowledge-injector.ts#buildFingerprintLines`（`step-runner.ts` → `injectForBodyGeneration` → `buildStyleInjection`），因此 R3 的「默认开启」在正文上并未生效。本轮补齐：
+
+| 项 | 实现 |
+| --- | --- |
+| 唯一实现 | 新增 `engine/style/v2-feature-section.ts`：`V2_FEATURE_SECTION_TITLE`、`summarizeV2Dimension`、`buildV2FeatureSection(fingerprints, v2Features, { descriptionLength })`；跳过 `status !== 'complete'` 的维度，无内容返回 `[]` |
+| 协同写作 | `dynamic-injection-engine.ts#buildGlobalTier` 删除内联 V2 块，改调 `buildV2FeatureSection(activeFps, v2Features, ...)` |
+| 11 步正文 | `knowledge-injector.ts#buildFingerprintLines(query, strength)` 在 V1 七维之后、`参考指纹来源：` 之前插入 `buildV2Lines`；`getV2FeaturesMap` 用 `typeof` 守卫（兼容旧测试桩）；强度 < 0.3 时 `descriptionLength` 返回 0（只留定量摘要），否则按 `getStyleIntensityEngine().previewIntensity(config).global.descriptionLength` 截断，与 TieredBuilder 同口径 |
+| 测试 | `tests/unit/engine/knowledge-injector-fingerprint.test.ts` 新增 5 例（见 §5 第 9 条）；现有 7 例与 `dynamic-injection-engine.test.ts` 58 例全部通过 |
+| 不改动 | 注入顺序、强度语义、V1 投影文案、豆腐块格式均未变；`globalIntensity: 0` 仍在取列表阶段过滤，V2 段随之消失 |
+
+沙箱说明：本机 vitest 的 esbuild/vite 需要 spawn 子进程（命名管道），沙箱内核拒为 EPERM，本轮用 `esbuild.exe` 单进程打包测试文件 + 一个 `vitest` 替身（`describe/it/expect` 子集）跑真实测试代码，另用独立校验脚本跑真实 `KnowledgeInjector`，6 项断言全过。CI / 开发机仍以 `npm test` 为准。
