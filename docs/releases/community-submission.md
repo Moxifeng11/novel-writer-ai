@@ -1,8 +1,16 @@
 # 上架 Obsidian 社区插件目录
 
-> 已上架版本 4.97.4 · 记录时间 2026-11-21 · 维护：DSH
+> 最新发版 4.97.5（2026-11-24，Release 已验，目录扫描跟进中） · 上一已上架版本 4.97.4 · 维护：DSH
 
-## 〇、结果：4.97.4 已上架（2026-11-21 22:55 复核通过）
+## 〇、4.97.5 发版（2026-11-24）
+
+- 覆盖内容：正文四项校验软聚合 / 按磁盘正文重算 / 格式偏离行号 + 视角剔除对话 / 章末钩子子短语判定；非破坏性，`minAppVersion` 维持 **1.8.7**。
+- 本地门禁：`preflight:release` 全绿（1024 个测试文件、10621 通过 + 3 跳过；覆盖率棘轮通过，`ui/views` 基线按 33 文件重锚）。生产冒烟：非 AI 路径 4 步通过；完整 AI 冒烟受开发 vault 的 API Key 401 阻塞（环境问题，与本版代码无关）。
+- tag `4.97.5` == `manifest.version`，Release workflow **success**（run 45422725034）；资产：`main.js` 6,262,628（SHA256 `0E57B801…93A0`）、`styles.css` 804,584、`manifest.json` 467、`versions.json` 1,998、zip 2,502,512、`SHA256SUMS.txt` 595。
+- `npm run check:release:remote` 通过：四资产体积与本地一致，`main.js` / `styles.css` 的 artifact attestation 校验通过。
+- 目录侧：发版后立即检查仍是 4.97.4（`Last updated` 停在 Nov 21）；4.97.4 的先例是发版后约 1–1.5 小时由目录周期扫描覆盖——上架判据仍只看下方三项。
+
+## 〇之一、上一版：4.97.4 上架记录（2026-11-21 复核通过）
 
 `npm run check:published -- --expect 4.97.4` 三项判据全部通过：
 
@@ -17,7 +25,7 @@
 
 这一版是破坏性升级（最低 Obsidian **1.8.7**、用户可见删除改走回收站），`versions.json` 已按版本记录客户端下限，老客户端会按规则停在 4.97.3。
 
-## 〇之一、上一版：4.97.3 上架记录（2026-11-21 复核通过）
+## 〇之二、更早：4.97.3 上架记录（2026-11-21 复核通过）
 
 `npm run check:published` 三项判据全部通过：
 
@@ -39,14 +47,14 @@
 
 关键时间线：4.97.2 修掉唯一阻断项（两条 eslint 指令缺描述）→ 4.97.3 修掉构建不可复现（fflate + mtime:0）→ 目录周期扫描覆盖 4.97.3 后放行。此前「页面停在 4.97.1」是目录尚未扫描（`Last updated` 早于发版），并非被拒。
 
-## 〇之二、4.97.4 发版 → 审核 → 上架（2026-11-21）
+## 〇之三、4.97.4 发版 → 审核 → 上架（2026-11-21）
 
 - tag `4.97.4` 已推、Release workflow **success**；资产 `main.js` 6,241,845（SHA256 `070ADD60…03B8`，与干净检出构建逐字节一致）、`styles.css` 805,893、`manifest.json` 467、zip 2,496,980、`SHA256SUMS.txt` 595。
 - 破坏性声明（Release notes 与 `docs/releases/4.97.4.md` 都已写）：最低 Obsidian **1.8.7**、用户可见删除改走回收站。
 - 发版后 21:45 首查仍是 4.97.3（目录周期检查未覆盖新版）；22:40 账号页 Reviews 里已出现 `4.97.4 … Pending`，22:52 点 `Check for new releases` 返回「A scan has already been run for this release and results are available on your dashboard.」；22:55 复查三项全绿。
 - 经验：**目录周期检查（`Last updated`）滞后于审核结果**，`Pending` 条目出现后不要急着反复点触发；判据只看 `check:published` 三项。
 
-### 〇之二之一、在没有浏览器会话的机器上怎么点这一下
+### 〇之三之一、在没有浏览器会话的机器上怎么点这一下
 
 审核触发必须登录 Obsidian 账号。本机登录态在 **DSH 桌面应用的内嵌浏览器面板**里（Electron，`D:\deepseek harness\DeepSeek Harness.exe`），不是系统 Edge、也不是另起的 Chromium——那两者的 profile 里没有会话。
 
