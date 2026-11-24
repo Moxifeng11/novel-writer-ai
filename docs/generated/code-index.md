@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 358 | 148168 | 1969 | 1557 | 79% |
+| `engine/` | 359 | 148530 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53714 | 2291 | 1781 | 78% |
+| `shared/` | 268 | 53749 | 2293 | 1783 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
 | `ui/` | 308 | 114115 | 1183 | 946 | 80% |
@@ -159,7 +159,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 3119 | 13 | 9 |
+| `engine/deconstruction-scheduler.ts` | 3228 | 13 | 9 |
 | `engine/deconstruction-worker-manager.ts` | 695 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4062 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
@@ -397,6 +397,7 @@
 | `engine/world-state-snapshot.ts` | 199 | 6 | 6 |
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
+| `engine/zhuque-detector.ts` | 253 | 5 | 2 |
 | `services/api-connectivity-service.ts` | 437 | 9 | 9 |
 | `services/assertion-context-service.ts` | 78 | 3 | 2 |
 | `services/attachment-service.ts` | 103 | 2 | 1 |
@@ -506,7 +507,7 @@
 | `shared/creation-flow.ts` | 650 | 13 | 13 |
 | `shared/creation-mode.ts` | 488 | 25 | 21 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
-| `shared/deconstruction-settings.ts` | 118 | 8 | 7 |
+| `shared/deconstruction-settings.ts` | 132 | 8 | 7 |
 | `shared/degradation-notifier.ts` | 286 | 11 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
@@ -596,7 +597,7 @@
 | `shared/obsidian-internal-bridge.ts` | 86 | 3 | 3 |
 | `shared/obsidian-query.ts` | 100 | 3 | 2 |
 | `shared/optimization-advisor.ts` | 617 | 16 | 6 |
-| `shared/paths.ts` | 1930 | 224 | 218 |
+| `shared/paths.ts` | 1951 | 226 | 220 |
 | `shared/pet-activity.ts` | 131 | 8 | 5 |
 | `shared/pet-geometry.ts` | 118 | 9 | 3 |
 | `shared/pet-image-model.ts` | 192 | 11 | 7 |

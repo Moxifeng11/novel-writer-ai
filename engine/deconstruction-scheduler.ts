@@ -37,6 +37,7 @@ import { CharacterDeconstructor, CharacterAnalysisResult } from './deconstructor
 import { CommercialDeconstructor, CommercialAnalysisResult } from './deconstructors/commercial-deconstructor';
 import { ReadabilityDeconstructor, ReadabilityAnalysisResult } from './deconstructors/readability-deconstructor';
 import { DeconstructionWorkerManager } from './deconstruction-worker-manager';
+import { ZhuqueDetector } from './zhuque-detector';
 import { SchedulerSegmentIntegration } from './scheduler-segment-integration';
 import type { AnalysisResult } from './incremental-result-aggregator';
 import { SegmentAwareBreakdown } from './segment-aware-breakdown';
@@ -113,6 +114,7 @@ import { yieldToUI } from '@/shared/yield';
 import { createLogger } from '@/shared/logger';
 import { chunkOriginalText } from '@/services/knowledge-original-chunker';
 import { KB_BREAKDOWN_HARD_LIMIT } from '@/shared/thresholds';
+import { kbBookZhuqueDetectionFile } from '@/shared/paths';
 
 const log = createLogger('DeconstructionScheduler');
 import {
@@ -320,6 +322,13 @@ export interface DeconstructionSchedulerSettings {
     /** 以下字段由插件 settings 透传，用于把拆解 LLM 路由到本地 provider */
     customProviders?: Array<{ id: string; endpoint: string; models?: string[]; sourceType?: 'cloud' | 'local' }>;
     providerKeys?: Record<string, string>;
+    /**
+     * EdgeOne Makers API Key（2026-11-25）。
+     *
+     * 用于朱雀 AIGC 检测。只在 `deconstructionEngine.includeZhuque` 为 true 时读取；
+     * 未开启时完全不需要它（也不该要求用户配置）。
+     */
+    makersModelsKey?: string;
 }
 
 /**
@@ -1319,6 +1328,16 @@ export class DeconstructionScheduler {
             if (aborted) {
                 throw new Error('任务已取消');
             }
+
+            // 朱雀人味检测（2026-11-25）：作为**独立后置检查**，不混进 8 个统计维度。
+            //
+            // 为什么独立：
+            // 1. 8 维都是本地统计（可降级到纯统计），朱雀是外部 API（拿不到就是拿不到）
+            // 2. 它测的是「人味」这个单一整体属性，不是可拆解的维度
+            // 3. 混进 BreakdownDimension 要改 6 处 Record 类型，且会污染维度计数/进度
+            //
+            // 失败不影响主流程：朱雀不可用只记日志，不让整个拆解失败。
+            await this.runZhuquePostCheck(task, inputText, emitter);
 
             // 先落批量写（成功维度的质量分 frontmatter），再判定失败——
             // 失败早退不能把成功维度已产出的数据留在 pending 里丢掉。
@@ -2456,6 +2475,96 @@ export class DeconstructionScheduler {
         }
 
         return { usedVector: vectorUsed, result };
+    }
+
+    /**
+     * 朱雀人味检测后置检查（2026-11-25）。
+     *
+     * 拆解完 8 个统计维度后跑一次，把真实的人工率写进独立的
+     * `朱雀人味检测.md`，不混进任何统计维度文件。
+     *
+     * 为什么值得做：本仓 8 维全是代理指标（句长/标点/词表），
+     * 与朱雀人工率的相关性弱（长句 r=0.150）。只有朱雀自己给的分才可信。
+     *
+     * 失败语义：任何失败（未开启/无 key/额度不足/超时）都只记日志并返回，
+     * **不让整个拆解失败**——朱雀是增值信息，不是必需步骤。
+     *
+     * @param task - 拆解任务
+     * @param text - 本次实际拆解的文本（已按硬上限截断）
+     * @param emitter - 进度发射器
+     */
+    private async runZhuquePostCheck(
+        task: BreakdownTask,
+        text: string,
+        emitter?: ProgressEmitter,
+    ): Promise<void> {
+        const engineSettings = this.getDeconstructionEngineSettings();
+        if (!engineSettings.includeZhuque) return;
+
+        const apiKey = String(this.settingsGetter?.()?.makersModelsKey || '').trim();
+        if (!apiKey) {
+            log.warn('[DeconstructionScheduler] 已开启朱雀检测但未配置 MAKERS_MODELS_KEY，跳过');
+            return;
+        }
+
+        const detector = new ZhuqueDetector({
+            enabled: true,
+            apiKey,
+            maxChars: engineSettings.zhuqueMaxChars,
+        });
+        emitter?.setProgress(98, '正在调用朱雀人味检测...');
+        try {
+            const r = await detector.detect(text);
+            if (!r.available) {
+                log.warn(`[DeconstructionScheduler] 朱雀检测不可用：${r.reason}`);
+                await this.appendBreakdownLog(
+                    task.bookName,
+                    `## 朱雀人味检测\n\n不可用：${r.reason}\n\n`,
+                    task.bookId,
+                );
+                return;
+            }
+
+            const gradeLabel: Record<string, string> = {
+                HUMAN: '人工（≥80%）',
+                LIKELY_HUMAN: '偏人工（≥50%）',
+                MIXED: '混合（≥20%）',
+                LIKELY_AI: '偏 AI（>0%）',
+                AI: 'AI（0%）',
+            };
+            const md = [
+                '## 朱雀人味检测（AIGC 判定）',
+                '',
+                `- **人工率**：${r.humanRate}%`,
+                `- **AI 率**：${r.aiRate}%`,
+                `- **疑似 AI**：${r.suspectedRate}%`,
+                `- **整体置信度（softmax）**：${r.softmax.toFixed(4)}（越高越像 AI）`,
+                `- **判定档位**：${gradeLabel[r.grade] || r.grade}`,
+                `- **检测字数**：${r.textLength} 字`,
+                `- **消耗额度**：${r.billedTokens} tokens（Makers 每月 50 万）`,
+                '',
+                '> 这是**唯一直接测「人味」**的判定。其余 8 个维度的句长/标点/词表',
+                '> 都是代理指标，与朱雀人工率相关性弱（长句 r=0.150），不应单独用来判断像不像人写。',
+                '',
+            ];
+            if (r.segments && r.segments.length > 1) {
+                const aiSegs = r.segments.filter(s => s.label !== 0);
+                if (aiSegs.length > 0) {
+                    md.push('### AI 味集中的分段', '');
+                    for (const s of aiSegs.slice(0, 5)) {
+                        md.push(`- 第 ${s.order} 段（置信 ${s.conf.toFixed(3)}）：${s.text}`);
+                    }
+                    md.push('');
+                }
+            }
+            await writeVaultText(this.app, kbBookZhuqueDetectionFile(task.bookName, this.baseDir), md.join('\n'));
+            log.info(
+                `[DeconstructionScheduler] 《${task.bookName}》朱雀：人工 ${r.humanRate}% / `
+                + `${r.grade} / softmax ${r.softmax.toFixed(4)} / ${r.billedTokens} tokens`,
+            );
+        } catch (e) { // silent-ok: 朱雀是增值信息，失败不能让整个拆解任务失败；已记日志并写不可用说明
+            log.warn('[DeconstructionScheduler] 朱雀检测异常（不影响拆解结果）:', e);
+        }
     }
 
     private async breakdownReadability(

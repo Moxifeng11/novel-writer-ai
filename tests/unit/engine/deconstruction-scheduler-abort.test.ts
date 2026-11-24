@@ -25,6 +25,8 @@ function createScheduler(): DeconstructionScheduler {
                 enabledDimensions: ['style'] as any[],
                 includeCommercial: false,
                 includeReadability: false,
+            includeZhuque: false,
+            zhuqueMaxChars: 20000,
                 vectorEnabled: false,
                 vectorModel: 'bge-m3',
                 vectorCacheSize: 5000,

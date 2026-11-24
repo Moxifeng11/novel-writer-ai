@@ -1568,6 +1568,27 @@ export const KB_COMMERCIAL_ANALYSIS_FILE = '商业价值.md';
  * 路径常量 KB_READABILITY_ANALYSIS_FILE：`'可读性分析.md'`。
  */
 export const KB_READABILITY_ANALYSIS_FILE = '可读性分析.md';
+
+/**
+ * 路径常量 KB_ZHUQUE_DETECTION_FILE：`'朱雀人味检测.md'`。
+ *
+ * 朱雀 AIGC 检测结果（2026-11-25）。与 8 个统计维度分开存：
+ * 它是外部模型判定，不是本地统计，混进「可读性」等文件会误导。
+ */
+export const KB_ZHUQUE_DETECTION_FILE = '朱雀人味检测.md';
+
+/**
+ * kbBookZhuqueDetectionFile：返回路径 ``${kbBookDir(bookName, baseDir)}/${KB_ZHUQUE_DETECTION_FILE}``。
+ *
+ * @param bookName - 书名
+ * @param baseDir - 知识库根目录（可省略）
+ * @returns 朱雀检测结果文件路径
+ * @example
+ * kbBookZhuqueDetectionFile('斗破苍穹') // '知识库/斗破苍穹/朱雀人味检测.md'
+ */
+export function kbBookZhuqueDetectionFile(bookName: string, baseDir?: string): string {
+    return `${kbBookDir(bookName, baseDir)}/${KB_ZHUQUE_DETECTION_FILE}`;
+}
 /**
  * 路径常量 KB_BREAKDOWN_LOG_FILE：`'拆解日志.md'`。
  */

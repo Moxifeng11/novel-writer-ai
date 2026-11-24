@@ -27,6 +27,18 @@ export interface DeconstructionEngineSettings {
     enabledDimensions: BreakdownDimension[];
     includeCommercial: boolean;
     includeReadability: boolean;
+    /**
+     * 是否启用朱雀人味检测（2026-11-25）。
+     *
+     * **默认关闭**：它会消耗 EdgeOne Makers 额度（每月 50 万 tokens）。
+     * 开启后拆解多一个「朱雀人味检测」维度，返回真实的人工率占比。
+     *
+     * 为什么值得开：其余 8 个维度都是本地统计代理指标，
+     * 与朱雀人工率的相关性弱（长句 r=0.150）。只有朱雀自己给的分才可信。
+     */
+    includeZhuque: boolean;
+    /** 朱雀单次检测的最大字符数（超出截断，省额度） */
+    zhuqueMaxChars: number;
     vectorEnabled: boolean;
     vectorModel: string;
     vectorCacheSize: number;
@@ -48,6 +60,8 @@ export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSetting
     enabledDimensions: ['style', 'rhythm', 'technique', 'structure', 'character', 'foreshadow'],
     includeCommercial: true,
     includeReadability: true,
+    includeZhuque: false,
+    zhuqueMaxChars: 20000,
     vectorEnabled: true,
     vectorModel: 'bge-m3',
     vectorCacheSize: 5000,
