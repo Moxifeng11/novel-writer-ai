@@ -1,6 +1,6 @@
 # 上架 Obsidian 社区插件目录
 
-> 最新发版 4.97.5（2026-11-24，Release 已验）· **目录扫描待用户登录触发**（2026-11-25 复核，三项仍红）· 上一已上架版本 4.97.4 · 维护：ZCode（2026-11-25 起接手）
+> 最新已上架 4.97.5（2026-11-25 三项全绿，可安装）· 维护：ZCode（2026-11-25 起接手）
 
 ## 〇、4.97.5 发版（2026-11-24）
 
@@ -8,28 +8,49 @@
 - 本地门禁：`preflight:release` 全绿（1024 个测试文件、10621 通过 + 3 跳过；覆盖率棘轮通过，`ui/views` 基线按 33 文件重锚）。生产冒烟：非 AI 路径 4 步通过；完整 AI 冒烟受开发 vault 的 API Key 401 阻塞（环境问题，与本版代码无关）。
 - tag `4.97.5` == `manifest.version`，Release workflow **success**（run 45422725034）；资产：`main.js` 6,262,628（SHA256 `0E57B801…93A0`）、`styles.css` 804,584、`manifest.json` 467、`versions.json` 1,998、zip 2,502,512、`SHA256SUMS.txt` 595。
 - `npm run check:release:remote` 通过：四资产体积与本地一致，`main.js` / `styles.css` 的 artifact attestation 校验通过。
-- 目录侧：发版后立即检查仍是 4.97.4（`Last updated` 停在 Nov 21）；4.97.4 的先例是发版后约 1–1.5 小时由目录周期扫描覆盖——上架判据仍只看下方三项。
 
-### 〇之二、目录复核结论（2026-11-25，ZCode）
+### 〇之二、目录复核结论（2026-11-25 收口，ZCode）
 
-`node scripts/check-published.mjs --expect 4.97.5` 三项实际值（复核时点 2026-11-25）：
+**最终状态：三项全绿，4.97.5 已可通过 Obsidian 客户端安装。**
+
+```text
+[check:published] novel-writer-ai（manifest 4.97.5）
+  目录上次检查：4 hours ago（Nov 24, 2026） · 下载 92
+  ✓ 插件页 Current version = 4.97.5 —— 实际 4.97.5
+  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录
+  ✓ RSS 出现 4.97.5 —— 最新 4.97.5
+[check:published] 已上架：4.97.5 可通过 Obsidian 客户端安装
+```
+
+**收口三步（前两步曾卡两天）**：
+
+| 时点 | 插件页版本 | RSS | 说明 |
+| --- | --- | --- | --- |
+| Nov 21 复核 | 4.97.4 | 4.97.4 | 目录站自 Nov 21 后未再扫描 |
+| 触发复审 | 4.97.4 | **4.97.5** | 点 `Check for new releases` → 返回「A scan has been queued」 |
+| **Nov 25 最终** | **4.97.5** | **4.97.5** | 扫描跑完，三项全绿 |
+
+**根因**：目录站扫描是队列化的异步任务。点按钮后 RSS 立刻更新（几分钟），
+插件页版本要等完整扫描跑完（本次约数十分钟到数小时）。此前误判为"审核未通过"，
+实际只是没触发扫描。
+
+**后续发版必须记住**：`tag` + GitHub Release 发布后**必须**手动点一次
+`Check for new releases`，否则目录站不会自己发现新版本（4.97.4 的"约 1–1.5 小时自动覆盖"
+是靠周期扫描撞上的，不可依赖）。
+
+<details>
+<summary>收口前的排查记录（保留作历史）</summary>
 
 ```text
 [check:published] novel-writer-ai（manifest 4.97.5）
   目录上次检查：3 days ago（Nov 21, 2026） · 下载 86
-  · 插件页 Current version = 4.97.5 —— 实际 4.97.4      ← ✗ 未更新
-  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录        ← ✓
-  · RSS 出现 4.97.5 —— 最新 4.97.4                      ← ✗ 未更新
-[check:published] 尚未上架到 4.97.5（审核未通过或尚未触发复审）
+  · 插件页 Current version = 4.97.5 —— 实际 4.97.4      ← 未更新
+  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录
+  · RSS 出现 4.97.5 —— 最新 4.97.4                      ← 未更新
 ```
 
-**结论**：目录站自 Nov 21 后未再扫描（`Last updated` 三天未动），4.97.5 未被复审。
 已排除代码/Release 问题（`check:release:remote` 通过、资产与 attestation 均验）。
-
-**需要用户操作（阻塞项）**：登录 `community.obsidian.md` → 账号页或插件页点
-**`Check for new releases`**。若返回「A scan has already been run」，说明扫描已在队列，
-隔几分钟刷新再看。完成后重跑 `node scripts/check-published.mjs --expect 4.97.5`，
-三项全绿即把本节改为上架结论并写日期。
+</details>
 
 > 注：手动触发后目录侧更新通常需数小时（4.97.4 先例约 1–1.5 小时）。本项**不要轮询**；
 > 判据只认 `check:published` + RSS + 市场清单，不用临时脚本撞目录站。
