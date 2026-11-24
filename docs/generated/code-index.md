@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 357 | 147851 | 1966 | 1556 | 79% |
+| `engine/` | 357 | 147932 | 1967 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 268 | 53714 | 2291 | 1781 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
@@ -159,7 +159,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 3030 | 12 | 9 |
+| `engine/deconstruction-scheduler.ts` | 3111 | 13 | 9 |
 | `engine/deconstruction-worker-manager.ts` | 695 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4062 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |

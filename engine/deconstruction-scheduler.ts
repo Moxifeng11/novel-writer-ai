@@ -74,6 +74,38 @@ function notifyLlmLocalModelRejected(model: string): void {
     });
 }
 
+/** 重负载拆解通知去重（同一本书 + 同一原因只提示一次） */
+const heavyTaskNotified = new Set<string>();
+
+/** 重置重负载通知去重状态（仅测试用） */
+export function resetHeavyTaskNoticeForTest(): void {
+    heavyTaskNotified.clear();
+}
+
+/**
+ * 通知「本次拆解开销较大」。
+ *
+ * @param bookName - 书名
+ * @param reasons - 风险因素列表
+ * @param severe - 是否严重（建议直接调整设置）
+ */
+function notifyHeavyDeconstruction(bookName: string, reasons: string[], severe: boolean): void {
+    const key = `${bookName}|${reasons.join('|')}`;
+    if (heavyTaskNotified.has(key)) return;
+    heavyTaskNotified.add(key);
+    getDegradationNotifier().notify({
+        source: 'quality',
+        from: 'full',
+        to: severe ? 'reduced' : 'full',
+        reason: `《${bookName}》拆解开销较大：${reasons.join('；')}。`
+            + `拆解期间 Obsidian 可能卡顿——${severe
+                ? '建议减少维度或关闭向量/LLM 增强后再试。'
+                : '可关闭部分维度以提速。'}`,
+        severity: severe ? 'warning' : 'info',
+        recoverable: true,
+    });
+}
+
 import { TimeEstimator } from '@/shared/time-estimator';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { QualityScorer, QualityScoringInput } from './quality-scorer';
@@ -676,6 +708,12 @@ export class DeconstructionScheduler {
         const resolvedDimensions = dimensions?.length
             ? dimensions
             : this.resolveDefaultDimensions(engineSettings);
+
+        // 2026-11-25：拆解前风险预检。
+        // 用户在 93 万字书上开 8 维 + 向量增强（会退回主线程）导致 Obsidian 卡死。
+        // 这里在入队前就把「高开销组合」告知用户，而不是等到卡死才让用户猜。
+        this.warnIfHeavyTask(book.name, sourceText.length, resolvedDimensions, engineSettings);
+
         const taskId = generateTaskId();
         const task: BreakdownTask = {
             id: taskId,
@@ -1636,6 +1674,49 @@ export class DeconstructionScheduler {
                 log.warn(`[DeconstructionScheduler] 批量写入失败 ${path}:`, e)
             )
         ));
+    }
+
+    /**
+     * 拆解前风险预检：高开销组合提前提醒用户。
+     *
+     * 2026-11-25：用户报告「知识库拆解直接导致 Obsidian 卡住」。
+     * 根因是三个因素叠加（全文不截断 / 增强退回主线程 / 8 维全开），
+     * 但用户在卡死前没有任何提示。这里在入队前算出风险等级并告知。
+     *
+     * 判定依据（按实际耗时权重）：
+     * - 文本长度：超硬上限会截断，但接近上限仍然慢
+     * - 维度数：每维一次独立统计扫描；style 维度还含 4 次向量化
+     * - 增强开关：向量增强让 `*:vector` 任务退回主线程；LLM 增强让**全部**任务退回
+     *
+     * @param bookName - 书名（提示用）
+     * @param textLength - 原文长度
+     * @param dimensions - 本次要跑的维度
+     * @param engineSettings - 拆解引擎设置
+     */
+    private warnIfHeavyTask(
+        bookName: string,
+        textLength: number,
+        dimensions: BreakdownDimension[],
+        engineSettings: DeconstructionEngineSettings,
+    ): void {
+        const dimCount = dimensions.length;
+        const isMainThread = engineSettings.vectorEnabled || engineSettings.llmEnabled;
+        const chars = Math.min(textLength, KB_BREAKDOWN_HARD_LIMIT);
+        // 粗估：每维每 10 万字约 1 个「耗时单位」；style 维度含 4 次向量化权重加倍
+        const weight = dimensions.reduce((n, d) => n + (d === 'style' ? 2 : 1), 0);
+        const cost = (chars / 100_000) * weight * (isMainThread ? 2 : 1);
+
+        if (cost < 3) return; // 轻负载不打扰
+
+        const reasons: string[] = [];
+        if (textLength > KB_BREAKDOWN_HARD_LIMIT) {
+            reasons.push(`原文 ${textLength.toLocaleString()} 字，将按 ${KB_BREAKDOWN_HARD_LIMIT.toLocaleString()} 字截断处理`);
+        }
+        if (dimCount >= 7) reasons.push(`${dimCount} 个维度全开`);
+        if (engineSettings.vectorEnabled) reasons.push('向量增强已开（部分任务退回主线程）');
+        if (engineSettings.llmEnabled) reasons.push('LLM 增强已开（全部任务退回主线程）');
+
+        notifyHeavyDeconstruction(bookName, reasons, cost >= 6);
     }
 
     /**

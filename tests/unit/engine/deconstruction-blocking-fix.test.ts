@@ -87,3 +87,17 @@ describe('拆解卡死修复：维度数量', () => {
         expect(DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS.enabledDimensions).toHaveLength(6);
     });
 });
+
+describe('拆解卡死修复：重负载预检', () => {
+    it('重负载通知去重状态可重置（测试隔离）', async () => {
+        const mod = await import('../../../engine/deconstruction-scheduler');
+        expect(typeof mod.resetHeavyTaskNoticeForTest).toBe('function');
+        expect(() => mod.resetHeavyTaskNoticeForTest()).not.toThrow();
+    });
+
+    it('本地模型通知去重状态可重置', async () => {
+        const mod = await import('../../../engine/deconstruction-scheduler');
+        expect(typeof mod.resetLlmLocalModelNoticeForTest).toBe('function');
+        expect(() => mod.resetLlmLocalModelNoticeForTest()).not.toThrow();
+    });
+});
