@@ -91,6 +91,15 @@ const HEADING_RE = /^#{1,6}\s+/;
 const CHAPTER_TITLE_RE = /^第[0-9一二三四五六七八九十百千]+章(?:[\s：:].*)?$/;
 
 const SHORT_SENTENCE_LIMIT = 10;
+/**
+ * 长句门槛（字数）。
+ *
+ * 2026-11-25 校准：用 7 部真人网文、139 段 × 2000 字实测，
+ * 以 35 字为门槛时真人长句占比 **中位 39.13%**（P25 26.98% / P75 50%）。
+ * 旧阈值为 0.08 / 0.04（见 `analyzeProse`），比真人下四分位低 3 倍以上，
+ * 意味着**真人原文送进来也不会报「缺少长句」**——检测实际上从未生效。
+ * 门槛值保持不变（35 字），只修正判定阈值，避免与既有指标口径断裂。
+ */
 const LONG_SENTENCE_LIMIT = 35;
 
 /** 「不是A，(而)是B」先否定再肯定：逗号或句号分隔都算；真人偶尔用，同一章堆 3 次以上就是典型 AI 痕迹 */
@@ -414,14 +423,16 @@ export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
         ));
     }
 
-    if (metrics.longSentenceRatio < 0.08) {
-        const severe = metrics.longSentenceRatio < 0.04;
+    // 阈值基于 139 段真人网文实测（≥35 字长句中位 39.13%，P25 26.98%）。
+    // 低于 P10（19.18%）算明显缺失，低于 P25 算轻度缺失。
+    if (metrics.longSentenceRatio < 0.2698) {
+        const severe = metrics.longSentenceRatio < 0.1918;
         issues.push(issue(
             'long-sentence-deficit',
             severe ? 'high' : 'medium',
             '缺少长句',
             `35 字以上长句只占 ${Math.round(metrics.longSentenceRatio * 100)}%。`,
-            '每个场景至少写 2–3 个带从句或并列结构的长句，让句长有真实起伏。',
+            '每个场景至少写 2–3 个带从句、插入语或并列结构的长句；真人网文这一项通常接近四成，让句长有真实起伏。',
             severe ? 15 : 10,
         ));
     }
@@ -461,13 +472,15 @@ export function scoreProseRisk(metrics: ProseMetrics): ProseRiskReport {
         ));
     }
 
-    if (metrics.dashPer1000 > 4) {
+    // 真人 139 段基线：破折号中位 0 处/千字，P75 也是 0，P90 才 1.19。
+    // 旧阈值 4 处/千字几乎永不触发；1 处/千字已是 P90 以上，值得报。
+    if (metrics.dashPer1000 > 1) {
         issues.push(issue(
             'dash-overuse',
             'medium',
             '破折号过多',
             `每千字 ${metrics.dashPer1000} 处破折号。`,
-            '把破折号改成逗号、冒号或直接断句；全章控制在 2 处以内。',
+            '真人网文几乎不用破折号；改成逗号、冒号或直接断句。',
             6,
         ));
     }

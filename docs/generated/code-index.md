@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 357 | 147744 | 1965 | 1556 | 79% |
+| `engine/` | 357 | 147753 | 1965 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53678 | 2290 | 1780 | 78% |
+| `shared/` | 268 | 53691 | 2290 | 1780 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
 | `ui/` | 308 | 114062 | 1183 | 946 | 80% |
@@ -274,7 +274,7 @@
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
 | `engine/prompts/human-countable-hints.ts` | 15 | 1 | 1 |
-| `engine/prompts/human-voice.ts` | 104 | 5 | 5 |
+| `engine/prompts/human-voice.ts` | 113 | 5 | 5 |
 | `engine/prompts/index.ts` | 67 | 2 | 0 |
 | `engine/prompts/memory-prompts.ts` | 66 | 3 | 3 |
 | `engine/prompts/prompt-registry.ts` | 210 | 8 | 8 |
@@ -626,7 +626,7 @@
 | `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
-| `shared/prose-metrics.ts` | 574 | 10 | 10 |
+| `shared/prose-metrics.ts` | 587 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/provider-detection.ts` | 240 | 4 | 4 |
