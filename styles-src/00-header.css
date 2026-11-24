@@ -246,6 +246,30 @@
     --nw-modal-lg: min(900px, 92vw);
     --nw-modal-xl: clamp(900px, 92vw, 2000px);
 
+    /* ===== 侧边抽屉宽度（2026-11-25，六档语义） =====
+     * 模态框是"打断式"的，抽屉是"并置式"的——用户在抽屉里看/改资料时
+     * 正文还在旁边可见，所以抽屉不能太宽（会挤压编辑区）。
+     *
+     * 六档按「要放多少东西」分，分层逻辑参考云笔，值按本仓三栏布局定：
+     *   assistant 320 — 常驻对话助手（最窄，不抢焦点）
+     *   detail    380 — 只读详情（看一个对象）
+     *   editor    420 — 单条编辑（一个表单）
+     *   assist    480 — 辅助面板（列表 + 少量操作）
+     *   primary   520 — 主数据面板（角色/大纲/时间线，列表为主）
+     *   manage    560 — 管理面板（列表 + 表单 + 操作按钮，最宽）
+     *
+     * 用法：给抽屉根元素加 `.nw-drawer--{档位}`，不要再写死 width。
+     */
+    --nw-drawer-assistant: min(320px, 86vw);
+    --nw-drawer-detail: min(380px, 88vw);
+    --nw-drawer-editor: min(420px, 90vw);
+    --nw-drawer-assist: min(480px, 90vw);
+    --nw-drawer-primary: min(520px, 92vw);
+    --nw-drawer-manage: min(560px, 94vw);
+    /* 拖拽时的上下限（抽屉不会宽到挤压正文） */
+    --nw-drawer-min: 280px;
+    --nw-drawer-max: 720px;
+
     /* ===== 按钮补充变量 ===== */
     --nw-btn-primary-active-bg: color-mix(in srgb, var(--interactive-accent), black 15%);
     --nw-btn-secondary-active-bg: var(--background-modifier-active-hover);

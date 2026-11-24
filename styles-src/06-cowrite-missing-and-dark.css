@@ -33,7 +33,9 @@
     top: 0;
     right: 0;
     height: 100vh;
-    width: min(520px, 90vw);
+    /* 2026-11-25：改用抽屉宽度 token，不再写死 520px。
+     * 主数据档（primary）与原值一致，视觉不变但可通过变量全局调整。 */
+    width: var(--nw-drawer-primary, min(520px, 92vw));
     z-index: 920;
     background: var(--background-primary, #1e1e1e);
     border-left: 1px solid var(--nw-card-border, var(--background-modifier-border));
@@ -43,6 +45,25 @@
     overflow: hidden;
     transform: translateX(100%);
     transition: transform 0.25s ease-out;
+}
+
+/* ── 抽屉宽度六档（2026-11-25）──
+   给任意侧边抽屉根元素加对应类即可，避免各处写死 width。
+   与模态框尺寸（--nw-modal-*）分开：抽屉是并置式，必须给正文留出空间。 */
+.nw-drawer--assistant { width: var(--nw-drawer-assistant, min(320px, 86vw)); }
+.nw-drawer--detail { width: var(--nw-drawer-detail, min(380px, 88vw)); }
+.nw-drawer--editor { width: var(--nw-drawer-editor, min(420px, 90vw)); }
+.nw-drawer--assist { width: var(--nw-drawer-assist, min(480px, 90vw)); }
+.nw-drawer--primary { width: var(--nw-drawer-primary, min(520px, 92vw)); }
+.nw-drawer--manage { width: var(--nw-drawer-manage, min(560px, 94vw)); }
+/* 小屏统一退到 92vw，否则宽抽屉会把正文挤没 */
+@media (max-width: 760px) {
+    .nw-drawer--assistant,
+    .nw-drawer--detail,
+    .nw-drawer--editor,
+    .nw-drawer--assist,
+    .nw-drawer--primary,
+    .nw-drawer--manage { width: 92vw; }
 }
 .nw-suggestion-drawer.is-open { transform: translateX(0); }
 .nw-suggestion-drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--nw-card-border, var(--background-modifier-border)); flex-shrink: 0; }

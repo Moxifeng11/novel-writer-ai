@@ -83,6 +83,21 @@ export interface BodyWriteRequest {
      * 导入/迁移这类「明确要全量替换」的入口可显式关闭。
      */
     backupBeforeOverwrite?: boolean;
+    /**
+     * 是否走「待确认」写入（2026-11-25，借鉴云笔的「生成结果四态」）。
+     *
+     * 云笔的做法：AI 生成完不直接落库，先进「待确认」，用户点「采用」才写正文。
+     * 本仓此前 `write()` 直接覆盖正文，AI 写坏了只能手动回滚。
+     *
+     * **默认 `undefined` = 旧行为（直接写入）**，保证既有调用方零改动。
+     * 只有显式传 `true` 才走待确认路径：
+     * 1. 正文写到 `<同目录>/.pending/<文件名>`
+     * 2. 原正文**不动**
+     * 3. 结果里带 `pendingPath`，调用方据此提供「采用 / 弃用」
+     *
+     * 采用 = 用 `pendingPath` 的内容再调一次 `write()`（此时不传本字段）。
+     */
+    requireConfirm?: boolean;
 }
 
 /**
@@ -95,6 +110,13 @@ export interface BodyWriteResult {
     body: string;
     wordCount: number;
     title: string;
+    /**
+     * 待确认文件的 vault 路径（仅 `requireConfirm: true` 时存在）。
+     *
+     * 存在此字段时表示**正文未被修改**，内容在待确认区等用户决定。
+     * 调用方应展示「采用 / 弃用」；采用即用该路径内容重新调用 `write()`。
+     */
+    pendingPath?: string;
 }
 
 /**
@@ -343,6 +365,23 @@ ${fmRaw}
         const fmBlock = fmRaw.trim() ? `---\n${fmRaw.trim()}\n---\n\n` : '';
         const content = `${fmBlock}${titleLine}${body}\n`;
 
+        // 4.5 待确认写入（2026-11-25）：只写旁路文件，原正文不动。
+        // 采用动作由调用方用 pendingPath 的内容再调一次 write()（不带本字段）。
+        if (req.requireConfirm) {
+            const pendingPath = this.pendingPathOf(req.path);
+            await fs.mkdir(this.dirOf(pendingPath));
+            await fs.write(pendingPath, content);
+            log.info(`[BodyWriter] 已写入待确认区（正文未修改）: ${pendingPath}`);
+            return {
+                path: req.path,
+                created: false,
+                body,
+                wordCount: body.length,
+                title,
+                pendingPath,
+            };
+        }
+
         await fs.mkdir(this.dirOf(req.path));
         await fs.write(req.path, content);
 
@@ -484,7 +523,7 @@ ${fmRaw}
         try {
             await this.getFS().write(recoveryPath, req.raw);
             log.warn(`[BodyWriter] 已另存旁路草稿: ${recoveryPath}（原稿 ${oldRaw.length} 字未改动）`);
-        } catch (e) {
+        } catch (e) { // silent-ok: 旁路草稿是最后兜底，失败时已无其他可写位置；原稿未被覆盖，故只记 error
             log.error('[BodyWriter] 旁路草稿写入也失败，本次内容仅在内存中:', e);
         }
     }
@@ -500,6 +539,89 @@ ${fmRaw}
     private dirOf(path: string): string {
         const idx = path.lastIndexOf('/');
         return idx > 0 ? path.slice(0, idx) : '';
+    }
+
+    /**
+     * 计算某正文路径对应的「待确认」文件路径。
+     *
+     * 放在同目录的 `.pending/` 下：正文与待确认文件同目录，
+     * 项目移动/重命名时不会脱钩；且 `.pending` 以点开头，Obsidian 默认不索引，
+     * 不会污染正文列表。
+     *
+     * @param path - 正文文件 vault 路径
+     * @returns 待确认文件路径
+     * @example
+     * pendingPathOf('书A/03-大纲与章节/正文/第1卷/第1章_正文.md')
+     * // '书A/03-大纲与章节/正文/第1卷/.pending/第1章_正文.md'
+     */
+    private pendingPathOf(path: string): string {
+        const dir = this.dirOf(path);
+        const name = dir ? path.slice(dir.length + 1) : path;
+        return dir ? `${dir}/.pending/${name}` : `.pending/${name}`;
+    }
+
+    /**
+     * 采用待确认内容：把待确认文件写回正文并删除待确认文件。
+     *
+     * 走完整 `write()` 流程（串行锁 / 备份 / 规整 / frontmatter 不变量），
+     * 不做「直接复制文件」——否则会绕过 status/tags/word_count 的维护。
+     *
+     * @param pendingPath - `write({ requireConfirm: true })` 返回的待确认路径
+     * @param overrides - 覆盖参数（如 chapterNum/writingMode）；path 由本方法从 pendingPath 反推
+     * @returns 写入结果
+     * @throws 待确认文件不存在时抛出
+     * @example
+     * const r = await writer.write({ ...req, requireConfirm: true });
+     * if (r.pendingPath) await writer.adoptPending(r.pendingPath, { writingMode: 'batch' });
+     */
+    async adoptPending(pendingPath: string, overrides: Omit<BodyWriteRequest, 'path' | 'raw' | 'requireConfirm'> & { path?: string }): Promise<BodyWriteResult> {
+        const fs = this.getFS();
+        if (!(await fs.exists(pendingPath))) {
+            throw new Error(`待确认文件不存在: ${pendingPath}`);
+        }
+        const raw = await fs.read(pendingPath);
+        const targetPath = overrides.path || this.targetPathOfPending(pendingPath);
+        const result = await this.write({
+            ...overrides,
+            path: targetPath,
+            raw,
+            requireConfirm: false,
+        });
+        // 采用成功后清理待确认文件（失败不阻塞主流程）
+        try {
+            await fs.delete(pendingPath);
+        } catch (e) { // silent-ok: 正文已成功写入，残留待确认文件不影响正确性；抛错会让调用方误判采用失败
+            log.warn(`[BodyWriter] 待确认文件清理失败（正文已采用）: ${pendingPath}`, e);
+        }
+        return result;
+    }
+
+    /**
+     * 弃用待确认内容：只删除待确认文件，正文不动。
+     *
+     * @param pendingPath - 待确认文件路径
+     * @returns 是否确实删除了文件（不存在时返回 false）
+     * @example
+     * await writer.discardPending(r.pendingPath);
+     */
+    async discardPending(pendingPath: string): Promise<boolean> {
+        const fs = this.getFS();
+        if (!(await fs.exists(pendingPath))) return false;
+        await fs.delete(pendingPath);
+        log.info(`[BodyWriter] 已弃用待确认内容: ${pendingPath}`);
+        return true;
+    }
+
+    /**
+     * 从待确认路径反推原正文路径（`.pending/xxx.md` → `xxx.md`）。
+     *
+     * @param pendingPath - 待确认路径
+     * @returns 原正文路径
+     * @example
+     * targetPathOfPending('卷1/.pending/第1章_正文.md') // '卷1/第1章_正文.md'
+     */
+    targetPathOfPending(pendingPath: string): string {
+        return pendingPath.replace(/\/\.pending\//, '/').replace(/^\.pending\//, '');
     }
 }
 

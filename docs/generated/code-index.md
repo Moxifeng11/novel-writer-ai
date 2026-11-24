@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 358 | 148046 | 1969 | 1557 | 79% |
+| `engine/` | 358 | 148168 | 1969 | 1557 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 268 | 53714 | 2291 | 1781 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
@@ -91,7 +91,7 @@
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
 | `engine/beat-verifier.ts` | 70 | 3 | 1 |
-| `engine/body-writer.ts` | 559 | 8 | 8 |
+| `engine/body-writer.ts` | 681 | 8 | 8 |
 | `engine/cache/index.ts` | 24 | 3 | 0 |
 | `engine/cache/preload-manager.ts` | 670 | 6 | 6 |
 | `engine/canon-vector-indexer.ts` | 132 | 8 | 5 |

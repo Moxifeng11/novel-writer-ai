@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-21T20:28:47.373Z",
-  "note": "A-7：回滚确认并入 OperationConfirmModal，删除 nw-rollback-* 9 个类（-1309 bytes）",
-  "bytes": 804584,
+  "generatedAt": "2026-11-24T22:07:27.585Z",
+  "note": "2026-11-25 新增抽屉宽度六档类(nw-drawer--assistant/detail/editor/assist/primary/manage)，把 .nw-suggestion-drawer 写死的 520px 改为 token 引用。6 个新类 + 2418 字节，功能必需。",
+  "bytes": 807002,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 221,
-  "uniqueClasses": 4331,
+  "uniqueClasses": 4337,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }
