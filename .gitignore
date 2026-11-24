@@ -48,3 +48,4 @@ pet-image.json
 # 本地 preflight 输出（临时）
 /.preflight-out.txt
 /preflight-run.log
+.env.local
