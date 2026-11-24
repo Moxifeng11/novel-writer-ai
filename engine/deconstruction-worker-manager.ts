@@ -572,7 +572,14 @@ export class DeconstructionWorkerManager {
             || (taskType.endsWith(':vector') && Boolean(this.vectorEnhancer));
         if (needsEnhancement && this.useWorkerMode && !this.enhancementBypassLogged) {
             this.enhancementBypassLogged = true;
-            log.info('[DeconstructionWorkerManager] 向量/LLM 增强已启用，Worker 降级为主线程执行以保留增强结果');
+            const why = this.llmEnhancer ? 'LLM 增强' : '向量增强';
+            log.info(`[DeconstructionWorkerManager] ${why}已启用，Worker 降级为主线程执行以保留增强结果`);
+            // 2026-11-25：改为用户可见提示。此前只 log.info，用户不知道已降级，
+            // 大文件（数十万字）拆解时界面卡死却找不到原因。
+            notifyWorkerUnavailable(
+                `已启用${why}：拆解改在主线程执行，长文本可能卡顿。`
+                + `如需流畅处理大文件，可关闭${why}，或减少拆解维度。`,
+            );
         }
 
         if (this.useWorkerMode && this.workerManager && !needsEnhancement) {

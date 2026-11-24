@@ -53,7 +53,17 @@ export const DEFAULT_DECONSTRUCTION_ENGINE_SETTINGS: DeconstructionEngineSetting
     vectorCacheSize: 5000,
     vectorBatchSize: 32,
     llmEnabled: false,
-    llmModel: 'deepseek-r1:7b',
+    /**
+     * LLM 增强模型：**必须云端**（2026-11-25 修正，用户明确要求）。
+     *
+     * 旧默认值是 `'deepseek-r1:7b'`（本地 Ollama），两个问题：
+     * 1. 拆解增强要求严格 JSON 结构化输出，7B 级本地模型成功率低——用户实测「会出错」
+     * 2. 本地模型走主线程串行调用，是知识库拆解卡死的直接原因之一
+     *
+     * 空字符串 = 未选择：用户必须显式选云端模型才能开 LLM 增强。
+     * 注意：`vectorModel` 用本地是**正确**的（embedding 轻量、不要求结构化输出）。
+     */
+    llmModel: '',
     maxConcurrency: 2,
     textSampleLimit: 100000,
     dimensionConcurrency: 3,

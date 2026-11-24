@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 357 | 147753 | 1965 | 1556 | 79% |
+| `engine/` | 357 | 147851 | 1966 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53691 | 2290 | 1780 | 78% |
+| `shared/` | 268 | 53714 | 2291 | 1781 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114062 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114089 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -159,8 +159,8 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 2950 | 11 | 9 |
-| `engine/deconstruction-worker-manager.ts` | 688 | 3 | 3 |
+| `engine/deconstruction-scheduler.ts` | 3030 | 12 | 9 |
+| `engine/deconstruction-worker-manager.ts` | 695 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4062 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
 | `engine/deconstructors/deconstruction-worker.ts` | 204 | 0 | 0 |
@@ -236,7 +236,7 @@
 | `engine/ledger/ledger-model.ts` | 323 | 28 | 11 |
 | `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
 | `engine/ledger/ledger-write.ts` | 421 | 8 | 5 |
-| `engine/llm-enhancer.ts` | 680 | 8 | 4 |
+| `engine/llm-enhancer.ts` | 691 | 8 | 4 |
 | `engine/llm-prompts.ts` | 364 | 7 | 3 |
 | `engine/local-vector-store.ts` | 338 | 3 | 2 |
 | `engine/logic-consistency-checker.ts` | 168 | 4 | 4 |
@@ -505,7 +505,7 @@
 | `shared/creation-flow.ts` | 650 | 13 | 13 |
 | `shared/creation-mode.ts` | 488 | 25 | 21 |
 | `shared/cursor-position.ts` | 31 | 2 | 2 |
-| `shared/deconstruction-settings.ts` | 108 | 8 | 7 |
+| `shared/deconstruction-settings.ts` | 118 | 8 | 7 |
 | `shared/degradation-notifier.ts` | 286 | 11 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
@@ -693,7 +693,7 @@
 | `shared/text-utils.ts` | 64 | 5 | 5 |
 | `shared/theme-colors.ts` | 450 | 25 | 18 |
 | `shared/theme-gallery.ts` | 205 | 12 | 11 |
-| `shared/thresholds.ts` | 914 | 125 | 97 |
+| `shared/thresholds.ts` | 927 | 126 | 98 |
 | `shared/time-context.ts` | 44 | 3 | 3 |
 | `shared/time-estimator.ts` | 465 | 6 | 2 |
 | `shared/timeline-events-format.ts` | 59 | 2 | 2 |
@@ -962,7 +962,7 @@
 | `ui/settings/api-section.ts` | 1741 | 1 | 1 |
 | `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
 | `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
-| `ui/settings/deconstruction-section.ts` | 335 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 362 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 294 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1260 | 5 | 5 |

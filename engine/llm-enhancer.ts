@@ -57,6 +57,17 @@ export interface LLMCallOptions {
     endpoint?: string;
     apiKey?: string;
     disableFallback?: boolean;
+    /**
+     * 本地模型被拒标记（2026-11-25）。
+     *
+     * LLM 增强要求严格 JSON 结构化输出，本地 7B 级模型成功率低且会长时间占用主线程
+     * （Ollama 单请求串行）。`resolveLlmCallOptions` 检测到本地模型时置 true，
+     * 调用方据此跳过增强、不发请求。
+     *
+     * 注意与向量模型区分：`vectorModel`（bge-m3 等）用本地是**正确**的 ——
+     * embedding 是轻量 HTTP 调用、不要求结构化输出。
+     */
+    localModelRejected?: boolean;
 }
 
 /**

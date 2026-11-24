@@ -249,12 +249,20 @@ export class DeconstructionSection extends SettingsSection {
             .setDesc(t('settings.deconstruction.llmModelDesc'))
             .addText(text => {
                 text.setValue(cfg.llmModel);
-                text.setPlaceholder('deepseek-r1:7b');
+                // 占位改为云端示例：LLM 增强不支持本地模型（2026-11-25）
+                text.setPlaceholder(t('settings.deconstruction.llmModelPlaceholder'));
                 text.onChange(async (value) => {
                     const trimmed = value.trim();
                     await this.ensureDeconstructionEngineSettingsPersists(s => {
                         s.llmModel = trimmed;
                     });
+                    // 本地模型告警：不阻止保存（可能先保存后改 provider），但明确提示
+                    if (trimmed && this.isLocalModelName(trimmed)) {
+                        new Notice(
+                            t('settings.deconstruction.llmLocalModelWarn', { model: trimmed }),
+                            8000,
+                        );
+                    }
                 });
             });
 
@@ -330,5 +338,24 @@ export class DeconstructionSection extends SettingsSection {
             this.refresh();
             new Notice(t('settings.deconstruction.resetNotice'));
         })(); });
+    }
+
+    /**
+     * 粗判模型名是否像本地模型（用于输入时的即时提示）。
+     *
+     * 为什么不查 provider 列表：用户可能在输入模型名的同时还没配好 provider，
+     * 这时查列表必然查不到。这里只按命名惯例给即时提示，真正的拦截在
+     * `DeconstructionScheduler.resolveLlmCallOptions`（按 provider endpoint 判定）。
+     *
+     * @param model - 模型名
+     * @returns 是否像本地模型
+     */
+    private isLocalModelName(model: string): boolean {
+        const m = model.toLowerCase();
+        // Ollama 常见本地模型族：size 后缀（:7b/:13b/:70b）、qwen/llama/mistral/phi/gemma、deepseek-r1 蒸馏版
+        return /:(?:[0-9]+(?:\.[0-9]+)?b|[0-9]+x[0-9]+b)\b/.test(m)
+            || /^(?:qwen|llama|mistral|phi|gemma|codellama|vicuna|orca|dolphin|nous)[\d.:-]/.test(m)
+            || /^deepseek-r1:/.test(m)
+            || /(?:^|[^a-z])ollama(?:$|[^a-z])/.test(m);
     }
 }

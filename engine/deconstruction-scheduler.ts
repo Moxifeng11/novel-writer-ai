@@ -44,12 +44,43 @@ import { countTotalChars } from './text-segmenter';
 import { ProgressEmitter } from '@/shared/progress-emitter';
 import { getDegradationNotifier } from '@/shared/degradation-notifier';
 import { resolvePluginWorkerUrl } from '@/shared/plugin-worker-url';
+
+/** LLM 增强本地模型被拒的一次性通知标记（避免每次拆解都弹） */
+let llmLocalModelNotified = false;
+
+/** 重置通知去重状态（仅测试用） */
+export function resetLlmLocalModelNoticeForTest(): void {
+    llmLocalModelNotified = false;
+}
+
+/**
+ * 通知「LLM 增强不支持本地模型」。
+ *
+ * 用户明确要求 LLM 增强必须用云端模型（本地会出错）。
+ * 这里用统一的降级通知机制告知，而不是静默跳过。
+ *
+ * @param model - 被拒绝的本地模型名
+ */
+function notifyLlmLocalModelRejected(model: string): void {
+    if (llmLocalModelNotified) return;
+    llmLocalModelNotified = true;
+    getDegradationNotifier().notify({
+        source: 'llm',
+        from: 'llm',
+        to: 'statistical',
+        reason: `LLM 增强不支持本地模型「${model}」——本地 7B 级模型做结构化输出成功率低且会阻塞主线程。请在设置里改用云端模型（如 deepseek / opencode）。向量模型（bge-m3）保持本地即可。`,
+        severity: 'warning',
+        recoverable: true,
+    });
+}
+
 import { TimeEstimator } from '@/shared/time-estimator';
 import { AdaptiveDebounceManager } from '@/shared/adaptive-debounce-manager';
 import { QualityScorer, QualityScoringInput } from './quality-scorer';
 import { yieldToUI } from '@/shared/yield';
 import { createLogger } from '@/shared/logger';
 import { chunkOriginalText } from '@/services/knowledge-original-chunker';
+import { KB_BREAKDOWN_HARD_LIMIT } from '@/shared/thresholds';
 
 const log = createLogger('DeconstructionScheduler');
 import {
@@ -1009,7 +1040,28 @@ export class DeconstructionScheduler {
         const sampleMode = this.isSampleModeEnabled();
         const sampleLimit = this.getTextSampleLimit();
         const rawWordCount = task.sourceText.length;
-        const inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
+        /**
+         * 输入文本截断（2026-11-25 修复卡死）。
+         *
+         * 旧逻辑：`sampleMode ? slice(0, sampleLimit) : 全文`。
+         * 问题：`sampleMode` 默认 false，于是**整本书不截断**直接进 8 维拆解。
+         * 用户实测 93 万字书 + 8 维全开 + 向量增强（走主线程）→ Obsidian 卡死。
+         *
+         * 修复：无论 sampleMode 与否，都用 `KB_BREAKDOWN_HARD_LIMIT` 兜底。
+         * 采样模式仍按 sampleLimit 截；非采样模式按硬上限截并 warn 说明。
+         */
+        let inputText: string;
+        if (rawWordCount > KB_BREAKDOWN_HARD_LIMIT) {
+            inputText = task.sourceText.slice(0, KB_BREAKDOWN_HARD_LIMIT);
+            if (!sampleMode) {
+                log.warn(
+                    `[DeconstructionScheduler] 原文 ${rawWordCount} 字超过拆解硬上限 ${KB_BREAKDOWN_HARD_LIMIT} 字，`
+                    + `已截断。如需覆盖更多内容请开启采样模式并提高上限（注意：文本越长拆解越慢）。`,
+                );
+            }
+        } else {
+            inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
+        }
         task.preprocessedText = this.preprocessText(inputText);
         const wordCount = task.preprocessedText.cleaned.length;
         let effectiveLevel: DeconstructionQualityLevel = qualityLevel;
@@ -1586,19 +1638,41 @@ export class DeconstructionScheduler {
         ));
     }
 
+    /**
+     * 解析 LLM 增强的调用选项。
+     *
+     * 2026-11-25 设计约束（用户要求）：**LLM 增强不允许使用本地模型**。
+     *
+     * 原因：拆解增强要求严格的 JSON 结构化输出，本地 7B 级模型（deepseek-r1:7b 等）
+     * 成功率低且会长时间占用主线程（Ollama 单请求串行）。用户实测「这样会导致错误」。
+     *
+     * 注意与向量的区别：`vectorModel`（bge-m3 等）**必须**本地 —— embedding 是
+     * 轻量 HTTP 调用、不要求结构化输出，本地跑更快更省。两者用途不同，不能一刀切。
+     *
+     * @param model - 模型名
+     * @returns 本地模型返回 `CLOUD_ONLY_REJECTED` 标记；云端模型返回路由选项或 undefined（走默认）
+     */
     private resolveLlmCallOptions(model: string): LLMCallOptions | undefined {
         const settings = this.settingsGetter?.();
         if (!settings || !model) return undefined;
         const providers = settings.customProviders || [];
-        const local = providers.find(p =>
-            Array.isArray(p.models)
-            && p.models.includes(model)
-            && resolveProviderSourceType({ id: p.id, endpoint: p.endpoint, sourceType: p.sourceType }) === 'local',
+        const owner = providers.find(p =>
+            Array.isArray(p.models) && p.models.includes(model),
         );
-        if (!local) return undefined;
+        if (!owner) return undefined; // 不在自定义 provider 里 → 走 caller 默认（云端）
+        const sourceType = resolveProviderSourceType({
+            id: owner.id,
+            endpoint: owner.endpoint,
+            sourceType: owner.sourceType,
+        });
+        if (sourceType === 'local') {
+            // 本地模型：不发起请求，返回标记让调用方跳过增强
+            log.warn(`[DeconstructionScheduler] LLM 增强不支持本地模型「${model}」，已跳过增强（请改用云端模型）`);
+            return { disableFallback: true, localModelRejected: true };
+        }
         return {
-            endpoint: local.endpoint,
-            apiKey: settings.providerKeys?.[local.id] || 'ollama',
+            endpoint: owner.endpoint,
+            apiKey: settings.providerKeys?.[owner.id] || '',
             disableFallback: true,
         };
     }
@@ -1609,10 +1683,16 @@ export class DeconstructionScheduler {
         const caller = this.llmCallerGetter?.();
         const model = this.getDeconstructionEngineSettings().llmModel;
         if (!caller || !model) return;
+        const callOptions = this.resolveLlmCallOptions(model);
+        // 本地模型被拒 → 不创建增强器（否则每个维度都会白跑一次请求）
+        if (callOptions?.localModelRejected) {
+            notifyLlmLocalModelRejected(model);
+            return;
+        }
         this.setLlmEnhancer(new LLMEnhancer(caller, {
             llmModel: model,
             maxTokens: 4096,
-            callOptions: this.resolveLlmCallOptions(model),
+            callOptions,
         }));
     }
 
