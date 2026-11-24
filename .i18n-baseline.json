@@ -95,7 +95,7 @@
     "ui/full-writer/step-render-controller.ts": 2,
     "ui/full-writer/streamlined-nav-presenter.ts": 1,
     "ui/full-writer/tab-controller.ts": 2,
-    "ui/full-writer/template-vars-builder.ts": 239,
+    "ui/full-writer/template-vars-builder.ts": 241,
     "ui/full-writer/title-bar-controller.ts": 2,
     "ui/full-writer/unit-writer-controller.ts": 1,
     "ui/full-writer/wizard-controller.ts": 2,
@@ -206,7 +206,7 @@
     "ui/writing-style-paths.ts": 5,
     "ui/writing-style-presets.ts": 33
   },
-  "total": 5338,
-  "updatedAt": "2026-11-21",
-  "note": ""
+  "total": 5341,
+  "updatedAt": "2026-11-24",
+  "note": "2026-11-25 新增 nextChapterHook 两句兜底文案（喂模型的提示词文本，非UI文案）。与同文件已有 prevChapEnding 兜底同性质（本章为开篇,无上一章结尾/本章无上一章结尾信息），属 i18n 判据①落盘即契约的同类新增，保留原值。"
 }

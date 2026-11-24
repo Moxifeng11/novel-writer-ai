@@ -1,3 +1,5 @@
+import { PRIORITY_ARBITRATION } from './priority-system';
+
 /**
  * human-voice.ts — 正文/协同写作的人味与可读性约束
  *
@@ -19,6 +21,7 @@
  * 旧配额版保留为 `HUMAN_VOICE_BLOCK`，可用设置 `humanVoiceMode='quota'` 回退对比。
  */
 
+/** 旧版配额式人味约束（23 条数值配额），保留用于 A/B 对比与回退 */
 export const HUMAN_VOICE_BLOCK = `【人味与可读性（最高优先级，优先于写作规则中的“一句一段/一段一个句号”）】
 
 一、分段
@@ -96,14 +99,23 @@ export interface HumanVoiceOptions {
 
 /**
  * 组装人味约束块。
- * - 样文优先模式：样文块 + 6 条弱约束；没有样文时只给弱约束（绝不再退回配额清单）。
- * - 配额模式：返回旧版 `HUMAN_VOICE_BLOCK`，用于 A/B 对比与回退。
+ *
+ * 顺序很重要：**优先级仲裁必须排在最前**。模型先读到具体规则就会形成锚点，
+ * 之后再读仲裁声明影响很弱——这和「动笔前提醒放最末」是同一个注意力原理的两端。
+ *
+ * - 样文优先模式：仲裁块 + 样文块 + 弱约束；没有样文时仲裁块 + 弱约束。
+ * - 配额模式：仲裁块 + 旧版 `HUMAN_VOICE_BLOCK`（用于 A/B 对比与回退）。
+ *
  * @param options - 配置项
  * @returns 文本结果
+ * @example
+ * buildHumanVoiceBlock({ mode: 'exemplar', exemplarBlock: samples });
  */
 export function buildHumanVoiceBlock(options: HumanVoiceOptions = {}): string {
-    if (options.mode === 'quota') return HUMAN_VOICE_BLOCK;
+    const head = PRIORITY_ARBITRATION;
+    if (options.mode === 'quota') return [head, HUMAN_VOICE_BLOCK].join('\n\n');
     const parts = [
+        head,
         (options.exemplarBlock || '').trim(),
         HUMAN_VOICE_WEAK_RULES,
     ].filter(Boolean);

@@ -21,6 +21,14 @@ import { renderChapterDigestBlock } from '@/engine/memory/chapter-digest';
 import { buildTimeContextMessage } from '@/shared/time-context';
 import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
+
+/**
+ * 后章约束（nextChapterHook）的最大字符数。
+ *
+ * 本章只需要知道「下一章大概从哪开始」，避免撞车即可。
+ * 给太多下一章剧情反而有「被提前写出来」的风险，所以只取开头一段。
+ */
+const NEXT_HOOK_MAX_CHARS = 600;
 import { stripFrontmatter, readMergedVolumeOutline } from '@/utils/helpers';
 import { findBodyFileV4 } from '@/engine/chapter-utils';
 import { deriveBodyFormat, describeBodyFormat } from '@/shared/body-format';
@@ -628,9 +636,14 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
     vars["prevChapEnding"] = "（本章为开篇，无上一章结尾）";
     vars["prevChapterStateSnapshot"] = "";
   }
+  // 后章约束在下方读取大纲后统一注入（见 nextHook），此处不再重复赋值。
   const outline = d.outline;
   vars["outlineContent"] = outline?.raw || "";
   vars["chapPlan"] = "";
+  // 后章约束：取下一章的大纲段落（2026-11-25，云笔 next_chapter_constraint 的本仓实现）。
+  // 只取「章首衔接/开头承接」语义的首段，长度受限——本章只需要知道「别撞车」，
+  // 不需要下一章的完整剧情（给了反而可能被模型提前写出来）。
+  let nextHook = "";
   try {
     const viContent = await readMergedVolumeOutline(deps.app, deps.project);
     if (viContent) {
@@ -638,10 +651,20 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
       const volSlice = volumeSectionSlice(viContent, deps.volume);
       const chapMatch = volSlice.match(chapterOutlineSection(deps.chapterNum));
       vars["chapPlan"] = chapMatch?.[0]?.trim() || "";
+      // 下一章可能跨卷：当前卷切不到就退回整份内容匹配
+      const nextRaw = volSlice.match(chapterOutlineSection(deps.chapterNum + 1))?.[0]
+        || viContent.match(chapterOutlineSection(deps.chapterNum + 1))?.[0]
+        || "";
+      if (nextRaw.trim()) {
+        const cleaned = nextRaw.replace(/^\s*#{1,6}[^\n]*\n?/, "").trim();
+        nextHook = cleaned.slice(0, NEXT_HOOK_MAX_CHARS);
+      }
     }
   } catch (e) {
-    log.warn("[小说工坊] 操作失败:", e);
+    log.warn("[小说工坊] 读取下一章大纲失败（后章约束将退化为通用说明）:", e);
   }
+  vars["nextChapterHook"] = nextHook.trim()
+    || "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
 }
 
@@ -739,6 +762,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "prevChaptersSummary",
   "prevChapEnding",
   "prevChapterStateSnapshot",
+  "nextChapterHook",
   "unrevealedForeshadow",
   "timelineEvents",
   "sceneCardDigest",
@@ -885,6 +909,8 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
     vars["protagonistName"] = "主角";
   if (!vars["prevChapEnding"])
     vars["prevChapEnding"] = "（本章无上一章结尾信息：不要自行编造上一章结尾）";
+  if (!vars["nextChapterHook"])
+    vars["nextChapterHook"] = "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   if (deps.stepResults["infoPlan"]) {
     vars["infoPlan"] = deps.stepResults["infoPlan"];
     // v4.20 章纲数据字段：开头承接/章末钩子/伏笔操作 解析成硬要求块，

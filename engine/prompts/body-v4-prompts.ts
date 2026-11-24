@@ -57,6 +57,9 @@ export const BODY_GENERATION_USER_TEMPLATE_V4 = `【台词清单（按编号顺�
 【上一章结尾】
 \${prevChapEnding}
 
+【下一章开头（⚠️ 只用于避免撞车，严禁在本章写出它的内容）】
+\${nextChapterHook}
+
 \${longTermMemory}
 
 【人物】
