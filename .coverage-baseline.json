@@ -1,53 +1,53 @@
 {
-  "generatedAt": "2026-11-14T10:12:19.486Z",
-  "gitHead": "b8af06bf6c335648832e3e5af230898fea377931",
+  "generatedAt": "2026-11-24T15:02:12.619Z",
+  "gitHead": "ebd7cece12d17d60f01cef19639cd47e0b144ec0",
   "nodeVersion": "v24.16.0",
-  "note": "v4.96.0：链路修复 8 项 + 阶段3 降级可见 + 设置重构 + E2E 常态化合入，覆盖率重锚",
+  "note": "4.97.5 发版：ui/views 新增视图文件后按当前实测重锚（旧基线 4.96.0，31 文件/4434 行 → 33 文件/5112 行）",
   "dirs": {
     "ui": {
-      "files": 270,
+      "files": 307,
       "lines": {
-        "total": 42131,
-        "covered": 9022,
-        "pct": 21.41
+        "total": 45365,
+        "covered": 11021,
+        "pct": 24.29
       },
       "statements": {
-        "total": 46012,
-        "covered": 9791,
-        "pct": 21.28
+        "total": 49850,
+        "covered": 11987,
+        "pct": 24.05
       },
       "branches": {
-        "total": 22546,
-        "covered": 5196,
-        "pct": 23.05
+        "total": 24265,
+        "covered": 6126,
+        "pct": 25.25
       },
       "functions": {
-        "total": 7201,
-        "covered": 1451,
-        "pct": 20.15
+        "total": 8230,
+        "covered": 1875,
+        "pct": 22.78
       }
     },
     "ui/views": {
-      "files": 31,
+      "files": 33,
       "lines": {
-        "total": 4434,
-        "covered": 1253,
-        "pct": 28.26
+        "total": 5112,
+        "covered": 1296,
+        "pct": 25.35
       },
       "statements": {
-        "total": 4797,
-        "covered": 1395,
-        "pct": 29.08
+        "total": 5590,
+        "covered": 1443,
+        "pct": 25.81
       },
       "branches": {
-        "total": 2441,
-        "covered": 843,
-        "pct": 34.54
+        "total": 2711,
+        "covered": 861,
+        "pct": 31.76
       },
       "functions": {
-        "total": 884,
-        "covered": 297,
-        "pct": 33.6
+        "total": 1071,
+        "covered": 323,
+        "pct": 30.16
       }
     }
   }

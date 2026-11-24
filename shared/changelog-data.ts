@@ -21,6 +21,15 @@ export interface ChangelogEntry {
  */
 export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
     {
+        version: '4.97.5',
+        date: '2026-11-24',
+        title: '正文四项校验补强',
+        sections: [
+            { type: 'added', label: '✅ 本章四项校验', items: ['字数、格式、视角、章末钩子汇总到质量面板一处：字数仍是硬门禁，其余只提示不阻断', '协同写作、续写、定向修订等不经过步骤 7 的正文，也能按磁盘正文一键重算四项校验'] },
+            { type: 'improved', label: '🔍 判定精度', items: ['格式偏离给出定位行号', '视角判定先剔除对话引号，减少「他说」类误报', '章末钩子改按子短语匹配结尾 200 字，不再恒为通过'] },
+        ],
+    },
+    {
         version: '4.97.4',
         date: '2026-11-21',
         title: '按 vault 隔离存储与回收站删除',
@@ -177,39 +186,6 @@ export const BUILTIN_CHANGELOG: ChangelogEntry[] = [
             },
         ],
     },
-    {
-        version: '4.91.0',
-        date: '2026-11-13',
-        title: '项目标准约束 + 事实库可编辑 + 长篇评测',
-        sections: [
-            {
-                type: 'added',
-                label: '📐 项目标准',
-                items: [
-                    '12 个必备目录/文件/命名规范与标准版本声明',
-                    '7 类结构校验 + check:project-standard 门禁与手册',
-                ],
-            },
-            {
-                type: 'added',
-                label: '📚 事实库',
-                items: [
-                    '视图内可改值/改区间/忽略/删除，写前整批校验',
-                    '能力按等级序判定：进阶不报、倒退才报',
-                ],
-            },
-            {
-                type: 'fixed',
-                label: '🛠️ 修复',
-                items: [
-                    'R1 年龄谓词改前缀锚定：补变体漏报，排除回溯限定谓词假矛盾',
-                ],
-            },
-        ],
-    },
-
-
-
 ];
 
 /**
