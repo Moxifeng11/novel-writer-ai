@@ -1706,6 +1706,14 @@ export class DeconstructionScheduler {
         const weight = dimensions.reduce((n, d) => n + (d === 'style' ? 2 : 1), 0);
         const cost = (chars / 100_000) * weight * (isMainThread ? 2 : 1);
 
+        // 分级阈值（按实测手感校准）：
+        //   < 3   → 不打扰（小文件/少维度，用户无需关心）
+        //   3–15  → info（告知即可，仍可正常跑完）
+        //   ≥ 15  → warning（明确建议调整设置，否则很可能卡顿）
+        // 参考：93 万字 × 8 维 × 向量增强 = 27（必然卡死）
+        //       10 万字 × 8 维 × 向量增强 = 18（明显卡顿）
+        //       10 万字 × 8 维 × 关增强   =  9（慢但可接受）
+        //       1 万字 × 6 维 × 向量增强 = 1.4（无感）
         if (cost < 3) return; // 轻负载不打扰
 
         const reasons: string[] = [];
@@ -1716,7 +1724,7 @@ export class DeconstructionScheduler {
         if (engineSettings.vectorEnabled) reasons.push('向量增强已开（部分任务退回主线程）');
         if (engineSettings.llmEnabled) reasons.push('LLM 增强已开（全部任务退回主线程）');
 
-        notifyHeavyDeconstruction(bookName, reasons, cost >= 6);
+        notifyHeavyDeconstruction(bookName, reasons, cost >= 15);
     }
 
     /**
