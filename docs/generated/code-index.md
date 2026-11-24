@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 357 | 147744 | 1965 | 1556 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53588 | 2281 | 1777 | 78% |
+| `shared/` | 268 | 53678 | 2290 | 1780 | 78% |
 | `core/` | 7 | 3395 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114033 | 1183 | 946 | 80% |
+| `ui/` | 308 | 114062 | 1183 | 946 | 80% |
 
 ## 文件清单
 
@@ -479,7 +479,7 @@
 | `shared/budget-telemetry.ts` | 81 | 6 | 6 |
 | `shared/canon-source.ts` | 375 | 21 | 20 |
 | `shared/changelog-data.ts` | 209 | 3 | 3 |
-| `shared/chapter-four-checks-model.ts` | 313 | 22 | 11 |
+| `shared/chapter-four-checks-model.ts` | 403 | 31 | 14 |
 | `shared/chapter-progress.ts` | 142 | 7 | 6 |
 | `shared/chapter-ref.ts` | 205 | 7 | 5 |
 | `shared/chapter-run.ts` | 2 | 1 | 0 |
@@ -937,7 +937,7 @@
 | `ui/prompt-manager-settings.ts` | 1361 | 1 | 1 |
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
-| `ui/quality-loop-modal.ts` | 382 | 1 | 1 |
+| `ui/quality-loop-modal.ts` | 411 | 1 | 1 |
 | `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |

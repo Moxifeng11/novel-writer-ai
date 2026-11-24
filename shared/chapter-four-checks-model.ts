@@ -310,3 +310,93 @@ export function renderFourCheckReport(report: FourCheckReport): string {
 export function fourCheckAttentionItems(report: FourCheckReport): FourCheckItem[] {
     return report.items.filter(item => item.status === 'warn' || item.status === 'fail');
 }
+
+/** 四项的固定顺序（趋势行按此排列图标；与 buildFourCheckReport 的构造顺序一致） */
+export const FOUR_CHECK_ORDER: readonly FourCheckId[] = ['wordCount', 'format', 'perspective', 'hook'];
+
+/** 状态图标（面板与趋势共用；放在 shared 避免 ui 层重复维护一份） */
+export const FOUR_CHECK_STATUS_ICONS: Record<FourCheckStatus, string> = {
+    pass: '✅',
+    warn: '⚠️',
+    fail: '❌',
+    skip: '⏭',
+};
+
+/** 趋势最多展示的章数（面板用） */
+export const FOUR_CHECK_TREND_LIMIT = 10;
+
+/** 趋势中的一章 */
+export interface FourCheckTrendRow {
+    chapterName: string;
+    checkedAt: number;
+    /** 按 FOUR_CHECK_ORDER 排列的状态；报告缺项时补 skip */
+    statuses: FourCheckStatus[];
+    warnCount: number;
+}
+
+/**
+ * 构建「最近 N 章」趋势。
+ *
+ * 输入约定：`view` 为 `FourCheckStore.view()` 的返回值 —— 按章名自然序排好
+ * （`第1章, 第2章, …, 第10章`），本函数按插入序取**末尾 N 章**，即书内进度最新的 N 章。
+ * 每章展开为四项固定顺序的状态序列，便于面板一行一章对齐比较。
+ *
+ * 为什么取末尾而不是按 checkedAt 取最新写入：趋势的意义是「随章节推进的变化」，
+ * 按章序对齐才能看出某项是持续恶化还是偶发；按写入时间会把乱序重算的章插进来。
+ *
+ * @param view - 章名 → 报告（已按自然序）
+ * @param maxChapters - 最多取几章（默认 FOUR_CHECK_TREND_LIMIT）
+ * @returns 趋势行（章序与输入一致）
+ */
+export function buildFourCheckTrend(
+    view: Record<string, FourCheckReport>,
+    maxChapters: number = FOUR_CHECK_TREND_LIMIT,
+): FourCheckTrendRow[] {
+    const limit = Math.max(1, Math.floor(maxChapters || FOUR_CHECK_TREND_LIMIT));
+    const names = Object.keys(view);
+    const tail = names.slice(Math.max(0, names.length - limit));
+    return tail.map(name => {
+        const report = view[name];
+        const statuses = FOUR_CHECK_ORDER.map(id => {
+            const item = report?.items?.find(entry => entry.id === id);
+            return item ? item.status : 'skip';
+        });
+        return {
+            chapterName: report?.chapterName || name,
+            checkedAt: report?.checkedAt || 0,
+            statuses,
+            warnCount: report?.warnCount ?? statuses.filter(s => s === 'warn' || s === 'fail').length,
+        };
+    });
+}
+
+/**
+ * 趋势区块标题。
+ *
+ * @param count - 实际展示的章数
+ * @returns 标题文本
+ */
+export function describeFourCheckTrendTitle(count: number): string {
+    return `最近 ${count} 章四项校验`;
+}
+
+/** 趋势区块说明 */
+export const FOUR_CHECK_TREND_HINT =
+    '按章序对齐四项（字数 / 格式 / 视角 / 钩子），用来判断某一项是持续恶化还是偶发；只统计已记录过的章。';
+
+/** 无任何记录时的占位 */
+export const FOUR_CHECK_TREND_EMPTY = '暂无已记录的四项校验结果：生成并保存正文后自动记录。';
+
+/**
+ * 趋势单行：`第3章  ✅⚠️✅✅  1 项待关注（11-24 10:05）`。
+ *
+ * @param row - 趋势行
+ * @param checkedAtText - 已本地化的检查时间（空串则不显示）
+ * @returns 单行文本
+ */
+export function describeFourCheckTrendRow(row: FourCheckTrendRow, checkedAtText: string): string {
+    const icons = row.statuses.map(status => FOUR_CHECK_STATUS_ICONS[status]).join('');
+    const attention = row.warnCount > 0 ? `${row.warnCount} 项待关注` : '全部通过';
+    const when = checkedAtText ? `（${checkedAtText}）` : '';
+    return `${row.chapterName}  ${icons}  ${attention}${when}`;
+}

@@ -22,11 +22,16 @@ import {
     FOUR_CHECK_REFRESH_LABEL,
     FOUR_CHECK_SECTION_HINT,
     FOUR_CHECK_SECTION_TITLE,
+    FOUR_CHECK_TREND_EMPTY,
+    FOUR_CHECK_TREND_HINT,
+    buildFourCheckTrend,
     describeFourCheckEmpty,
     describeFourCheckHeader,
     describeFourCheckRefreshFailed,
     describeFourCheckRefreshed,
     describeFourCheckRefreshStarted,
+    describeFourCheckTrendRow,
+    describeFourCheckTrendTitle,
 } from '@/shared/chapter-four-checks-model';
 import type { FourCheckReport, FourCheckStatus } from '@/shared/chapter-four-checks-model';
 import {
@@ -323,7 +328,7 @@ export class QualityLoopModal extends Modal {
         }
     }
 
-    /** 渲染「本章四项校验」（正文保存后落盘，按章覆盖） */
+    /** 渲染「本章四项校验」（正文保存后落盘，按章覆盖）+ 最近 N 章趋势 */
     private renderFourChecks(): void {
         const el = this.fourChecksEl;
         if (!el) return;
@@ -334,12 +339,36 @@ export class QualityLoopModal extends Modal {
                 text: describeFourCheckEmpty(this.chapter),
                 cls: 'setting-item-description',
             });
+        } else {
+            el.createEl('p', { text: describeFourCheckHeader(report, formatCheckedAt(report.checkedAt)) });
+            const list = el.createEl('ul', { cls: 'nw-quality-loop-items' });
+            for (const item of report.items) {
+                list.createEl('li', { text: `${FOUR_CHECK_ICON[item.status]} [${item.label}] ${item.message}` });
+            }
+        }
+        this.renderFourCheckTrend(el);
+    }
+
+    /**
+     * 渲染「最近 N 章四项校验」趋势。
+     *
+     * 数据来自同一份 `四项校验.json`（按章覆盖，最多 500 章），所以只展示已记录的章，
+     * 不需要新采集。展示为一行一章：章名 + 四项固定顺序图标 + 待关注项数 ——
+     * 用于判断某项是持续恶化还是偶发。
+     */
+    private renderFourCheckTrend(container: HTMLElement): void {
+        const trend = buildFourCheckTrend(this.fourChecks);
+        if (trend.length === 0) {
+            container.createEl('p', { text: FOUR_CHECK_TREND_EMPTY, cls: 'setting-item-description' });
             return;
         }
-        el.createEl('p', { text: describeFourCheckHeader(report, formatCheckedAt(report.checkedAt)) });
-        const list = el.createEl('ul', { cls: 'nw-quality-loop-items' });
-        for (const item of report.items) {
-            list.createEl('li', { text: `${FOUR_CHECK_ICON[item.status]} [${item.label}] ${item.message}` });
+        container.createEl('h5', { text: describeFourCheckTrendTitle(trend.length) });
+        container.createEl('p', { text: FOUR_CHECK_TREND_HINT, cls: 'setting-item-description' });
+        const list = container.createEl('ul', { cls: 'nw-quality-loop-items' });
+        for (const row of trend) {
+            list.createEl('li', {
+                text: describeFourCheckTrendRow(row, row.checkedAt ? formatCheckedAt(row.checkedAt) : ''),
+            });
         }
     }
 
