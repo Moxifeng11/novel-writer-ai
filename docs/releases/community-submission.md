@@ -1,6 +1,6 @@
 # 上架 Obsidian 社区插件目录
 
-> 最新发版 4.97.5（2026-11-24，Release 已验，目录扫描跟进中） · 上一已上架版本 4.97.4 · 维护：DSH
+> 最新发版 4.97.5（2026-11-24，Release 已验）· **目录扫描待用户登录触发**（2026-11-25 复核，三项仍红）· 上一已上架版本 4.97.4 · 维护：ZCode（2026-11-25 起接手）
 
 ## 〇、4.97.5 发版（2026-11-24）
 
@@ -9,6 +9,30 @@
 - tag `4.97.5` == `manifest.version`，Release workflow **success**（run 45422725034）；资产：`main.js` 6,262,628（SHA256 `0E57B801…93A0`）、`styles.css` 804,584、`manifest.json` 467、`versions.json` 1,998、zip 2,502,512、`SHA256SUMS.txt` 595。
 - `npm run check:release:remote` 通过：四资产体积与本地一致，`main.js` / `styles.css` 的 artifact attestation 校验通过。
 - 目录侧：发版后立即检查仍是 4.97.4（`Last updated` 停在 Nov 21）；4.97.4 的先例是发版后约 1–1.5 小时由目录周期扫描覆盖——上架判据仍只看下方三项。
+
+### 〇之二、目录复核结论（2026-11-25，ZCode）
+
+`node scripts/check-published.mjs --expect 4.97.5` 三项实际值（复核时点 2026-11-25）：
+
+```text
+[check:published] novel-writer-ai（manifest 4.97.5）
+  目录上次检查：3 days ago（Nov 21, 2026） · 下载 86
+  · 插件页 Current version = 4.97.5 —— 实际 4.97.4      ← ✗ 未更新
+  ✓ 客户端市场清单包含 novel-writer-ai —— 已收录        ← ✓
+  · RSS 出现 4.97.5 —— 最新 4.97.4                      ← ✗ 未更新
+[check:published] 尚未上架到 4.97.5（审核未通过或尚未触发复审）
+```
+
+**结论**：目录站自 Nov 21 后未再扫描（`Last updated` 三天未动），4.97.5 未被复审。
+已排除代码/Release 问题（`check:release:remote` 通过、资产与 attestation 均验）。
+
+**需要用户操作（阻塞项）**：登录 `community.obsidian.md` → 账号页或插件页点
+**`Check for new releases`**。若返回「A scan has already been run」，说明扫描已在队列，
+隔几分钟刷新再看。完成后重跑 `node scripts/check-published.mjs --expect 4.97.5`，
+三项全绿即把本节改为上架结论并写日期。
+
+> 注：手动触发后目录侧更新通常需数小时（4.97.4 先例约 1–1.5 小时）。本项**不要轮询**；
+> 判据只认 `check:published` + RSS + 市场清单，不用临时脚本撞目录站。
 
 ## 〇之一、上一版：4.97.4 上架记录（2026-11-21 复核通过）
 
