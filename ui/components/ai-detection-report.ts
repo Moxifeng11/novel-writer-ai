@@ -1,104 +1,109 @@
 /**
- * ai-detection-report.ts — AI 味检测报告渲染组件（UI 可视化，P0-1）
+ * ai-detection-report.ts — AI 特征命中报告（纯展示组件）
  *
- * 纯展示组件：接收正文文本，调用 AntiAIDetector.detect 得到检测结果，
- * 渲染「评分 + 雷达图 + 命中短语 + 修改建议」四部分。
- * 零副作用：不修改任何全局状态，仅操作传入的 container；不引入新依赖（复用现有 radarChart）。
+ * ## 2026-11-25 重大改版
+ *
+ * 旧版把 `AntiAIDetector.detect().score` 当成「AI 味分数」大字展示（0-100 分 + 雷达图 + 占比）。
+ * 实测证明**这个分数排序是反的**：
+ * - 真人网文 7 部 → 10.6 分（朱雀 100% 人工）
+ * - 云笔 5570 → 9.0 分（朱雀 42.3% 人工）
+ * - AI 模板 → 14.0 分（朱雀 0%）
+ *
+ * 真人分比云笔还高，AI 模板只有 14 分。用这个分数做任何判断都会误导。
+ *
+ * 新版只展示**可解释的具体命中**：
+ * - 命中了哪些模板短语 / 句式（具体词句，用户能自己判断要不要改）
+ * - 各特征的出现次数（不是加权分数）
+ * - 不做「AI 味 X 分」的伪精确展示
+ *
+ * 需要人味判据时用 `engine/zhuque-detector.ts`（真实 AIGC 检测）。
  */
 
 import { AntiAIDetector } from '@/engine/anti-ai-detector';
-import { radarChart } from '@/ui/svg-charts';
-import { setSanitizedHtml } from '@/ui/rendering/safe-html';
+import { t } from '@/i18n';
 
-type ScoreLevel = 'low' | 'medium' | 'high';
-
-function scoreLevel(score: number): ScoreLevel {
-    if (score < 30) return 'low';
-    if (score < 60) return 'medium';
-    return 'high';
+/** 单条命中（与 AntiAIDetector.detectWithPositions 的输出兼容） */
+export interface AIDetectionHitLike {
+    type: 'l1' | 'l2' | 'l3';
+    text: string;
+    start: number;
+    end: number;
+    weight: number;
 }
 
-function levelLabel(score: number): string {
-    if (score < 30) return '人味正常';
-    if (score < 60) return '疑似 AI 味';
-    return '明显 AI 味';
-}
+/** 命中类型标签 → i18n key */
+const HIT_TYPE_KEY: Record<string, string> = {
+    l1: 'cowrite.aiReport.typeL1',
+    l2: 'cowrite.aiReport.typeL2',
+    l3: 'cowrite.aiReport.typeL3',
+};
 
 /**
- * 渲染 AI 味检测报告到指定容器。
- * @param container 目标容器（会被清空后写入）
- * @param text 待检测的正文文本
+ * 渲染 AI 特征命中报告。
  *
+ * 只展示「命中了什么」，不展示「AI 味多少分」——后者实测不可信。
+ *
+ * @param container - 挂载容器（会被清空后写入）
+ * @param text - 待检测的正文文本
  * @example
  * ```ts
  * const el = document.createElement('div');
  * renderAIDetectionReport(el, '他的眼神像一潭死水……');
- * container.appendChild(el);
  * ```
  */
 export function renderAIDetectionReport(container: HTMLElement, text: string): void {
     const detector = new AntiAIDetector();
-    const result = detector.detect(text);
+    const hits = detector.detectWithPositions(text);
 
     container.empty();
     container.addClass('nw-ai-report');
 
-    // 1. 头部：标题 + 评分 + 等级
+    // 1. 头部：只给命中总数，不给分数
     const head = container.createDiv({ cls: 'nw-ai-report-head' });
-    head.createSpan({ cls: 'nw-ai-report-title', text: '🤖 AI 味检测' });
-    const scoreWrap = head.createDiv({ cls: 'nw-ai-report-score-wrap' });
-    scoreWrap.createSpan({
-        cls: `nw-ai-report-score nw-ai-report-score-${scoreLevel(result.score)}`,
-        text: String(result.score),
-    });
-    scoreWrap.createSpan({ cls: 'nw-ai-report-score-unit', text: '分' });
+    head.createSpan({ cls: 'nw-ai-report-title', text: t('cowrite.aiReport.title') });
     head.createSpan({
-        cls: `nw-ai-report-level nw-ai-report-level-${scoreLevel(result.score)}`,
-        text: levelLabel(result.score),
+        cls: 'nw-ai-report-count',
+        text: hits.length > 0
+            ? t('cowrite.aiReport.count', { count: String(hits.length) })
+            : t('cowrite.aiReport.none'),
     });
 
-    // 2. 雷达图（至少 3 个维度才渲染）
-    if (result.features.length >= 3) {
-        const chart = container.createDiv({ cls: 'nw-ai-report-chart' });
-        setSanitizedHtml(chart, radarChart(
-            result.features.map(f => ({ label: f.displayName, value: f.value })),
-            { size: 280, title: 'AI 味特征' },
-        ));
+    // 2. 说明：为什么不给分数
+    const note = container.createDiv({ cls: 'nw-ai-report-note' });
+    note.createSpan({ text: t('cowrite.aiReport.note') });
+
+    if (hits.length === 0) return;
+
+    // 3. 按类型分组计数
+    const byType = new Map<string, AIDetectionHitLike[]>();
+    for (const h of hits) {
+        const list = byType.get(h.type) || [];
+        list.push(h);
+        byType.set(h.type, list);
     }
 
-    // 3. 评分构成（各分项的原始得分与相对占比，用于定位主要 AI 味来源）
-    const scored = result.features.filter(f => typeof f.score === 'number' && f.score > 0);
-    const weightSum = scored.reduce((sum, f) => sum + (f.score || 0), 0);
-    if (scored.length > 0 && weightSum > 0) {
-        const breakdown = container.createDiv({ cls: 'nw-ai-report-breakdown' });
-        breakdown.createDiv({ cls: 'nw-ai-report-section-title', text: '评分构成（相对贡献）' });
-        for (const f of [...scored].sort((a, b) => (b.score || 0) - (a.score || 0))) {
-            const share = Math.round(((f.score || 0) / weightSum) * 100);
-            breakdown.createDiv({
-                cls: 'nw-ai-report-suggestion',
-                text: `• ${f.displayName}：${(f.score || 0).toFixed(1)} 分 · 占比 ${share}%`,
-            });
-        }
-    }
-
-    // 4. 命中模板短语（仅 L2/L3，去重，最多 8 个）
-    const l2l3 = result.hits.filter(h => h.type === 'l2' || h.type === 'l3');
-    const unique = [...new Set(l2l3.map(h => h.text))].slice(0, 8);
-    if (unique.length > 0) {
-        const hits = container.createDiv({ cls: 'nw-ai-report-hits' });
-        hits.createDiv({ cls: 'nw-ai-report-section-title', text: `命中 ${unique.length} 处模板短语` });
-        const hitList = hits.createDiv({ cls: 'nw-ai-report-hit-list' });
+    // 4. 逐类型列出具体命中（去重，每类最多 10 个）
+    const groups = container.createDiv({ cls: 'nw-ai-report-groups' });
+    for (const [type, list] of byType) {
+        const unique = [...new Set(list.map(h => h.text))].slice(0, 10);
+        const group = groups.createDiv({ cls: 'nw-ai-report-group' });
+        group.createDiv({
+            cls: 'nw-ai-report-section-title',
+            text: t('cowrite.aiReport.groupTitle', {
+                type: t(HIT_TYPE_KEY[type] || ''),
+                hits: String(list.length),
+                unique: String(unique.length),
+            }),
+        });
+        const hitList = group.createDiv({ cls: 'nw-ai-report-hit-list' });
         for (const phrase of unique) {
             hitList.createDiv({ cls: 'nw-ai-report-hit', text: phrase });
         }
-    }
-
-    // 5. 修改建议
-    if (result.suggestions.length > 0) {
-        const sug = container.createDiv({ cls: 'nw-ai-report-suggestions' });
-        sug.createDiv({ cls: 'nw-ai-report-section-title', text: '修改建议' });
-        for (const s of result.suggestions) {
-            sug.createDiv({ cls: 'nw-ai-report-suggestion', text: `• ${s}` });
+        if (unique.length < list.length) {
+            group.createDiv({
+                cls: 'nw-ai-report-more',
+                text: t('cowrite.aiReport.more', { count: String(list.length - unique.length) }),
+            });
         }
     }
 }

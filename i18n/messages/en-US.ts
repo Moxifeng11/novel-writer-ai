@@ -5708,6 +5708,17 @@ export const enUS: MessageTree = {
             disabled: '"{book}" reference disabled',
             setPrimary: 'Set as the primary reference',
         },
+        aiReport: {
+            title: '🔍 AI feature hits',
+            count: '{count} hits',
+            none: 'No known AI features found',
+            note: 'Lists which known AI features were hit — no scoring. The weighted "AI-taste score" proved unreliable in testing (human text scored higher than AI), so it is retired. Use Zhuque detection for a humanness verdict.',
+            groupTitle: '{type}: {hits} hits, {unique} distinct phrases',
+            more: '…{count} more repeated hits not listed',
+            typeL1: 'High-frequency words',
+            typeL2: 'Template phrases',
+            typeL3: 'Sentence patterns',
+        },
         kbcard: {
             genre: 'Genre: ',
             quality: 'Quality: ',

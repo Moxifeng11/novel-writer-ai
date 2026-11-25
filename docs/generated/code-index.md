@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148530 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148565 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 268 | 53749 | 2293 | 1783 | 78% |
+| `shared/` | 268 | 53763 | 2293 | 1783 | 78% |
 | `core/` | 7 | 3398 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113942 | 1177 | 942 | 80% |
+| `ui/` | 307 | 113950 | 1178 | 942 | 80% |
 
 ## 文件清单
 
@@ -86,7 +86,7 @@
 | `engine/ai-worldview-generator.ts` | 735 | 2 | 1 |
 | `engine/analysis-report-engine.ts` | 1456 | 1 | 1 |
 | `engine/analysis-session-manager.ts` | 760 | 2 | 2 |
-| `engine/anti-ai-detector.ts` | 454 | 6 | 6 |
+| `engine/anti-ai-detector.ts` | 483 | 6 | 6 |
 | `engine/asset-registry.ts` | 238 | 6 | 1 |
 | `engine/bases-generator.ts` | 325 | 9 | 7 |
 | `engine/batch-import-manager.ts` | 907 | 9 | 9 |
@@ -284,7 +284,7 @@
 | `engine/prompts/template-utils.ts` | 177 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
-| `engine/quality-gate.ts` | 240 | 6 | 5 |
+| `engine/quality-gate.ts` | 242 | 6 | 5 |
 | `engine/quality-scorer.ts` | 388 | 5 | 3 |
 | `engine/quality/deviation-detector.ts` | 2056 | 26 | 22 |
 | `engine/quality/four-check-refresh.ts` | 173 | 3 | 3 |
@@ -329,7 +329,7 @@
 | `engine/repository/project-repository.ts` | 145 | 1 | 1 |
 | `engine/review-agent.ts` | 446 | 1 | 1 |
 | `engine/revision/quality-issue-parser.ts` | 141 | 3 | 3 |
-| `engine/revision/revision-guard.ts` | 194 | 7 | 6 |
+| `engine/revision/revision-guard.ts` | 198 | 7 | 6 |
 | `engine/revision/revision-prompts.ts` | 99 | 2 | 2 |
 | `engine/revision/revision-types.ts` | 68 | 7 | 7 |
 | `engine/revision/targeted-revision.ts` | 212 | 4 | 4 |
@@ -558,7 +558,7 @@
 | `shared/http-request.ts` | 124 | 7 | 3 |
 | `shared/http-transport.ts` | 235 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
-| `shared/human-similarity.ts` | 318 | 11 | 11 |
+| `shared/human-similarity.ts` | 332 | 11 | 11 |
 | `shared/id-migration-model.ts` | 113 | 6 | 4 |
 | `shared/id-registry-model.ts` | 254 | 17 | 11 |
 | `shared/info-debt-board.ts` | 26 | 1 | 1 |
@@ -790,7 +790,7 @@
 | `ui/co-writing/word-goal.ts` | 116 | 5 | 3 |
 | `ui/co-writing/writing-advice.ts` | 185 | 3 | 3 |
 | `ui/command-ui-executor.ts` | 756 | 2 | 2 |
-| `ui/components/ai-detection-report.ts` | 105 | 1 | 1 |
+| `ui/components/ai-detection-report.ts` | 110 | 2 | 1 |
 | `ui/components/analysis-report-panel.ts` | 297 | 1 | 1 |
 | `ui/components/button-compat.ts` | 38 | 1 | 1 |
 | `ui/components/categorization-review-panel.ts` | 449 | 2 | 2 |
@@ -955,7 +955,7 @@
 | `ui/services/flow-diagnosis-collectors.ts` | 209 | 1 | 1 |
 | `ui/services/flow-repair-host.ts` | 247 | 8 | 1 |
 | `ui/services/human-sample-loader.ts` | 80 | 2 | 2 |
-| `ui/services/humanness-scorer.ts` | 131 | 3 | 3 |
+| `ui/services/humanness-scorer.ts` | 134 | 3 | 3 |
 | `ui/services/project-create-service.ts` | 482 | 6 | 5 |
 | `ui/settings-tab.ts` | 382 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |

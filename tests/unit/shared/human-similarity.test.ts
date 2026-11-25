@@ -165,10 +165,17 @@ describe('human-similarity — 综合分', () => {
         expect(result.composite).toBe(0);
     });
 
-    it('AI 味越高综合分越低（同文本）', () => {
+    // 2026-11-25：antiAI 权重已从 composite 移除（原 0.40）。
+    // 原因：该分数经三组已知朱雀结果的样本交叉验证，排序完全反了
+    // （真人 10.6 > 云笔 5570 9.0，AI 模板仅 14）。把反向指标计入综合分会让分数失去意义。
+    // 现在 composite = 0.75×humanSim + 0.25×fidelity，与 antiAI 无关。
+    it('antiAI 不再影响综合分（权重已归零）', () => {
         const baseline = humanBaseline();
         const low = scoreHumanity({ original: HUMAN_TEXT, candidate: HUMAN_TEXT, antiAI: 10, baseline });
         const high = scoreHumanity({ original: HUMAN_TEXT, candidate: HUMAN_TEXT, antiAI: 80, baseline });
-        expect(low.composite).toBeGreaterThan(high.composite);
+        expect(low.composite).toBe(high.composite);
+        // antiAI 字段本身仍原样保留（供展示/兼容）
+        expect(low.antiAI).toBe(10);
+        expect(high.antiAI).toBe(80);
     });
 });

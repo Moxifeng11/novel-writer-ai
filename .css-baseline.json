@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-11-24T22:07:27.585Z",
-  "note": "2026-11-25 新增抽屉宽度六档类(nw-drawer--assistant/detail/editor/assist/primary/manage)，把 .nw-suggestion-drawer 写死的 520px 改为 token 引用。6 个新类 + 2418 字节，功能必需。",
-  "bytes": 807002,
+  "generatedAt": "2026-11-25T01:07:45.216Z",
+  "note": "2026-11-25 方案A：删除本地人工率仪表盘样式(nw-hr-* / nw-cowrite-human-rate-card)，AI特征报告改用新分组样式。",
+  "bytes": 805773,
   "important": 24,
   "hardcodedHex": 192,
   "rgbHsl": 221,
-  "uniqueClasses": 4337,
+  "uniqueClasses": 4327,
   "otherClasses": 92,
   "maxSelectorDepth": 4
 }

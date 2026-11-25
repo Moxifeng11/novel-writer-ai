@@ -2314,13 +2314,16 @@ describe('ai-detection-report（fake DOM）', () => {
         expect(container.className).toBe('nw-ai-report');
         const head = container.findByClass('nw-ai-report-head');
         expect(head).not.toBeNull();
-        expect(head?.findByClass('nw-ai-report-title')?.textContent).toContain('AI 味检测');
-        const score = head?.querySelector('.nw-ai-report-score');
-        expect(score).not.toBeNull();
-        expect(Number(score?.textContent)).not.toBeNaN();
-        const suggestions = container.findByClass('nw-ai-report-suggestions');
-        expect(suggestions).not.toBeNull();
-        expect(suggestions?.children.length).toBeGreaterThan(0);
+        // 2026-11-25：改为「特征命中」展示，不再给「AI 味 X 分」
+        // （加权评分实测排序反了：真人 10.6 > 云笔 9.0，AI 模板仅 14）
+        expect(head?.findByClass('nw-ai-report-title')?.textContent).toContain('AI 特征命中');
+        // 不给分数元素
+        expect(head?.querySelector('.nw-ai-report-score')).toBeNull();
+        // 但必须有命中计数与分组清单
+        expect(head?.findByClass('nw-ai-report-count')?.textContent).toMatch(/共 \d+ 处/);
+        const groups = container.findByClass('nw-ai-report-groups');
+        expect(groups).not.toBeNull();
+        expect(groups?.children.length).toBeGreaterThan(0);
     });
 
     it('renderAIDetectionReport：人味文本评分低，无建议区', () => {
@@ -2332,8 +2335,10 @@ describe('ai-detection-report（fake DOM）', () => {
 
         const head = container.findByClass('nw-ai-report-head');
         expect(head).not.toBeNull();
-        const level = head?.children.find(c => c.className.startsWith('nw-ai-report-level'));
-        expect(level?.textContent).toBe('人味正常');
+        // 2026-11-25：不再输出「人味正常/AI 味」这类等级判定（那是基于不可信分数的）
+        expect(head?.children.find(c => c.className.startsWith('nw-ai-report-level'))).toBeUndefined();
+        // 人味文本应给出「未命中」或极少的命中
+        expect(head?.findByClass('nw-ai-report-count')?.textContent).toMatch(/未命中|共 \d+ 处/);
     });
 });
 

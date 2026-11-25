@@ -283,8 +283,20 @@ export interface HumanityScore {
 }
 
 /**
- * 综合分：0.40×(100−antiAI)/100 + 0.45×humanSim + 0.15×fidelity。
+ * 综合分：0.75×humanSim + 0.25×fidelity。
+ *
+ * **2026-11-25 重大调整**：antiAI 权重从 0.40 降到 **0**。
+ *
+ * 原因：`AntiAIDetector.detect().score` 经三组已知朱雀结果的样本交叉验证，
+ * **排序完全反了**——真人 10.6 分、云笔 5570 9.0 分、AI 模板 14.0 分
+ * （理想应是真人 < 云笔 < AI）。把这个反向指标按 40% 权重合进「人味综合分」，
+ * 会让整个分数失去意义。
+ *
+ * 保留 `antiAI` 字段仅为向后兼容（调用方可继续读它做展示），但**不再参与 composite**。
+ * 真正的人味判据请用 `engine/zhuque-detector.ts`。
+ *
  * 保真不过（ok=false）时综合分按 0 计——改得再「像人」但把情节改没了也不能接受。
+ *
  * @param params - 参数集合
   * @returns HumanityScore 实例
  */
@@ -310,8 +322,10 @@ export function scoreHumanity(params: {
     }
 
     const anti = Math.max(0, Math.min(100, params.antiAI));
+    // antiAI 权重为 0（见函数文档）：它排序反了，不能进综合分。
+    // 权重转移给 humanSim（分布相似度）——它虽也是代理指标，但至少方向正确。
     const composite = fidelity.ok
-        ? 0.40 * ((100 - anti) / 100) + 0.45 * humanSim + 0.15 * fidelity.score
+        ? 0.75 * humanSim + 0.25 * fidelity.score
         : 0;
     return { antiAI: anti, humanSim, fidelity, composite };
 }

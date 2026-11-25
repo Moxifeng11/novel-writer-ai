@@ -115,7 +115,9 @@ export class QualityGate {
             adviseAbility: options?.adviseAbility,
         });
             aiWords = this.antiAI.detectAIWords(body);
-            aiDetection = this.antiAI.detect(body);
+            // 2026-11-25：不再调用 detect()（其 score 字段实测排序反了）。
+            // 只取可解释的具体命中；若下游需要 features/suggestions，另行按需求生成。
+            aiDetection = { score: 0, hits: this.antiAI.detectWithPositions(body), features: [], suggestions: [] };
         }
 
         // —— 第二层：结构（零 AI） ——

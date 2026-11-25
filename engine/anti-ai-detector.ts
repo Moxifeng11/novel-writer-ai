@@ -309,20 +309,49 @@ export class AntiAIDetector {
     /**
      * 0-100 AI 味评分（越高越像 AI 写的）
      *
+     * @deprecated **不要再用这个分数判断「像不像人写」（2026-11-25）。**
+     *
+     * 实测证据（三组已知朱雀结果的样本交叉验证）：
+     * | 组 | 朱雀人工率 | 本函数分数 |
+     * | --- | ---: | ---: |
+     * | 真人网文 7 部 | 100% | 10.6 |
+     * | 云笔 5570 | 42.3% | 9.0 |
+     * | AI 模板 | 0% | 14.0 |
+     *
+     * **排序完全反了**：真人的分数比云笔还高，AI 模板只拿到 14/100。
+     * 原因是权重是拍的（从未用朱雀结果标定），且把「可解释的具体命中」
+     * 与「模糊统计特征」混在一起加权成一个伪精确分数。
+     *
+     * 需要人味判据时**只用 `engine/zhuque-detector.ts`**。
+     * 本类保留的是可解释的能力：`detectAIWords()` / `detectWithPositions()` /
+     * `AI_HIGH_FREQ_WORDS`（用于生成提示词禁令，这部分是有效的）。
+     *
      * @param text - 文本内容
      * @returns 数值结果
      */
     score(text: string): number {
-        return this.detect(text).score;
+        return this.detectScoreInternal(text).score;
     }
 
     /**
      * 完整检测：评分 + 命中项 + 特征向量 + 修改建议
      *
+     * @deprecated **`score` 字段不可信**（见 `score()` 的实测证据）。
+     * 若只需要「命中了哪些 AI 特征」，用 `detectWithPositions()` 拿具体命中列表；
+     * 若需要人味判据，用 `engine/zhuque-detector.ts`。
+     *
+     * 保留本方法仅为兼容既有 UI（`ui/components/ai-detection-report.ts` 展示雷达图），
+     * 该 UI 应改为「特征命中清单」而非「AI 味分数」。
+     *
      * @param text - 文本内容
       * @returns AIDetectionResult 实例
      */
     detect(text: string): AIDetectionResult {
+        return this.detectScoreInternal(text);
+    }
+
+    /** 评分计算实现（score() 与 detect() 共用；detect 的 deprecated 只针对其返回值语义） */
+    private detectScoreInternal(text: string): AIDetectionResult {
         const hits = this.detectWithPositions(text);
 
         const l1Count = hits.filter(h => h.type === 'l1').length;

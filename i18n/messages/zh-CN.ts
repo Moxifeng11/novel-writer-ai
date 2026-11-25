@@ -5711,6 +5711,17 @@ export const zhCN: MessageTree = {
             disabled: '已停用《{book}》的参考',
             setPrimary: '已设为主参考书籍',
         },
+        aiReport: {
+            title: '🔍 AI 特征命中',
+            count: '共 {count} 处',
+            none: '未命中已知 AI 特征',
+            note: '这里只列「命中了哪些已知 AI 特征」，不做打分。「AI 味 X 分」那种加权评分实测排序不可靠（真人分比 AI 还高），已停用。需要人味判据请用朱雀检测。',
+            groupTitle: '{type}：命中 {hits} 处，{unique} 个不同词句',
+            more: '…另有 {count} 处重复命中未列出',
+            typeL1: '高频词',
+            typeL2: '模板短语',
+            typeL3: '句式模板',
+        },
         kbcard: {
             genre: '题材：',
             quality: '质量：',

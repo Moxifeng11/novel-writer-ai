@@ -1,13 +1,14 @@
 /**
  * humanness-scorer.ts — 改写打分的宿主封装
  *
- * 把「AI 味（AntiAIDetector）+ 人味相似度（human-similarity，需本地真人基线）
- * + 保真」组合成迭代精修能用的 `score()`。基线来自 `npm run sample:human`
- * 落在插件 data 目录的 `human-samples/baseline.json`；没有基线时返回 null，
- * 调用方退化为「不评分、只跑单次」的旧行为（绝不因此报错）。
+ * 把「人味相似度（human-similarity，需本地真人基线）+ 保真」组合成迭代精修能用的 `score()`。
+ * 基线来自 `npm run sample:human` 落在插件 data 目录的 `human-samples/baseline.json`；
+ * 没有基线时返回 null，调用方退化为「不评分、只跑单次」的旧行为。
+ *
+ * **2026-11-25 调整**：不再纳入 `AntiAIDetector` 的加权评分——实测排序反了
+ * （真人 10.6 > 云笔 9.0，AI 模板仅 14）。人味判据见 `engine/zhuque-detector.ts`。
  */
 import type { App } from 'obsidian';
-import { AntiAIDetector } from '@/engine/anti-ai-detector';
 import { analyzeDistribution, scoreHumanity, type DistributionHistogram } from '@/shared/human-similarity';
 import type { RefineRoundScore } from '@/shared/iterative-refine';
 import { createLogger } from '@/shared/logger';
@@ -95,12 +96,14 @@ export function setHumannessBaseline(distribution: DistributionHistogram | null)
  */
 export async function createHumannessScorer(app: App): Promise<HumannessScorer> {
     const baseline = await loadBaseline(app);
-    const detector = new AntiAIDetector();
     return {
         dialogueRatio: (text) => analyzeDistribution(text).dialogueRatio,
         hasBaseline: () => Boolean(baseline),
         score: (candidate, original) => {
-            const antiAI = detector.detect(candidate).score;
+            // 2026-11-25：antiAI 已从 composite 权重移除（原占 40%，但该分数排序反了）。
+            // 不再调用 detect()（deprecated）；字段保留为 0 用于向后兼容。
+            // 若要展示「命中了哪些 AI 特征」，用 detector.detectWithPositions(candidate)。
+            const antiAI = 0;
             if (baseline) {
                 const result = scoreHumanity({ original, candidate, antiAI, baseline });
                 return {

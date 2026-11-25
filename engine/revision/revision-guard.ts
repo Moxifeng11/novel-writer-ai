@@ -156,8 +156,12 @@ export function recheckRevision(
     options: { lockedNames?: readonly string[] } = {},
 ): RevisionRecheck {
     const detector = new AntiAIDetector();
-    const aiScoreBefore = detector.score(before);
-    const aiScoreAfter = detector.score(after);
+    // 2026-11-25：改用「可解释的命中条数」而不是加权评分。
+    // 加权评分（score）实测排序反了（真人 10.6 > 云笔 9.0，AI 模板仅 14），
+    // 用它做 delta 判断「改写让 AI 味上升了没」同样不可信。
+    // 命中条数是可数的客观事实：改后命中变多 → 确实加了 AI 特征。
+    const aiScoreBefore = detector.detectWithPositions(before).length;
+    const aiScoreAfter = detector.detectWithPositions(after).length;
     const beforeMetrics = analyzeHumanFeatures(before);
     const afterMetrics = analyzeHumanFeatures(after);
     const keywordHits = issues.filter((issue) => {
@@ -169,13 +173,13 @@ export function recheckRevision(
     const gate = evaluateRevision(before, after, options);
 
     const parts = [
-        `AI味 ${aiScoreBefore.toFixed(0)}→${aiScoreAfter.toFixed(0)}（${aiScoreAfter - aiScoreBefore >= 0 ? '+' : ''}${(aiScoreAfter - aiScoreBefore).toFixed(0)}）`,
+        `AI特征命中 ${aiScoreBefore}→${aiScoreAfter}（${aiScoreAfter - aiScoreBefore >= 0 ? '+' : ''}${aiScoreAfter - aiScoreBefore}）`,
         `对话 ${(beforeMetrics.dialogueRatio * 100).toFixed(0)}%→${(afterMetrics.dialogueRatio * 100).toFixed(0)}%`,
         `短叙述 ${(beforeMetrics.shortNarrationShare * 100).toFixed(0)}%→${(afterMetrics.shortNarrationShare * 100).toFixed(0)}%`,
         `未消化问题线索 ${keywordHits}/${issues.length}`,
     ];
     const warnings: string[] = [];
-    if (aiScoreAfter - aiScoreBefore > 10) warnings.push('AI 味分明显上升，建议人工复核');
+    if (aiScoreAfter - aiScoreBefore > 3) warnings.push('AI 特征命中数明显上升，建议人工复核');
     if (afterMetrics.dialogueRatio < beforeMetrics.dialogueRatio - 0.05) warnings.push('对话占比明显下滑，建议人工复核');
 
     return {
