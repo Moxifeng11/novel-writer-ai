@@ -194,8 +194,6 @@ export interface ControlPanelHandles {
     saveStateDisplay: HTMLElement;
     /** 临时指令输入（多行；Shift+Enter 换行，Enter 应用） */
     hintInput: HTMLTextAreaElement;
-    /** 人工率仪表盘挂载点（概览 Tab，不再占用 AI 建议面板） */
-    humanRateContainer: HTMLElement;
     modelToggleBtn: HTMLButtonElement;
     nextNodeBtn: HTMLButtonElement;
     suggestBtn: HTMLButtonElement;
@@ -247,11 +245,6 @@ export function renderControlPanelAssembly(
     wordCard.createDiv({ cls: 'nw-card-title', text: t('cowrite.monitor.words') });
     const wordCountDisplay = wordCard.createDiv({ cls: 'nw-card-value', text: '0' });
     const wordGoalDisplay = wordCard.createDiv({ cls: 'nw-card-sub', text: t('cowrite.monitor.goalPlaceholder') });
-
-    // 人工率仪表盘：属于「概览」数据，不再塞进 AI 建议面板
-    const humanRateContainer = overviewTabContent.createDiv({
-        cls: 'nw-human-rate-dashboard nw-cowrite-human-rate-card',
-    });
 
     // 写作控制台（紧凑模式）
     const controlPanel = overviewTabContent.createDiv({ cls: 'nw-cowrite-control-panel' });
@@ -399,7 +392,6 @@ export function renderControlPanelAssembly(
         hintStateDisplay,
         saveStateDisplay,
         hintInput,
-        humanRateContainer,
         modelToggleBtn,
         nextNodeBtn,
         suggestBtn,

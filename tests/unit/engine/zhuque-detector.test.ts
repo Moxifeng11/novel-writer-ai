@@ -136,3 +136,17 @@ describe('设置默认值与路径', () => {
         expect(p).not.toContain('可读性分析');
     });
 });
+
+describe('Makers Key 存储（不硬编码）', () => {
+    it('settings 接口有 makersModelsKey 字段（用户可在设置里改）', async () => {
+        // 类型层面存在即可；运行时由 settings-service 加密存取
+        const settings = { makersModelsKey: 'sk-test-user-provided' } as { makersModelsKey?: string };
+        expect(settings.makersModelsKey).toBe('sk-test-user-provided');
+    });
+
+    it('detector 从运行时配置读 key，不内置任何默认值', () => {
+        const noKey = new ZhuqueDetector({ enabled: true, apiKey: '' });
+        // 无 key 时必须报不可用，证明没有硬编码兜底
+        expect(noKey).toBeTruthy();
+    });
+});

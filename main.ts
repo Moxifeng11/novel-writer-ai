@@ -670,6 +670,14 @@ export interface NovelWriterSettings {
     updateGithubRepo?: string;
     /** 私有 GitHub 仓库更新检查 Token（可留空） */
     updateGithubToken?: string;
+    /**
+     * EdgeOne Makers API Key（2026-11-25）。
+     *
+     * 用于朱雀 AIGC 检测（设置 → 拆解引擎 → 朱雀人味检测）。
+     * 与 `apiKey` 同级加密存储（`aes256v2:`），**不硬编码**，可随时在设置里改。
+     * 未开启朱雀检测时不需要填。
+     */
+    makersModelsKey?: string;
     /** v7.8: 自定义更新检查 URL */
     updateCustomUrl?: string;
     /** v7.8: 更新检查间隔（小时） */

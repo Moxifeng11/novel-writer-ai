@@ -266,6 +266,59 @@ export class DeconstructionSection extends SettingsSection {
                 });
             });
 
+        // ── 朱雀人味检测（2026-11-25）──
+        // 为什么单独一张卡：它是唯一直接测「人味」的判据，
+        // 其余 8 个维度都是句长/标点/词表这类代理指标（相关性弱，长句 r=0.150）。
+        const zhuqueCard = section.createDiv({ cls: 'nw-st-dc-card' });
+        zhuqueCard.createEl('h4', {
+            text: t('settings.deconstruction.zhuqueTitle'),
+            cls: 'nw-st-dc-card-title',
+        });
+        zhuqueCard.createDiv({
+            text: t('settings.deconstruction.zhuqueNote'),
+            cls: 'nw-st-dc-note',
+        });
+
+        new Setting(zhuqueCard)
+            .setName(t('settings.deconstruction.zhuqueEnabledName'))
+            .setDesc(t('settings.deconstruction.zhuqueEnabledDesc'))
+            .addToggle(toggle => {
+                toggle.setValue(cfg.includeZhuque);
+                toggle.onChange(async (value) => {
+                    await this.ensureDeconstructionEngineSettingsPersists(s => {
+                        s.includeZhuque = value;
+                    });
+                });
+            });
+
+        new Setting(zhuqueCard)
+            .setName(t('settings.deconstruction.zhuqueKeyName'))
+            .setDesc(t('settings.deconstruction.zhuqueKeyDesc'))
+            .addText(text => {
+                text.setValue(this.plugin.settings.makersModelsKey || '');
+                text.setPlaceholder(t('settings.deconstruction.zhuqueKeyPlaceholder'));
+                // 密码型输入：避免肩窥。加密存储由 settings-service 统一处理。
+                text.inputEl.type = 'password';
+                text.onChange(async (value) => {
+                    this.plugin.settings.makersModelsKey = value.trim();
+                    await this.plugin.saveSettings();
+                });
+            });
+
+        new Setting(zhuqueCard)
+            .setName(t('settings.deconstruction.zhuqueMaxCharsName'))
+            .setDesc(t('settings.deconstruction.zhuqueMaxCharsDesc', { count: cfg.zhuqueMaxChars.toLocaleString() }))
+            .addText(text => {
+                text.setValue(String(cfg.zhuqueMaxChars));
+                text.onChange(async (value) => {
+                    const n = Number(value.trim());
+                    if (!Number.isFinite(n) || n < 1000) return;
+                    await this.ensureDeconstructionEngineSettingsPersists(s => {
+                        s.zhuqueMaxChars = Math.min(200_000, Math.round(n));
+                    });
+                });
+            });
+
         const perfCard = section.createDiv({
             cls: 'nw-st-dc-card'
         });

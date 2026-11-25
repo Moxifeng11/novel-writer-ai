@@ -60,7 +60,6 @@ type FinalizeCtx = {
     isCurrentSuggestionEpoch: (epoch: number) => boolean;
     setGhostSuggestion: ReturnType<typeof vi.fn>;
     renderEmptySuggestions: ReturnType<typeof vi.fn>;
-    updateHumanRateDashboard: ReturnType<typeof vi.fn>;
     finalizeAcceptedInsert: (epoch: number) => void;
 };
 
@@ -71,7 +70,6 @@ function makeFinalizeCtx(currentEpoch: number): FinalizeCtx {
         currentRecord: { id: 'rec' },
         setGhostSuggestion: vi.fn(),
         renderEmptySuggestions: vi.fn(),
-        updateHumanRateDashboard: vi.fn(),
     } as unknown as FinalizeCtx;
     ctx.isCurrentSuggestionEpoch = CoWritingView.prototype['isCurrentSuggestionEpoch'];
     ctx.finalizeAcceptedInsert = CoWritingView.prototype['finalizeAcceptedInsert'];
@@ -122,7 +120,6 @@ describe('CoWritingView — NBI-05 异步结果归属', () => {
         expect(ctx.currentRecord).toBeNull();
         expect(ctx.setGhostSuggestion).toHaveBeenCalledWith(null);
         expect(ctx.renderEmptySuggestions).toHaveBeenCalledTimes(1);
-        expect(ctx.updateHumanRateDashboard).toHaveBeenCalledTimes(1);
     });
 
     it('TR-E5: 收尾期间已开始新一轮生成（代次变化）→ 不覆盖其进度面板', () => {
@@ -133,7 +130,6 @@ describe('CoWritingView — NBI-05 异步结果归属', () => {
         expect(ctx.currentSuggestions).toEqual([{ id: 's1', text: '旧候选' }]);
         expect(ctx.currentRecord).toEqual({ id: 'rec' });
         expect(ctx.renderEmptySuggestions).not.toHaveBeenCalled();
-        expect(ctx.updateHumanRateDashboard).not.toHaveBeenCalled();
     });
 });
 

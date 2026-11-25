@@ -9,9 +9,9 @@
 | `engine/` | 359 | 148530 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 268 | 53749 | 2293 | 1783 | 78% |
-| `core/` | 7 | 3395 | 35 | 20 | 57% |
+| `core/` | 7 | 3398 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 308 | 114115 | 1183 | 946 | 80% |
+| `ui/` | 307 | 113942 | 1177 | 942 | 80% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 647 | 5 | 4 |
+| `core/settings-service.ts` | 650 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -751,21 +751,20 @@
 | `ui/chapter-version-modal.ts` | 542 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3991 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3948 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
 | `ui/co-writing/chapter-match.ts` | 164 | 3 | 3 |
 | `ui/co-writing/chapter-nav.ts` | 157 | 6 | 3 |
-| `ui/co-writing/control-panel.ts` | 410 | 14 | 8 |
-| `ui/co-writing/dashboard-status.ts` | 191 | 9 | 7 |
+| `ui/co-writing/control-panel.ts` | 402 | 14 | 8 |
+| `ui/co-writing/dashboard-status.ts` | 142 | 6 | 5 |
 | `ui/co-writing/editor-aux.ts` | 169 | 5 | 3 |
 | `ui/co-writing/editor-display.ts` | 128 | 10 | 6 |
 | `ui/co-writing/editor-shortcuts.ts` | 89 | 4 | 2 |
 | `ui/co-writing/find-replace.ts` | 271 | 11 | 6 |
 | `ui/co-writing/friendly-error.ts` | 52 | 1 | 1 |
 | `ui/co-writing/ghost-association.ts` | 93 | 4 | 2 |
-| `ui/co-writing/human-rate.ts` | 126 | 3 | 2 |
 | `ui/co-writing/kb-panel.ts` | 386 | 12 | 11 |
 | `ui/co-writing/kb-reference-card.ts` | 174 | 2 | 2 |
 | `ui/co-writing/kb-reference-config.ts` | 206 | 10 | 7 |
@@ -964,7 +963,7 @@
 | `ui/settings/api-section.ts` | 1741 | 1 | 1 |
 | `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
 | `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
-| `ui/settings/deconstruction-section.ts` | 362 | 1 | 1 |
+| `ui/settings/deconstruction-section.ts` | 415 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 294 | 1 | 1 |
 | `ui/settings/general-sections.ts` | 1260 | 5 | 5 |

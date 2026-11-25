@@ -4,7 +4,6 @@
  * 从 `ui/co-writing-view.ts` 抽出：字数/目标/保存状态展示、精准模式人工率面板。
  * 纯格式化函数与 DOM 渲染分离，便于锁定字数进度与脏状态判定。
  */
-import { calculateHumanRate, renderHumanRate } from '@/ui/co-writing/human-rate';
 import { isDirtySaveState, parseSaveState } from '@/ui/co-writing/save-state';
 import { t } from '@/i18n';
 
@@ -30,16 +29,6 @@ export interface StatusBarHost {
     wordGoal: number;
     /** 目标来源短标签（大纲/项目/默认）；不传则不标注 */
     wordGoalSource?: string;
-}
-
-/** 人工率仪表盘宿主。 */
-export interface HumanRateHost {
-    /** 仪表盘容器 */
-    container: HTMLElement | null;
-    /** 精准模式开关 */
-    precisionMode: boolean;
-    /** 正文 */
-    editorText: string;
 }
 
 /**
@@ -149,42 +138,4 @@ export function updateSaveStateDisplay(
     if (!display) return;
     display.setText(state);
     display.toggleClass('is-dirty', isDirtyState(state));
-}
-
-/**
- * 渲染人工率仪表盘（精准模式关闭时显示占位）。
- *
- * @param host - 仪表盘宿主
- * @example
- * ```ts
- * renderHumanRatePanel({ container, precisionMode: true, editorText });
- * ```
- */
-export function renderHumanRatePanel(host: HumanRateHost): void {
-    if (!host.container) return;
-    host.container.empty();
-    if (!host.precisionMode) {
-        host.container.createDiv({ cls: 'nw-hr-header' });
-        host.container.createDiv({ cls: 'nw-hr-disabled', text: t('cowrite.dash.precisionOffBanner') });
-        return;
-    }
-    renderHumanRate(host.container, calculateHumanRate(host.editorText));
-}
-
-/**
- * 更新人工率仪表盘。
- *
- * @param host - 仪表盘宿主
- * @example
- * ```ts
- * updateHumanRatePanel({ container, precisionMode: true, editorText });
- * ```
- */
-export function updateHumanRatePanel(host: HumanRateHost): void {
-    if (!host.container) return;
-    if (!host.precisionMode) {
-        renderHumanRatePanel(host);
-        return;
-    }
-    renderHumanRate(host.container, calculateHumanRate(host.editorText));
 }

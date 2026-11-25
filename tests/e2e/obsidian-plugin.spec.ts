@@ -1520,23 +1520,19 @@ test.describe('Novel Writer AI · 真实 Electron 链路', () => {
         expect(await executeCommand(page, toObsidianCommandId('novel-writer-co-writing'))).toBe(true);
         await expect(page.locator('.nw-cowrite-editor')).toBeVisible({ timeout: 20_000 });
 
-        // 4.81.1 UI 回归：控制台是多行 textarea（不再垂直居中），人工率不在 AI 建议面板
+        // 4.81.1 UI 回归：控制台是多行 textarea（不再垂直居中）
+        // 2026-11-25：本地人工率仪表盘已删除（启发式评分不合格，改由朱雀检测判断），
+        // 因此不再断言 .nw-human-rate-dashboard 的存在与归属。
         const consoleUi = await page.evaluate(() => {
             const hint = document.querySelector<HTMLTextAreaElement>('.nw-hint-input');
-            const dashboard = document.querySelector<HTMLElement>('.nw-human-rate-dashboard');
-            const suggestionPanel = document.querySelector<HTMLElement>('.nw-cowrite-suggestions-panel');
             return {
                 tag: hint?.tagName ?? '',
-                hintInSuggestion: Boolean(suggestionPanel && dashboard && suggestionPanel.contains(dashboard)),
-                dashboardParentTab: dashboard?.closest('.nw-cowrite-tab-content')?.getAttribute('data-tab') ?? '',
                 minHeight: hint ? getComputedStyle(hint).minHeight : '',
                 alignItems: hint?.parentElement ? getComputedStyle(hint.parentElement).alignItems : '',
             };
         });
         console.log('COWRITE_CONSOLE_UI ' + JSON.stringify(consoleUi));
         expect(consoleUi.tag).toBe('TEXTAREA');
-        expect(consoleUi.hintInSuggestion).toBe(false);
-        expect(consoleUi.dashboardParentTab).toBe('overview');
 
         // 4.81.1：剧情 / 实时质量 顶栏入口已移除（浮窗仍由「质检」复用）
         const headerButtons = await page.evaluate(() =>

@@ -101,7 +101,6 @@ import { ProgressEmitter, type ProgressState } from '@/shared/progress-emitter';
 import { StepListComponent } from './components/progress/step-list';
 import { TimeEstimator } from '@/shared/time-estimator';
 import { createLogger } from '@/shared/logger';
-import { calculateHumanRate, renderHumanRate, type HumanRateScores } from '@/ui/co-writing/human-rate';
 import { getAssetStatus, getCompletenessIcon, renderAssetStatusBar } from '@/ui/co-writing/asset-status';
 import '@/ui/co-writing/friendly-error';
 import {
@@ -115,7 +114,7 @@ import {
 } from '@/ui/co-writing/chapter-context';
 import { renderGhostSuggestion, resolveGhostTrigger } from '@/ui/co-writing/ghost-association';
 import { canColdStart, renderBriefPanel, updateStartButtonState } from '@/ui/co-writing/brief-panel';
-import { renderHumanRatePanel, renderStatusBar, updateHumanRatePanel, updateSaveStateDisplay } from '@/ui/co-writing/dashboard-status';
+import { renderStatusBar, updateSaveStateDisplay } from '@/ui/co-writing/dashboard-status';
 import {
     adjustReferenceWeight,
     setPrimaryReference,
@@ -348,7 +347,6 @@ export class CoWritingView extends ItemView {
   private precisionModeBtn: HTMLButtonElement | null = null;
   /** 顶栏模型快速切换器（原右下角状态栏浮窗的替代入口） */
   private modelSwitcher: ModelQuickSwitcherHandle | null = null;
-  private humanRateDashboard: HTMLElement | null = null;
   private assetStatusBar: HTMLElement | null = null;
 
   // v7.3: 进度增强相关
@@ -959,9 +957,6 @@ export class CoWritingView extends ItemView {
     this.hintStateDisplay = h.hintStateDisplay;
     this.saveStateDisplay = h.saveStateDisplay;
     this.hintInput = h.hintInput;
-    // 人工率仪表盘移到概览 Tab（AI 建议面板只显示建议内容）
-    this.humanRateDashboard = h.humanRateContainer;
-    this.renderHumanRateDashboard();
     this.modelToggleBtn = h.modelToggleBtn;
     this.nextNodeBtn = h.nextNodeBtn;
     this.suggestBtn = h.suggestBtn;
@@ -1892,7 +1887,6 @@ export class CoWritingView extends ItemView {
     await this.plugin.saveSettings();
     this.facade.setPrecisionMode(enabled);
     this.updatePrecisionModeBtn();
-    this.updateHumanRateDashboard();
     showSuccessNotice(enabled ? t('cowrite.precisionOn') : t('cowrite.precisionOff'), { timeout: 2000 });
   }
 
@@ -1909,42 +1903,6 @@ export class CoWritingView extends ItemView {
     }
   }
 
-  /** 渲染人工率仪表盘 */
-  renderHumanRateDashboard() {
-    renderHumanRatePanel({
-      container: this.humanRateDashboard,
-      precisionMode: this.facade.settings.precisionMode || false,
-      editorText: this.rightEditor?.value || '',
-    });
-  }
-
-  /**
-   * 计算人工率各维度评分
-   *
-    * @returns number } 结果
-   */
-  calculateHumanRate(): HumanRateScores {
-    return calculateHumanRate(this.rightEditor?.value || '');
-  }
-
-  /**
-   * 将评分渲染到仪表盘容器
-   *
-   * @param scores - 分数表
-   */
-  renderHumanRateInto(scores: HumanRateScores) {
-    if (!this.humanRateDashboard) return;
-    renderHumanRate(this.humanRateDashboard, scores);
-  }
-
-  /** 更新人工率仪表盘 */
-  updateHumanRateDashboard() {
-    updateHumanRatePanel({
-      container: this.humanRateDashboard,
-      precisionMode: this.facade.settings.precisionMode || false,
-      editorText: this.rightEditor?.value || '',
-    });
-  }
   /** v6.4: 推进到下一个未完成剧情节点 */
   async handleAdvanceNextNode() {
     const body = this.rightEditor.value;
@@ -2526,7 +2484,6 @@ ${text}`;
     this.setGhostSuggestion(null);
     this.currentRecord = null;
     this.renderEmptySuggestions("\u5DF2\u63D2\u5165\u3002\u7EE7\u7EED\u5199\u4F5C\u540E\u6309 Tab \u751F\u6210\u4E0B\u4E00\u8F6E\u4E3B\u5EFA\u8BAE\uFF1B\u6709\u5EFA\u8BAE\u65F6 Tab \u4F1A\u76F4\u63A5\u63A5\u53D7\u7B2C\u4E00\u6761\u3002");
-    this.updateHumanRateDashboard();
   }
   /** 取消已排队的尾随渲染（强制刷新会立即渲染，视图关闭时也不能留定时器） */
   private clearPreviewTimer(): void {

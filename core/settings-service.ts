@@ -253,6 +253,7 @@ export class SettingsService {
         settings.vectorDoubaoApiKey = await this.decryptSecretField('向量-豆包', settings.vectorDoubaoApiKey || '');
         settings.vectorQwenApiKey = await this.decryptSecretField('向量-千问', settings.vectorQwenApiKey || '');
         settings.updateGithubToken = await this.decryptSecretField('更新令牌', settings.updateGithubToken || '');
+        settings.makersModelsKey = await this.decryptSecretField('朱雀检测 Makers Key', settings.makersModelsKey || '');
         if (settings.canonResearch && settings.canonResearch.apiKey) {
             settings.canonResearch.apiKey = await this.decryptSecretField('同人考据密钥', settings.canonResearch.apiKey);
         }
@@ -300,6 +301,8 @@ export class SettingsService {
             vectorDoubaoApiKey: typeof data.vectorDoubaoApiKey === 'string' ? data.vectorDoubaoApiKey : '',
             vectorQwenApiKey: typeof data.vectorQwenApiKey === 'string' ? data.vectorQwenApiKey : '',
             updateGithubToken: typeof data.updateGithubToken === 'string' ? data.updateGithubToken : '',
+            // 朱雀检测的 EdgeOne Makers Key（2026-11-25）：与 apiKey 同级加密存储，允许用户随时在设置里改
+            makersModelsKey: typeof data.makersModelsKey === 'string' ? data.makersModelsKey : '',
             'canonResearch.apiKey': (() => {
                 const canon = data.canonResearch;
                 return canon && typeof canon === 'object' && typeof (canon as Record<string, unknown>).apiKey === 'string'
