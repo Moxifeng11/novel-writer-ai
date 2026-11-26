@@ -1,4 +1,5 @@
 import { FileTxService } from '@/services/file-tx';
+import { resolveSampling, taskKindOfStep } from '@/shared/ai-task-profile';
 import { App, TFile } from 'obsidian';
 import { buildAssertionConstraintPack, renderAssertionConstraintSection } from '@/services/assertion-context-service';
 import { parseAssertions } from '@/shared/assertion-source-model';
@@ -1211,7 +1212,25 @@ export class StepRunner {
 
         const systemPrompt = ctx.systemPromptEl?.value || '';
         const userPrompt = ctx.userPromptEl?.value || '';
-        const temperature = Math.max(0, Math.min(2, parseFloat(ctx.temperatureSlider?.value || '1.4') || 1.4));
+        /**
+         * 温度按任务类型分档（2026-11-26）。
+         *
+         * 旧实现：所有步骤共用 UI slider 的值（默认 1.4）。
+         * 问题：质量自检要稳定 JSON（1.4 会导致格式漂移）、正文生成要创意。
+         * 共用一个值必有一端不最优，且 1.4 超出多数模型建议上限。
+         *
+         * 现行：按 stepKey 映射到任务类型，取该档温度（0.2-0.8）。
+         * UI slider 若被用户显式改过（非默认 1.4），尊重用户选择——
+         * 这是「高级用户可覆盖」的逃生口。
+         */
+        const profile = resolveSampling(taskKindOfStep(stepKey));
+        const sliderRaw = ctx.temperatureSlider?.value;
+        const sliderValue = parseFloat(sliderRaw || '');
+        // 默认值 1.4 视为「用户没改」；改成其他值视为用户显式指定
+        const userTouched = Number.isFinite(sliderValue) && Math.abs(sliderValue - 1.4) > 1e-6;
+        const temperature = userTouched
+            ? Math.max(0, Math.min(2, sliderValue))
+            : profile.temperature;
 
         // 归因用「实际发送的文本」+ resolver 的模板来源/版本；用户手改 prompt 也能追溯。
         try {

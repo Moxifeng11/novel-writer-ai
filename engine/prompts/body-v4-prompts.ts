@@ -29,7 +29,9 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `\${lensDeclaration}
 - 对话必须加引号 ""
 - 字数跟随本章目标：约 \${baseWords} 字
 
-\${humanVoice}`;
+\${humanVoice}
+
+\${protocolLines}`;
 
 /**
  * BODY_GENERATION_USER_TEMPLATE_V4 常量。

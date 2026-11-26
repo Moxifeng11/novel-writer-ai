@@ -14,11 +14,12 @@
 import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
+import { splitProtocolLines, validateProtocolLines, renderProtocolChecklist } from '@/shared/protocol-lines';
 import { pjBodyFile, pjBodyDir } from '@/shared/paths';
 import { entityDir } from '@/shared/entity-reader';
 import { findBodyFileByChapterNum } from './chapter-utils';
 import { listFolderFiles } from '@/shared/vault-tree';
-import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta } from '@/shared/file-system-port';
+import { FileSystemPort, FrontmatterPort, VaultMetaPort, ObsidianFileSystem, ObsidianFrontmatter, ObsidianVaultMeta, writeVaultText } from '@/shared/file-system-port';
 import './step-runner-callbacks';
 import { validateStepResult } from './step-validator';
 import { createLogger } from '@/shared/logger';
@@ -317,10 +318,43 @@ export class StepResultSaver {
                 }
 
                 const chapNum = v4ChapN || this.parseChapterNum(chapterName);
+                /**
+                 * 协议行分离（2026-11-26）。
+                 *
+                 * 正文提示词末尾会让模型追加 CR/CI/BT/NE 结构化变更行。
+                 * 这里在写盘前剥离，避免协议行混进正文；
+                 * 剥出的变更**不直接改数据表**，而是落成待确认清单——
+                 * AI 可能编造，直接改会污染数据。
+                 */
+                const protocolSplit = splitProtocolLines(content);
+                const protocolValid = validateProtocolLines(protocolSplit.lines);
+                const cleanContent = protocolSplit.lines.length > 0 ? protocolSplit.body : content;
+                if (protocolSplit.lines.length > 0) {
+                    log.info(
+                        `[StepResultSaver] ${chapterName} 协议行：解析 ${protocolSplit.lines.length} 条，`
+                        + `合法 ${protocolValid.valid.length} 条`
+                        + (protocolValid.warnings.length ? `，告警 ${protocolValid.warnings.length} 条` : ''),
+                    );
+                    if (protocolValid.warnings.length > 0) {
+                        log.warn(`[StepResultSaver] 协议行告警：${protocolValid.warnings.join('；')}`);
+                    }
+                    if (protocolValid.valid.length > 0) {
+                        const checklist = renderProtocolChecklist(protocolValid.valid, chapterName);
+                        const checklistPath = actualTargetPath.replace(/\.md$/, '.协议行待确认.md');
+                        try {
+                            if (this.app) {
+                                await writeVaultText(this.app, checklistPath, checklist);
+                                log.info(`[StepResultSaver] 协议行清单已写入: ${checklistPath}`);
+                            }
+                        } catch (e) { // silent-ok: 清单是辅助产物，写失败不影响正文落盘；正文已正确剥离协议行
+                            log.warn('[StepResultSaver] 协议行清单写入失败（不影响正文）:', e);
+                        }
+                    }
+                }
                 const writer = new BodyWriter({ fs: this.getFS(), frontmatter: this.getFrontmatter() });
                 await writer.write({
                     path: actualTargetPath,
-                    raw: content,
+                    raw: cleanContent,
                     chapterNum: chapNum,
                     chapterName,
                     volume,

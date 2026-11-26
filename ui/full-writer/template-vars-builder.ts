@@ -21,6 +21,7 @@ import { renderChapterDigestBlock } from '@/engine/memory/chapter-digest';
 import { buildTimeContextMessage } from '@/shared/time-context';
 import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
+import { PROTOCOL_LINES_INSTRUCTION } from '@/shared/protocol-lines';
 
 /**
  * 后章约束（nextChapterHook）的最大字符数。
@@ -663,6 +664,9 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   } catch (e) {
     log.warn("[小说工坊] 读取下一章大纲失败（后章约束将退化为通用说明）:", e);
   }
+  // 协议行指令（2026-11-26）：让模型在正文末尾顺手输出结构化变更，
+  // 省一次 distill LLM 调用。解析与落盘在 step-result-saver 里做（不直接改数据表）。
+  vars["protocolLines"] = PROTOCOL_LINES_INSTRUCTION;
   vars["nextChapterHook"] = nextHook.trim()
     || "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
@@ -763,6 +767,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "prevChapEnding",
   "prevChapterStateSnapshot",
   "nextChapterHook",
+  "protocolLines",
   "unrevealedForeshadow",
   "timelineEvents",
   "sceneCardDigest",
