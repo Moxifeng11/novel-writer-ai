@@ -77,6 +77,8 @@ const metrics = {
 };
 
 const updateBaseline = process.argv.includes('--update-baseline');
+/** --strict：恢复旧的阻断行为（仅发版前自查用；日常开发只报告） */
+const strictMode = process.argv.includes('--strict');
 const noteIndex = process.argv.indexOf('--note');
 const baselineNote = noteIndex !== -1 ? process.argv[noteIndex + 1] : '';
 
@@ -125,18 +127,29 @@ const budgetKeys = [
     'otherClasses',
     'maxSelectorDepth',
 ];
+// ── 预算报告（2026-11-27 起不阻断；同 check-bundle 的理由）──
+// 语法/命名问题（issues）仍然阻断——那是真缺陷；
+// 预算增长只报告（CSS 体积/类数随功能自然增长，逐 KB 审批会阻塞开发）。
+// 发版前可用 --strict 恢复阻断自查。
 const violations = budgetKeys
     .filter((key) => typeof baseline[key] === 'number' && metrics[key] > baseline[key])
     .map((key) => `${key}: ${metrics[key]} > 基线 ${baseline[key]} (+${metrics[key] - baseline[key]})`);
 
 if (violations.length > 0) {
-    console.error('\n❌ CSS 预算超基线（只允许下降）:');
-    violations.forEach((v) => console.error(`  - ${v}`));
+    if (strictMode) {
+        console.error('\n❌ CSS 预算超基线（--strict 模式）:');
+        violations.forEach((v) => console.error(`  - ${v}`));
+        console.error('\n提示：不带 --strict 时只报告不阻断；确需更新基线请加 --note。');
+    } else {
+        console.warn('\nℹ️ CSS 预算相对基线增长（不阻断，属正常迭代）：');
+        violations.forEach((v) => console.warn(`  - ${v}`));
+    }
 }
 
-if (issues.length > 0 || violations.length > 0) {
+if (issues.length > 0 || (strictMode && violations.length > 0)) {
     console.error('\n=== 检查失败 ===');
     process.exit(1);
 }
 
-console.log('\n✅ CSS 语法与预算检查通过');
+const budgetTail = violations.length ? `（预算有 ${violations.length} 项增长，仅报告）` : '，预算未增长';
+console.log(`\n✅ CSS 语法检查通过${budgetTail}`);

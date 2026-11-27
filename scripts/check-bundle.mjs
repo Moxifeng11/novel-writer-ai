@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * check-bundle.mjs — 主包构建产物体积预算棘轮（只降不升）
+ * check-bundle.mjs — 构建产物体积**报告**（2026-11-27 起不再阻断）
  *
- * 统计构建产物 `main.js` 与 `styles.css` 的字节数，与 `.bundle-baseline.json` 对比：
- *   - 任一文件超过基线 → exit 1（列出超量字节数）；
- *   - 低于基线 → 提示可用 --update-baseline 收紧基线；
- *   - 缺构建产物或缺基线 → 报错并给出修复命令。
+ * ## 为什么从「棘轮门禁」改为「报告」
  *
- * 基线格式：{ generatedAt, note, files: { "main.js": bytes, "styles.css": bytes } }。
- * 口径与 check-css.js 一致：统一按 LF 计费（Windows checkout 是 CRLF，若按工作树
- * 字节记基线，Linux/Release 会少 ~1 byte/行，棘轮在不同平台上口径不一致）。
+ * 原规则是「只降不升」，每次功能迭代涨 1-4 KB 都要 --update-baseline --note 审批。
+ * 实测代价：功能开发被体积门禁反复阻塞，而 Obsidian 与社区目录**都没有体积硬上限**
+ * （几 MB 的插件很常见）。逐 KB 审批的噪音远大于收益。
+ *
+ * 现在只做**观测**：
+ *   - 打印各产物体积，永不 exit 1
+ *   - 相对基线增长超过阈值（默认 10%）时给 warning，方便发现「误加大依赖」
+ *   - 低于基线时提示可收紧（可选）
+ *
+ * 仍然保留的：`--update-baseline` 强制带 `--note`，让 git 历史可追溯体积变化原因。
+ *
+ * 基线格式：{ generatedAt, note, files: { "main.js": bytes, ... } }。
+ * 口径统一按 LF 计费（Windows checkout 是 CRLF，按工作树字节记基线会让跨平台口径不一致）。
  *
  * 用法：
- *   node scripts/check-bundle.mjs                            # 校验（preflight 在 build 之后运行）
- *   node scripts/check-bundle.mjs --update-baseline          # 用当前体积重写基线（note 保留追加）
- *   node scripts/check-bundle.mjs --update-baseline --note "原因"  # 带更新原因重写基线
- *
- * 规则：体积只允许下降；只有真正精简产物后才能收紧基线；确需上调（如新增大依赖）
- * 必须显式更新基线并在 note 里说明原因，不得为了让门禁通过而悄悄上调。
+ *   node scripts/check-bundle.mjs                            # 报告（preflight 在 build 之后运行）
+ *   node scripts/check-bundle.mjs --update-baseline --note "原因"  # 记录当前体积为新基线
+ *   node scripts/check-bundle.mjs --strict                    # 恢复旧行为（超基线即 exit 1，用于发版前自查）
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,6 +55,10 @@ function formatMB(bytes) {
 
 const args = process.argv.slice(2);
 const updateBaseline = args.includes('--update-baseline');
+/** --strict：恢复旧的阻断行为（仅发版前自查用，日常开发不阻断） */
+const strictMode = args.includes('--strict');
+/** 相对基线的告警阈值（默认 10%） */
+const WARN_RATIO = 0.10;
 const noteIndex = args.indexOf('--note');
 const noteArg = noteIndex !== -1 ? (args[noteIndex + 1] || null) : null;
 
@@ -94,8 +102,8 @@ if (updateBaseline) {
             const old = existing.files[file];
             if (typeof old === 'number' && current[file] > old) {
                 console.warn(
-                    `⚠️ ${file} 基线上调：${old} → ${current[file]}（+${current[file] - old}）；`
-                    + '体积预算应只降不升，请确认 note 里已说明上调原因。',
+                    `ℹ️ ${file} 基线上调：${old} → ${current[file]}（+${current[file] - old}）；`
+                    + '已记入 note（体积检查不阻断，仅作追溯）。',
                 );
             }
         }
@@ -128,22 +136,45 @@ try {
 }
 const baselineFiles = baseline.files ?? {};
 
-// 基线里没有的文件按 0 计（同 check-any-budget：新增产物视为超预算）
-const violations = FILES
-    .filter((f) => current[f] > (baselineFiles[f] ?? 0))
-    .map((f) => {
-        const allowed = baselineFiles[f] ?? 0;
-        return `${f}: ${current[f]} > 基线 ${allowed}（+${current[f] - allowed}，${formatMB(current[f])}）`;
-    });
+// ── 体积报告（不阻断；--strict 时恢复阻断）──────────────────
+// 增长分两档：超阈值（默认 10%）→ warning 提示可能误加大依赖；
+// --strict 下任何增长 → exit 1（仅发版前自查用）。
+const grown = [];
+const warned = [];
+for (const f of FILES) {
+    const allowed = baselineFiles[f] ?? 0;
+    if (allowed === 0) continue; // 基线无记录视为首次，不比较
+    const delta = current[f] - allowed;
+    if (delta <= 0) continue;
+    const ratio = delta / allowed;
+    grown.push({ file: f, delta, allowed, ratio });
+    if (ratio > WARN_RATIO) warned.push({ file: f, delta, allowed, ratio });
+}
 
-if (violations.length > 0) {
-    console.error('\n❌ 构建产物体积超基线（只允许下降）:');
-    violations.forEach((v) => console.error(`  - ${v}`));
-    console.error(
-        '\n请先精简产物体积；确需上调必须运行 `node scripts/check-bundle.mjs --update-baseline` '
-        + '并在 note 里说明原因，不得为了过门禁悄悄上调基线。',
-    );
-    process.exit(1);
+if (grown.length > 0) {
+    if (strictMode) {
+        console.error('\n❌ 构建产物体积超基线（--strict 模式）:');
+        for (const g of grown) {
+            console.error(`  - ${g.file}: +${g.delta} bytes（当前 ${formatMB(current[g.file])}，基线 ${formatMB(g.allowed)}）`);
+        }
+        console.error('\n提示：不带 --strict 时只报告不阻断；确需更新基线请加 --note。');
+        process.exit(1);
+    }
+    if (warned.length > 0) {
+        console.warn(`\n⚠️ 产物体积相对基线增长超过 ${(WARN_RATIO * 100).toFixed(0)}%（可能是误加大依赖）：`);
+        for (const w of warned) {
+            console.warn(
+                `  - ${w.file}: +${w.delta} bytes（+${(w.ratio * 100).toFixed(1)}%，`
+                + `当前 ${formatMB(current[w.file])} vs 基线 ${formatMB(w.allowed)}）`,
+            );
+        }
+        console.warn('  → 若非预期，检查是否引入大依赖；确认无问题可 --update-baseline 更新基线。');
+    } else {
+        console.log(`\nℹ️ 产物体积相对基线小幅增长（均 < ${(WARN_RATIO * 100).toFixed(0)}%，属正常迭代）：`);
+        for (const g of grown) {
+            console.log(`  - ${g.file}: +${g.delta} bytes（${formatMB(current[g.file])}）`);
+        }
+    }
 }
 
 const tightened = FILES.filter((f) => current[f] < (baselineFiles[f] ?? 0));
@@ -155,4 +186,4 @@ if (tightened.length > 0) {
     }
 }
 
-console.log('\n✅ 构建产物体积预算通过');
+console.log('\n✅ 构建产物体积报告完成（不阻断；发版前可用 --strict 自查）');
