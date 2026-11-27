@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T00:18:30.286Z",
+  "generatedAt": "2026-11-27T11:54:07.557Z",
   "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
   "layers": {
     "engine": {
@@ -19,9 +19,9 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 266,
-      "exports": 2297,
-      "documented": 2296,
+      "files": 268,
+      "exports": 2310,
+      "documented": 2309,
       "methods": 163,
       "methodsDocumented": 163,
       "incomplete": 0
@@ -43,11 +43,11 @@
       "incomplete": 0
     },
     "ui": {
-      "files": 305,
-      "exports": 1167,
-      "documented": 1167,
-      "methods": 678,
-      "methodsDocumented": 677,
+      "files": 307,
+      "exports": 1175,
+      "documented": 1175,
+      "methods": 681,
+      "methodsDocumented": 680,
       "incomplete": 0
     }
   },
@@ -2945,6 +2945,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/ai-task-profile.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/api-format.ts": {
       "exports": 21,
       "documented": 21,
@@ -4088,6 +4095,13 @@
     "shared/protagonist.ts": {
       "exports": 2,
       "documented": 2,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/protocol-lines.ts": {
+      "exports": 8,
+      "documented": 8,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -5356,8 +5370,8 @@
       "incomplete": 0
     },
     "ui/components/ai-detection-report.ts": {
-      "exports": 1,
-      "documented": 1,
+      "exports": 2,
+      "documented": 2,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0,
@@ -5432,6 +5446,24 @@
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 1,
+      "examplesDocumented": 1
+    },
+    "ui/components/generate-confirm-format.ts": {
+      "exports": 4,
+      "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0,
+      "exampleTargets": 3,
+      "examplesDocumented": 3
+    },
+    "ui/components/generate-confirm-modal.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 3,
+      "methodsDocumented": 3,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1

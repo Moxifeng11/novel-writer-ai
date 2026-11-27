@@ -13,7 +13,8 @@ import { BodyWriter } from '@/engine/body-writer';
 import { describeBodyFormat } from '@/shared/body-format';
 import { listFolderFiles } from '@/shared/vault-tree';
 import { createLogger } from '@/shared/logger';
-import { showErrorNotice } from './components/notice-helpers';
+import { showErrorNotice, showSuccessNotice } from './components/notice-helpers';
+import { t } from '@/i18n';
 import { ModalRunningGuard } from './components/modal-running-guard';
 
 
@@ -410,7 +411,16 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
 
                 // 7. 统一落盘入口（保留原有 frontmatter、统一标题与缩进）
                 const writer = new BodyWriter({ app: this.app });
-                await writer.write({
+                /**
+                 * 待确认模式（2026-11-27）：按设置决定是否先落 .pending/ 等用户确认。
+                 * - 'off'        → 直接写（旧行为）
+                 * - 'overwrite'  → 仅覆盖已有正文时确认（新建章节不打扰）
+                 * - 'always'     → 每次确认
+                 */
+                const confirmMode = this.plugin.settings.bodyConfirmMode ?? 'overwrite';
+                const shouldConfirm = confirmMode === 'always'
+                    || (confirmMode === 'overwrite' && Boolean(await this.app.vault.adapter.exists(bodyFile.path)));
+                const writeResult = await writer.write({
                     path: bodyFile.path,
                     raw: result.content,
                     chapterNum: chapter.num,
@@ -419,7 +429,18 @@ ${describeBodyFormat({ ...bodyFormat, allowTitle: true })}`;
                     project,
                     writingMode: 'continue',
                     naturalize: this.plugin.settings.naturalParagraphMode !== false,
+                    requireConfirm: shouldConfirm,
                 });
+                if (shouldConfirm && writeResult.pendingPath) {
+                    // 批量续写里逐章弹窗会打断流程：只提示路径，由用户在「待确认」区统一处理
+                    showSuccessNotice(
+                        t('cowrite.generateConfirm.pendingNotice', {
+                            num: String(chapter.num),
+                            path: writeResult.pendingPath,
+                        }),
+                        { timeout: 8000 },
+                    );
+                }
 
                 done++;
                 notice.setMessage(`⏳ 正在生成续写内容：${done}/${targetChapters.length}`);

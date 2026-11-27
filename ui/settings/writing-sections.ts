@@ -315,6 +315,19 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
+            .setName(t('settings.writing.bodyConfirmName'))
+            .setDesc(t('settings.writing.bodyConfirmDesc'))
+            .addDropdown((dropdown) => dropdown
+                .addOption('off', t('settings.writing.bodyConfirmOff'))
+                .addOption('overwrite', t('settings.writing.bodyConfirmOverwrite'))
+                .addOption('always', t('settings.writing.bodyConfirmAlways'))
+                .setValue(this.plugin.settings.bodyConfirmMode || 'overwrite')
+                .onChange(async (value) => {
+                    this.plugin.settings.bodyConfirmMode = (value || 'overwrite') as 'off' | 'overwrite' | 'always';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
             .setName(t('settings.writing.bodyTemplateName'))
             .setDesc(t('settings.writing.bodyTemplateDesc'))
             .addDropdown((dropdown) => dropdown

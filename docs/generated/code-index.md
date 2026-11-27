@@ -9,9 +9,9 @@
 | `engine/` | 359 | 148622 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 270 | 54077 | 2306 | 1790 | 78% |
-| `core/` | 7 | 3398 | 35 | 20 | 57% |
+| `core/` | 7 | 3399 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 307 | 113955 | 1178 | 942 | 80% |
+| `ui/` | 309 | 114244 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 650 | 5 | 4 |
+| `core/settings-service.ts` | 651 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -801,6 +801,8 @@
 | `ui/components/emotion-curve-view.ts` | 131 | 1 | 1 |
 | `ui/components/empty-state.ts` | 196 | 5 | 3 |
 | `ui/components/error-state.ts` | 57 | 3 | 3 |
+| `ui/components/generate-confirm-format.ts` | 67 | 4 | 3 |
+| `ui/components/generate-confirm-modal.ts` | 188 | 3 | 1 |
 | `ui/components/modal-dirty-guard.ts` | 107 | 1 | 1 |
 | `ui/components/modal-running-guard.ts` | 91 | 1 | 1 |
 | `ui/components/notice-helpers.ts` | 160 | 3 | 3 |
@@ -815,7 +817,7 @@
 | `ui/consistency-audit-modal.ts` | 278 | 2 | 1 |
 | `ui/context-injector-modal.ts` | 210 | 1 | 1 |
 | `ui/context-metrics-modal.ts` | 82 | 1 | 1 |
-| `ui/continue-chapters-modal.ts` | 578 | 1 | 1 |
+| `ui/continue-chapters-modal.ts` | 599 | 1 | 1 |
 | `ui/cowrite/body-save-controller.ts` | 284 | 3 | 2 |
 | `ui/cowrite/cowrite-mappers.ts` | 111 | 6 | 6 |
 | `ui/cowrite/history-modal.ts` | 56 | 1 | 1 |
@@ -977,7 +979,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 848 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 861 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |

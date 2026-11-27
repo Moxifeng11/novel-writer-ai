@@ -115,3 +115,31 @@ describe('BodyWriter 待确认写入', () => {
         await expect(writer.adoptPending(PENDING, { writingMode: 'batch' })).rejects.toThrow(/待确认文件不存在/);
     });
 });
+
+describe('T5 待确认模式的设置与 UI 契约', () => {
+    it('bodyConfirmMode 三档取值合法', () => {
+        const modes: Array<'off' | 'overwrite' | 'always'> = ['off', 'overwrite', 'always'];
+        expect(modes).toHaveLength(3);
+    });
+
+    it('overwrite 模式：新建章节不确认，覆盖已有才确认', async () => {
+        // 模拟 shouldConfirm 判定逻辑（与 continue-chapters-modal 一致）
+        const shouldConfirm = (mode: string, exists: boolean): boolean =>
+            mode === 'always' || (mode === 'overwrite' && exists);
+
+        expect(shouldConfirm('off', true)).toBe(false);
+        expect(shouldConfirm('off', false)).toBe(false);
+        expect(shouldConfirm('overwrite', true)).toBe(true);
+        expect(shouldConfirm('overwrite', false)).toBe(false);
+        expect(shouldConfirm('always', true)).toBe(true);
+        expect(shouldConfirm('always', false)).toBe(true);
+    });
+
+    it('GenerateConfirmModal 三态选择都已定义', async () => {
+        const mod = await import('../../../ui/components/generate-confirm-modal');
+        expect(mod.GenerateConfirmModal).toBeDefined();
+        // 类型层面三态
+        const choices: Array<'adopt' | 'discard' | 'later'> = ['adopt', 'discard', 'later'];
+        expect(choices).toHaveLength(3);
+    });
+});

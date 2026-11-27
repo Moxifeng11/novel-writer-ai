@@ -678,6 +678,14 @@ export interface NovelWriterSettings {
      * 未开启朱雀检测时不需要填。
      */
     makersModelsKey?: string;
+    /**
+     * 正文生成后是否走「待确认」（2026-11-27，云笔四态的本仓实现）。
+     *
+     * - 'off'（默认）：生成后直接写正文（旧行为）
+     * - 'overwrite'：仅当要覆盖已有正文时才确认（新建章节不打扰）
+     * - 'always'：每次都确认
+     */
+    bodyConfirmMode?: 'off' | 'overwrite' | 'always';
     /** v7.8: 自定义更新检查 URL */
     updateCustomUrl?: string;
     /** v7.8: 更新检查间隔（小时） */

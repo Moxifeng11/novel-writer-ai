@@ -9,7 +9,7 @@
 | `engine/` | 342 | 1948 | 1947 | 100% | 1264 | 1264 | 100% | 0 |
 | `services/` | 66 | 297 | 297 | 100% | 312 | 312 | 100% | 0 |
 | `shared/` | 268 | 2310 | 2309 | 100% | 163 | 163 | 100% | 0 |
-| `ui/` | 305 | 1168 | 1168 | 100% | 678 | 677 | 100% | 0 |
+| `ui/` | 307 | 1175 | 1175 | 100% | 681 | 680 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
 
@@ -75,6 +75,8 @@
 | `ui/components/emotion-curve-view.ts` | 1 | 1 | 100% | — |
 | `ui/components/empty-state.ts` | 3 | 3 | 100% | — |
 | `ui/components/error-state.ts` | 1 | 1 | 100% | — |
+| `ui/components/generate-confirm-format.ts` | 3 | 3 | 100% | — |
+| `ui/components/generate-confirm-modal.ts` | 1 | 1 | 100% | — |
 | `ui/components/modal-dirty-guard.ts` | 1 | 1 | 100% | — |
 | `ui/components/modal-running-guard.ts` | 1 | 1 | 100% | — |
 | `ui/components/notice-helpers.ts` | 3 | 3 | 100% | — |
