@@ -388,6 +388,14 @@ export interface NovelWriterSettings {
     activeBodyTemplate?: 'auto' | 'v1' | 'v2' | 'v3' | 'v4';
     /** 追加「可数硬指标」（时间锚点/口语/对话段数）；实验 C9 的组成部分，默认关 */
     countableHumanHints?: boolean;
+    /**
+     * 正文末尾追加结构化变更行（CR/CI/BT/NE，省一次蒸馏调用）。
+     *
+     * 默认关：这段指令约 350 字，每章都要付 token；且会让模型在正文尾部
+     * 输出程序可解析的行，对不跑步骤流程的用户是纯噪声。开启后协议行由
+     * `step-result-saver` 解析成「待确认」文件，不会直接改数据表。
+     */
+    structuredChangeLines?: boolean;
     /** 上下文体检自动清空重复段（保留权威版本）；默认开，串章只告警不改 */
     contextHygieneAutoFix?: boolean;
     /** 首次启动引导已完成（创建第一个项目后置 true） */

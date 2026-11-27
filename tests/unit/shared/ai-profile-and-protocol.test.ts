@@ -2,6 +2,9 @@
  * 温度分档 + 协议行 的回归测试（2026-11-26）
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
     AI_TASK_PROFILES, resolveSampling, taskKindOfStep, type AiTaskKind,
 } from '../../../shared/ai-task-profile';
@@ -147,5 +150,18 @@ describe('T3 协议行', () => {
 
     it('protocolLines 登记在 fallback 键表（否则占位符原样发给模型）', () => {
         expect(TEMPLATE_VAR_FALLBACK_KEYS).toContain('protocolLines');
+    });
+
+    it('协议行指令默认关闭（350 字指令不该每章都付 token）', () => {
+        // 2026-11-28 实测缺陷：此前 `vars["protocolLines"]` 无条件注入，
+        // 没有开关能关掉，正文尾部恒带程序用行。现由 structuredChangeLines 控制。
+        const here = path.dirname(fileURLToPath(import.meta.url));
+        const src = readFileSync(
+            path.resolve(here, '../../../ui/full-writer/template-vars-builder.ts'),
+            'utf8',
+        );
+        expect(src).toContain('structuredChangeLines');
+        // 不允许再出现裸赋值（无条件注入）
+        expect(src).not.toMatch(/vars\["protocolLines"\]\s*=\s*PROTOCOL_LINES_INSTRUCTION\s*;/);
     });
 });

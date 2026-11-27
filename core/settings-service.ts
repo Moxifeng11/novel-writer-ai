@@ -527,6 +527,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         activeRulesVersion: '',
         activeBodyTemplate: 'auto',
         countableHumanHints: false,
+        structuredChangeLines: false,
         contextHygieneAutoFix: true,
         firstRunComplete: false,
         autoRevisionAfterQC: true,

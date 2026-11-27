@@ -2517,6 +2517,8 @@ export const zhCN: MessageTree = {
             humanVoiceQuota: '旧版数值配额（对照）',
             countableName: '可数硬指标（实验）',
             countableDesc: '在正文 system 末尾追加可数的人味要求：时间锚点、口语标记、对话占比、段落长度。默认关闭。',
+            structuredLinesName: '结构化变更行（省一次蒸馏调用）',
+            structuredLinesDesc: '让模型在正文末尾追加 CR/CI/BT/NE 变更行，由步骤流程解析成「待确认」文件后再入库。指令约 350 字且会让正文尾部带程序用行，默认关闭。',
             groupContextTitle: '上下文与模型',
             groupContextDesc: '影响每次生成能看到多少资料，以及模型断联时的回退行为。',
             storyTierName: '故事上下文档位',

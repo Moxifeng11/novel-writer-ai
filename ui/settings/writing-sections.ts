@@ -377,6 +377,16 @@ export class WritingSection extends SettingsSection {
                     await this.plugin.saveSettings();
                 }));
 
+        new Setting(section)
+            .setName(t('settings.writing.structuredLinesName'))
+            .setDesc(t('settings.writing.structuredLinesDesc'))
+            .addToggle((toggle) => toggle
+                .setValue(this.plugin.settings.structuredChangeLines === true)
+                .onChange(async (value) => {
+                    this.plugin.settings.structuredChangeLines = value;
+                    await this.plugin.saveSettings();
+                }));
+
         group(t('settings.writing.groupContextTitle'), t('settings.writing.groupContextDesc'));
         new Setting(section)
             .setName(t('settings.writing.storyTierName'))

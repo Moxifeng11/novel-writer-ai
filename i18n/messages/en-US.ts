@@ -2514,6 +2514,8 @@ export const enUS: MessageTree = {
             humanVoiceQuota: 'Legacy numeric quota (comparison)',
             countableName: 'Countable hard metrics (experimental)',
             countableDesc: 'Append countable human-voice requirements to the body system prompt: time anchors, colloquial markers, dialogue ratio, paragraph length. Off by default.',
+            structuredLinesName: 'Structured change lines (saves a distillation call)',
+            structuredLinesDesc: 'Ask the model to append CR/CI/BT/NE change lines to the body; the step flow parses them into a pending-review file before writing to data tables. The instruction costs ~350 chars and leaves machine-readable lines at the end of the chapter, so it is off by default.',
             groupContextTitle: 'Context and model',
             groupContextDesc: 'Controls how much material each generation sees and how the plugin falls back when the model disconnects.',
             storyTierName: 'Story context tier',

@@ -666,9 +666,15 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   } catch (e) {
     log.warn("[小说工坊] 读取下一章大纲失败（后章约束将退化为通用说明）:", e);
   }
-  // 协议行指令（2026-11-26）：让模型在正文末尾顺手输出结构化变更，
-  // 省一次 distill LLM 调用。解析与落盘在 step-result-saver 里做（不直接改数据表）。
-  vars["protocolLines"] = PROTOCOL_LINES_INSTRUCTION;
+  // 协议行指令（2026-11-26）：让模型在正文末尾顺手输出结构化变更，省一次
+  // distill LLM 调用。解析与落盘在 step-result-saver 里做（不直接改数据表）。
+  //
+  // 2026-11-28 修真实缺陷：此前无条件注入。这段约 350 字，每章都要付 token，
+  // 且会让正文尾部带程序用行——对不跑步骤流程的用户是纯噪声，也没有任何开关
+  // 能关掉。改为由 `structuredChangeLines`（默认关）控制。
+  vars["protocolLines"] = deps.plugin.settings.structuredChangeLines === true
+    ? PROTOCOL_LINES_INSTRUCTION
+    : "";
   vars["nextChapterHook"] = nextHook.trim()
     || "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;

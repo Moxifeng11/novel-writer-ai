@@ -58,7 +58,14 @@ export interface EntityNames {
  * StepResultSaverDeps 类型定义。
  */
 export interface StepResultSaverDeps {
-    getPlugin?: () => { settings?: { defaultModel?: string; naturalParagraphMode?: boolean } };
+    getPlugin?: () => {
+        settings?: {
+            defaultModel?: string;
+            naturalParagraphMode?: boolean;
+            /** 结构化变更行开关（默认关）；关闭时不解析协议行，避免误摘正文。 */
+            structuredChangeLines?: boolean;
+        };
+    };
     showNotice?: (msg: string, duration?: number) => void;
 }
 
@@ -325,8 +332,15 @@ export class StepResultSaver {
                  * 这里在写盘前剥离，避免协议行混进正文；
                  * 剥出的变更**不直接改数据表**，而是落成待确认清单——
                  * AI 可能编造，直接改会污染数据。
+                 *
+                 * 2026-11-28 修真实缺陷：此前**无条件**解析。关掉
+                 * `structuredChangeLines` 后 prompt 里已没有这份指令，此时仍剥离是
+                 * 危险的——用户正文里本来就可能有 `CR|...` 形态的行（表格、列举、
+                 * 剧本格式），会被误当协议行摘掉，正文静默缺内容。改为按开关启用。
                  */
-                const protocolSplit = splitProtocolLines(content);
+                const protocolSplit = this.deps.getPlugin?.()?.settings?.structuredChangeLines === true
+                    ? splitProtocolLines(content)
+                    : { body: content, lines: [] };
                 const protocolValid = validateProtocolLines(protocolSplit.lines);
                 const cleanContent = protocolSplit.lines.length > 0 ? protocolSplit.body : content;
                 if (protocolSplit.lines.length > 0) {

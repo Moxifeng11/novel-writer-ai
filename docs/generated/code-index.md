@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148719 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148733 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 273 | 54588 | 2327 | 1804 | 78% |
-| `core/` | 7 | 3400 | 35 | 20 | 57% |
+| `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114300 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114316 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 652 | 5 | 4 |
+| `core/settings-service.ts` | 653 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -353,7 +353,7 @@
 | `engine/step-definitions.ts` | 297 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 662 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
-| `engine/step-result-saver.ts` | 609 | 5 | 4 |
+| `engine/step-result-saver.ts` | 623 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 160 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 228 | 6 | 5 |
 | `engine/step-runner.ts` | 2505 | 2 | 1 |
@@ -879,7 +879,7 @@
 | `ui/full-writer/step-render-controller.ts` | 679 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1283 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1289 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
@@ -982,7 +982,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 874 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 884 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |
