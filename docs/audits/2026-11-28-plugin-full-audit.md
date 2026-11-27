@@ -9,8 +9,8 @@
 
 ## 一、结论摘要
 
-本轮共修复 **13 处真实缺陷**，新增 **3 个可重复执行的实测脚本**（共 20 项零成本断言）。
-`prod-smoke` 6/6、`check:func` 8/8、`check:decon` 6/6、全量单测 10787 通过、`preflight` EXIT=0。
+本轮共修复 **17 处真实缺陷**，新增 **3 个可重复执行的实测脚本**（共 20 项零成本断言）。
+`prod-smoke` 6/6、`check:func` 8/8、`check:decon` 6/6、全量单测 10794 通过、`preflight` EXIT=0。
 
 最重要的发现是一类**共同根因**，而不是零散 bug：
 
@@ -18,6 +18,9 @@
 
 仓库里存在多条并行实现：有的在活跃链路上，有的已经死了但没人删。多次「修好了」的提交，
 改的恰好是死的那一条——活路径保留原缺陷，而单测又只覆盖死路径，于是全绿。
+
+拆解链路另有一类更隐蔽的形态：**计数型状态机在异常路径上不守恒**。三处缺陷各自都能
+让 `activeCount` 失真，其中两处的后果是整个队列永久死锁（无自愈路径）。
 
 ---
 
@@ -64,7 +67,7 @@
 
 ## 五、拆解链路（用户最初报「直接卡死」）
 
-现状：三道防护都在且接线正确——
+### 5.1 三道既有防护（都在且接线正确）
 
 1. `KB_BREAKDOWN_HARD_LIMIT` 输入截断（93 万字 → 10 万字）
 2. `warnIfHeavyTask` 重负载预检 + 用户可见通知（成本 ≥15 明确警告）
@@ -74,7 +77,36 @@
 `deepseek-r1:7b` 却忘建 provider，请求会打到默认云端端点并稳定失败（模型不存在）——
 比明确拒绝更难排查。新增 `looksLikeLocalModelName()`（保守识别，宁可漏判不误伤云端）。
 
+### 5.2 并发计数三处不守恒（本轮最严重的一组）
+
+| 缺陷 | 触发 | 后果 |
+|---|---|---|
+| `activeCount++` 之后、真正的 `try {` 之前还有 4 个 `await`；任一 reject 就跳过 `finally` | `appendBreakdownLog` 首读 / `preprocessText` 抛错 | 计数永久 +1，watchdog/abortControllers 残留。**默认 maxConcurrency=2，累计两次即整队列永久死锁，无自愈路径** |
+| `cancelTask('paused')` 自己 `activeCount--`，而 paused 的 worker 还挂在 `waitForResume`，abort 后它走自己的 `finally` 再减一次 | 先 pause 再 cancel（`cancelByBook` 的 `getActiveTasks()` 包含 paused） | 计数**变负** → 一次启动超过上限的任务 → 重复计费 + 主线程卡死 |
+| watchdog 只看 `lastSeenAlive`，只有 `emitProgress` 写它；`vectorizeBook` 全程零 `emitProgress` | 中长书向量化 > `WATCHDOG_TIMEOUT`(120s) | 把**已跑到 100%** 的任务改成 failed 并 abort，向量库还记一次失败 |
+
+修法与回归测试见 `tests/unit/engine/deconstruction-concurrency-invariant.test.ts`。
+
+### 5.3 取消后仍整本向量化计费
+
+`vectorizeBook` / `embedText(s)` 全链路不接受 signal。取消拆解后，样本收集与逐条 embed
+仍跑完整本书。已在写向量前加任务状态检查（`cancelled`/`failed` 直接跳过并抛错，
+由调用方如实记失败）。
+
 `check:decon` 6/6 验证：引擎设置可读、LLM 模型非本地、向量模型允许本地、队列无卡死残留。
+
+---
+
+## 五之二、复核后**判定不成立**的审计项
+
+排查过程中收到两条指控，读源码后确认不成立，记录以免后续重复劳动：
+
+- **「取消 + 重试 = 重复计费」**：`ai-api-client.ts` 与 `ai-api-stream.ts` 的 catch
+  首行都有 `if (externalSignal?.aborted) return { content:'', error:'aborted' }`，
+  取消后不会进入重试分支。
+- **「`abortable` 第二次取消失效」**：每次 `requestViaUrl` 都新建 `abortable` 实例并
+  重新注册 `{once:true}` 监听，不存在「监听器已被移除」问题。真正的限制是
+  `requestUrl` 本身不可中断——这是 Obsidian API 的硬约束，已在注释里说明。
 
 ---
 
