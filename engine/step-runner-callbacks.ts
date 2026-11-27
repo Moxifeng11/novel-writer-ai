@@ -65,6 +65,20 @@ export interface StepRunnerCallbacks {
      * @param message - 消息
      * @param duration - 耗时
      */
+    /**
+     * 步骤执行门禁确认（可选）。未注入时视为「总是确认」。
+     *
+     * 为什么走回调：engine 层不能 import ui/（架构门禁），
+     * 确认弹窗的实现在 ui/，由宿主注入到这里。
+     *
+     * @param gate - 门禁提示数据（标题/说明/步骤）
+     * @returns 用户是否确认执行
+     * @example
+     * // 宿主侧
+     * confirmStepGate: (gate) => OperationConfirmModal.confirm(app, gate),
+     */
+    confirmStepGate?(gate: import('@/shared/step-gate').StepGatePromptSpec): Promise<boolean>;
+
     showNotice(message: string, duration?: number): void;
     /**
      * 显示成功通知

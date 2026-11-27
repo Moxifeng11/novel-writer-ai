@@ -537,6 +537,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         promptCacheEnabled: true,
         antiAiExtraWords: [],
         bodyConfirmMode: 'overwrite',
+        stepGateMode: 'costly',
         wordMinRatio: 0.7,
         promptSplitRatio: 0.67,
         naturalParagraphMode: true,

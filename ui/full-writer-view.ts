@@ -62,6 +62,7 @@ import { ENGINE_NAMES } from '@/shared/engine-names';
 import { ChapterStateManager } from './states/chapter-state-manager';
 import './utils/worldview-utils';
 import { StepRunner, ALL_FULL_STEPS, FullStep, StepRunCtx } from '@/engine/step-runner';
+import { OperationConfirmModal } from './components/progress/operation-confirm-modal';
 import { BODY_CHANGE_INVALIDATED_STEPS } from '@/engine/step-definitions';
 import { buildCreationModeGuide, parseCreationModeMeta } from '@/shared/creation-mode';
 import {
@@ -631,6 +632,18 @@ export class FullWriterView extends ItemView {
             invalidateSteps: (keys: string[]) => {
                 this.chapterStateManager.invalidateSteps(keys);
             },
+            // 步骤门禁确认（2026-11-27, T8）：engine 层不 import ui/，
+            // 弹窗实现由宿主注入。
+            confirmStepGate: (gate: { stepLabel: string; chapterName: string }) =>
+                OperationConfirmModal.confirm(this.app, {
+                    title: t('settings.writing.stepGateDialogTitle', { label: gate.stepLabel }),
+                    description: t('settings.writing.stepGateDialogDesc', { chapter: gate.chapterName }),
+                    steps: [
+                        t('settings.writing.stepGateDialogStep1'),
+                        t('settings.writing.stepGateDialogStep2'),
+                        t('settings.writing.stepGateDialogStep3'),
+                    ],
+                }),
         };
 
         this.stepRunner = new StepRunner(this.app, plugin, stepRunnerCallbacks);

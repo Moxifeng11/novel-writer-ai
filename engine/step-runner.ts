@@ -1,5 +1,6 @@
 import { FileTxService } from '@/services/file-tx';
 import { resolveSampling, taskKindOfStep } from '@/shared/ai-task-profile';
+import { decideStepGate, buildStepGatePrompt } from '@/shared/step-gate';
 import { App, TFile } from 'obsidian';
 import { buildAssertionConstraintPack, renderAssertionConstraintSection } from '@/services/assertion-context-service';
 import { parseAssertions } from '@/shared/assertion-source-model';
@@ -1191,6 +1192,17 @@ export class StepRunner {
      * executeCurrentStep 的执行体（原逻辑不变；拆出以便用量 scope 包裹整个函数）。
      * @param ctx - 上下文
      */
+    /**
+     * 构造章节标签（用于门禁弹窗文案）。
+     *
+     * @param ctx - 步骤上下文
+     * @returns 章节名或兜底文案
+     */
+    private buildChapterLabel(ctx: StepRunCtx): string {
+        const name = ctx.vars?.['chapterName'] || ctx.vars?.['chapPosition'] || '';
+        return String(name).trim() || '当前章节';
+    }
+
     private async executeCurrentStepInner(ctx: StepRunCtx): Promise<void> {
         // D3：重试按钮依赖「最近一次执行的上下文」，必须在入口记录，
         // 且要在任何早退分支之前——否则请求失败后按钮拿到的永远是 null。
@@ -1203,6 +1215,23 @@ export class StepRunner {
         const stepKey = currentStep.key;
         if (!stepKey) return;
         const stepLabel = currentStep.label;
+
+        // 步骤执行门禁（2026-11-27，T8 最小可行子集）：高成本步骤执行前确认。
+        // 云笔的完整三段式（草案→确认→写库验证）要改 step-runner 架构，
+        // 本仓先实现「执行前告知」这一层，避免误触覆盖正文。
+        const gateMode = this.plugin.settings.stepGateMode ?? 'costly';
+        if (decideStepGate(currentStep, { mode: gateMode }) === 'needs-confirm') {
+            const gate = buildStepGatePrompt(currentStep, this.buildChapterLabel(ctx));
+            // 确认交互由宿主注入（engine 层不依赖 ui/，见 tests/unit/architecture）
+            const confirmed = this.callbacks.confirmStepGate
+                ? await this.callbacks.confirmStepGate(gate)
+                : true;
+            if (!confirmed) {
+                this.emitEvent('step-skip', 'info', `已跳过：${stepLabel}`, stepKey, stepLabel);
+                return;
+            }
+        }
+
         this.emitEvent('step-start', 'info', `开始执行：${stepLabel}`, stepKey, stepLabel);
 
         // 先占位再解析模板：resolveStepPrompt 是异步的，若等它结束才置 busy，

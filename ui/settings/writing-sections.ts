@@ -315,6 +315,19 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
+            .setName(t('settings.writing.stepGateName'))
+            .setDesc(t('settings.writing.stepGateDesc'))
+            .addDropdown((dropdown) => dropdown
+                .addOption('off', t('settings.writing.stepGateOff'))
+                .addOption('costly', t('settings.writing.stepGateCostly'))
+                .addOption('all', t('settings.writing.stepGateAll'))
+                .setValue(this.plugin.settings.stepGateMode || 'costly')
+                .onChange(async (value) => {
+                    this.plugin.settings.stepGateMode = (value || 'costly') as 'off' | 'costly' | 'all';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
             .setName(t('settings.writing.bodyConfirmName'))
             .setDesc(t('settings.writing.bodyConfirmDesc'))
             .addDropdown((dropdown) => dropdown

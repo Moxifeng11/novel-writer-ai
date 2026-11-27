@@ -686,6 +686,15 @@ export interface NovelWriterSettings {
      * - 'always'：每次都确认
      */
     bodyConfirmMode?: 'off' | 'overwrite' | 'always';
+    /**
+     * 步骤执行门禁（2026-11-27，T8 最小可行子集）。
+     *
+     * 本仓步骤链是自动连跑的：点「开始」就一路跑到底，正文生成会直接覆盖正文。
+     * - 'off'：从不确认
+     * - 'costly'（默认）：只确认高成本步骤（正文生成/质量控制/分析报告）
+     * - 'all'：所有手动步骤都确认
+     */
+    stepGateMode?: 'off' | 'costly' | 'all';
     /** v7.8: 自定义更新检查 URL */
     updateCustomUrl?: string;
     /** v7.8: 更新检查间隔（小时） */

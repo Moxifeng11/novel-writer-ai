@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148626 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148669 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 272 | 54381 | 2320 | 1799 | 78% |
-| `core/` | 7 | 3399 | 35 | 20 | 57% |
+| `shared/` | 273 | 54493 | 2326 | 1803 | 78% |
+| `core/` | 7 | 3400 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114267 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114293 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 651 | 5 | 4 |
+| `core/settings-service.ts` | 652 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -354,9 +354,9 @@
 | `engine/step-modal-controller.ts` | 662 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
 | `engine/step-result-saver.ts` | 609 | 5 | 4 |
-| `engine/step-runner-callbacks.ts` | 146 | 5 | 0 |
+| `engine/step-runner-callbacks.ts` | 160 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 228 | 6 | 5 |
-| `engine/step-runner.ts` | 2476 | 2 | 1 |
+| `engine/step-runner.ts` | 2505 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
 | `engine/step-specials.ts` | 269 | 5 | 4 |
@@ -674,6 +674,7 @@
 | `shared/settlement-recovery-model.ts` | 92 | 5 | 4 |
 | `shared/skill-model.ts` | 118 | 6 | 4 |
 | `shared/step-frontmatter.ts` | 154 | 5 | 4 |
+| `shared/step-gate.ts` | 112 | 6 | 4 |
 | `shared/step-keys.ts` | 32 | 2 | 1 |
 | `shared/storage-keys.ts` | 50 | 5 | 2 |
 | `shared/store/compose.ts` | 64 | 2 | 2 |
@@ -848,7 +849,7 @@
 | `ui/fingerprint-library-modal.ts` | 319 | 1 | 1 |
 | `ui/fingerprint-utils.ts` | 231 | 13 | 13 |
 | `ui/font-manager-modal.ts` | 117 | 1 | 1 |
-| `ui/full-writer-view.ts` | 2777 | 2 | 2 |
+| `ui/full-writer-view.ts` | 2790 | 2 | 2 |
 | `ui/full-writer/batch-pipeline-runner.ts` | 504 | 5 | 4 |
 | `ui/full-writer/batch-step-retry.ts` | 26 | 2 | 1 |
 | `ui/full-writer/batch-targets.ts` | 69 | 4 | 4 |
@@ -981,7 +982,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 861 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 874 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |
