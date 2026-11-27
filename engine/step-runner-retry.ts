@@ -175,8 +175,14 @@ export async function callAIStreamWithRetry(
 
         const chunkContent = result.content || '';
         fullContent += chunkContent;
+        // DSH-20261113-20 缺陷：缺失的 finishReason 不得兜成 'stop'——
+        // undefined 只在流被截断/异常时出现，兜底会让续写逻辑失效、
+        // 半截正文被当作完整章节落盘。保持 undefined，循环按非 length 收尾。
+        //
+        // 2026-11-28：这个修复此前只落在 `AIEngine.generateChapterStream`
+        // （死路径），活的续写链路一直保留 `|| 'stop'`。此处改为保持原值。
         finalFinishReason =
-                    (result as { finishReason?: 'length' | 'error' | 'stop' | 'aborted' }).finishReason || 'stop';
+            (result as { finishReason?: 'length' | 'error' | 'stop' | 'aborted' }).finishReason;
         if (result.actualModel) actualModel = result.actualModel;
 
         if (result.usage) {

@@ -1,4 +1,4 @@
-import '@/shared/rebuild-guard';
+import { isRebuildableSkeleton } from '@/shared/rebuild-guard';
 import '@/shared/paths';
 import { App, Modal, Notice, TFile, TFolder } from 'obsidian';
 import NovelWriterPlugin from '@/main';
@@ -297,7 +297,13 @@ export class RebuildChaptersModal extends Modal {
                 if (outlineFile) {
                     const outlineContent = await this.app.vault.read(outlineFile);
                     const outlineBody = outlineContent.replace(/^---[\s\S]*?---/, '').trim();
-                    const isSkeleton = outlineBody.includes('（待 auto_writer') || outlineBody.includes('（待定）') || outlineBody.length < 100;
+                    // 2026-11-28 修真实缺陷：此处原为内联判定
+                    //   outlineBody.includes('（待 auto_writer') || includes('（待定）') || length < 100
+                    // `length < 100` 正是 `shared/rebuild-guard.ts` 文件头明确要废弃的启发式
+                    // ——它会把用户手写的短大纲当骨架整篇覆盖。且内联版只认 2 个占位符，
+                    // 而 guard 认 8 个（含「请填写」「本节待补充」等）。
+                    // guard 模块此前只有一句副作用空 import，从未被调用。
+                    const isSkeleton = isRebuildableSkeleton(outlineBody);
                     if (!isSkeleton) outlineExists = true;
                 }
                 if (!outlineExists) {

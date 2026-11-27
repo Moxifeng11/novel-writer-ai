@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148733 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148749 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 273 | 54588 | 2327 | 1804 | 78% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114316 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114372 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -281,7 +281,7 @@
 | `engine/prompts/prompt-registry.ts` | 210 | 8 | 8 |
 | `engine/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
 | `engine/prompts/style-exemplars.ts` | 134 | 8 | 7 |
-| `engine/prompts/template-utils.ts` | 177 | 4 | 4 |
+| `engine/prompts/template-utils.ts` | 187 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
 | `engine/prompts/writing-rules.ts` | 9 | 0 | 0 |
 | `engine/quality-gate.ts` | 242 | 6 | 5 |
@@ -355,7 +355,7 @@
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
 | `engine/step-result-saver.ts` | 623 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 160 | 5 | 0 |
-| `engine/step-runner-retry.ts` | 228 | 6 | 5 |
+| `engine/step-runner-retry.ts` | 234 | 6 | 5 |
 | `engine/step-runner.ts` | 2505 | 2 | 1 |
 | `engine/step-sequential.ts` | 116 | 4 | 3 |
 | `engine/step-settlement.ts` | 221 | 3 | 3 |
@@ -946,7 +946,7 @@
 | `ui/protect-yuan-modal.ts` | 88 | 1 | 1 |
 | `ui/quality-dashboard-modal.ts` | 506 | 2 | 2 |
 | `ui/quality-loop-modal.ts` | 411 | 1 | 1 |
-| `ui/rebuild-chapters-modal.ts` | 370 | 1 | 1 |
+| `ui/rebuild-chapters-modal.ts` | 376 | 1 | 1 |
 | `ui/refill-modal.ts` | 650 | 1 | 1 |
 | `ui/rename-project-modal.ts` | 105 | 1 | 1 |
 | `ui/rendering/context-panel.ts` | 957 | 1 | 1 |
@@ -1040,7 +1040,7 @@
 | `ui/welcome-modal.ts` | 232 | 1 | 1 |
 | `ui/wizard-checker.ts` | 572 | 2 | 1 |
 | `ui/workspace-manager.ts` | 139 | 2 | 2 |
-| `ui/writing-pet.ts` | 662 | 10 | 8 |
+| `ui/writing-pet.ts` | 712 | 10 | 8 |
 | `ui/writing-stats-modal.ts` | 245 | 1 | 1 |
 | `ui/writing-stats-settings.ts` | 74 | 1 | 1 |
 | `ui/writing-style-modal.ts` | 597 | 1 | 1 |

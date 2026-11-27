@@ -164,14 +164,24 @@ ${modeBlock}`,
 
 /**
  * 替换模板变量
+ *
+ * 2026-11-28 修真实缺陷：原实现用 `result.replace(re, value)`——字符串形式的
+ * 替换值会被 `String.replace` 解释替换模式：`$&`（整个匹配）、`` $` ``（匹配前
+ * 文本）、`$'`（匹配后文本）、`$$`。用户大纲/规则/正文里出现这些序列时，
+ * 插入的内容会被悄悄改写（例如 `$&` 变成 `${sceneCardDigest}` 本身）。
+ * 改用函数式替换，替换值原样插入。
+ *
  * @param template - 模板
  * @param vars - 变量表
  * @returns 文本结果
+ * @example
+ * fillTemplate('${a}和${b}', { a: '$&', b: '正文' }) // '$&和正文'
  */
 export function fillTemplate(template: string, vars: Record<string, string>): string {
     let result = template;
     for (const [key, value] of Object.entries(vars)) {
-        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value || '');
+        const text = value || '';
+        result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), () => text);
     }
     return result;
 }

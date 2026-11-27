@@ -28,7 +28,13 @@ import {
     subscribePetActivity,
     type PetActivityKind,
 } from '@/shared/pet-activity';
-import '@/shared/pet-geometry';
+import {
+    clampPetPoint,
+    snapPetPoint,
+    PET_SNAP_THRESHOLD,
+    type PetSnapEdges,
+    type PetViewport,
+} from '@/shared/pet-geometry';
 import { onNodeDoc } from '@/shared/dom-window';
 
 /**
@@ -642,20 +648,64 @@ export class WritingPet {
         this.disposeDragListeners();
         if (!this.moved || !this.root) return;
         const rect = this.root.getBoundingClientRect();
+        // 松手时应用边缘吸附（逐帧拖动不做，否则手感发粘）
+        this.placeAt(rect.left, rect.top, true);
+        const snapped = this.root.getBoundingClientRect();
         const settings = this.deps.plugin.settings;
-        settings.petPosition = { x: Math.round(rect.left), y: Math.round(rect.top) };
+        settings.petPosition = { x: Math.round(snapped.left), y: Math.round(snapped.top) };
         void this.deps.plugin.saveSettings();
         // 拖动结束后的那次 click 不应再触发展开
         window.setTimeout(() => { this.moved = false; }, 0);
     }
 
-    private placeAt(x: number, y: number): void {
+    /**
+     * 把宠物放到指定坐标（已做可视区域钳制）。
+     *
+     * 2026-11-28 修真实缺陷：`shared/pet-geometry.ts`（139 行，含边缘吸附）
+     * 此前只有一句副作用空 import，实际定位是在这里**内联重写**的，且：
+     * 1. 用 `window.innerWidth/innerHeight`，popout 窗口与软键盘场景下
+     *    可视区域与窗口尺寸不一致，会钳到错误边界（模块本来处理了
+     *    visualViewport 偏移）；
+     * 2. 完全不实现边缘吸附——而右键菜单里的「吸附左/右/底」三个开关
+     *    只写 `settings.petSnapEdges`，从没有任何代码读它，纯摆设。
+     *
+     * 现在改用模块函数：可视区域优先 `visualViewport`，松手吸附按设置生效。
+     *
+     * @param x - 目标左上角 X（px，相对窗口）
+     * @param y - 目标左上角 Y（px，相对窗口）
+     * @param snap - 是否应用边缘吸附（拖拽松手时 true，逐帧移动时 false）
+     */
+    private placeAt(x: number, y: number, snap = false): void {
         if (!this.root) return;
         const width = this.root.offsetWidth || 150;
         const height = this.root.offsetHeight || 170;
-        const maxX = Math.max(8, window.innerWidth - width - 8);
-        const maxY = Math.max(8, window.innerHeight - height - 8);
-        this.root.style.left = `${Math.min(Math.max(8, Math.round(x)), maxX)}px`;
-        this.root.style.top = `${Math.min(Math.max(8, Math.round(y)), maxY)}px`;
+        const win = this.root.ownerDocument?.defaultView ?? window;
+        // visualViewport 才是「用户实际能看到」的区域：popout/缩放/软键盘下
+        // 与 innerWidth/innerHeight 不同，用它才不会把宠物放到看不见的地方。
+        const vv = win.visualViewport;
+        const view: PetViewport = {
+            left: 0,
+            top: 0,
+            right: vv ? vv.width : win.innerWidth,
+            bottom: vv ? vv.height : win.innerHeight,
+            width: vv ? vv.width : win.innerWidth,
+            height: vv ? vv.height : win.innerHeight,
+        };
+        const size = Math.max(width, height);
+        const stored = (this.deps.plugin.settings as {
+            petSnapEdges?: Partial<PetSnapEdges> & { threshold?: number };
+        }).petSnapEdges;
+        const edges: PetSnapEdges = {
+            left: stored?.left !== false,
+            right: stored?.right !== false,
+            bottom: stored?.bottom !== false,
+        };
+        const threshold = typeof stored?.threshold === 'number' ? stored.threshold : PET_SNAP_THRESHOLD;
+        const point = { x: Math.round(x), y: Math.round(y) };
+        const resolved = snap
+            ? snapPetPoint(point, view, size, threshold, edges)
+            : clampPetPoint(point, view, size);
+        this.root.style.left = `${resolved.x}px`;
+        this.root.style.top = `${resolved.y}px`;
     }
 }
