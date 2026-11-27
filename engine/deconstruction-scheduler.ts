@@ -3070,6 +3070,17 @@ export class DeconstructionScheduler {
             throw new Error('没有可向量化的内容：原文与拆解报告均未产出片段，检索不可用');
         }
 
+        // 2026-11-28 修真实缺陷（取消后仍整本计费）：
+        // `vectorizeBook` 不接收 signal——取消拆解后，上面收集样本、下面
+        // `replaceBookSamples` 里的逐条 embed 仍会跑完整本书并计费。
+        // 这里在真正 embedding 前查一次任务状态：已取消/已失败就不再写向量。
+        // （无法中断「正在跑的那一次 embed」，但至少不再继续后续批次。）
+        const ownerTask = [...this.tasks.values()].find(t => t.bookId === bookId);
+        if (ownerTask && (ownerTask.status === 'cancelled' || ownerTask.status === 'failed')) {
+            log.info(`[DeconstructionScheduler] 任务已 ${ownerTask.status}，跳过向量化写入: ${bookName}`);
+            throw new Error(`任务已${ownerTask.status === 'cancelled' ? '取消' : '失败'}，跳过向量化`);
+        }
+
         // 重新拆解时替换整本书向量，避免新旧样本叠加导致索引膨胀
         if (typeof this.vectorStore.replaceBookSamples === 'function') {
             await this.vectorStore.replaceBookSamples(bookId, bookName, samples);

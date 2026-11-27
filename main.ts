@@ -147,6 +147,7 @@ import { normalizePetImageConfig } from './shared/pet-image-model';
 import { clearPetImageFromDisk, loadPetImageFromDisk, savePetImageToDisk } from './shared/pet-image-store';
 import { shouldAutoOpenFirstRunGuide } from './shared/first-run-guide';
 import { RulesService } from './services/rules-service';
+import { GenreConfigRegistry } from './engine/genre';
 import { getPromptCache } from './engine/prompt-cache';
 import { StyleFingerprintLibrary } from './engine/style-fingerprint-library';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
@@ -3478,6 +3479,11 @@ export default class NovelWriterPlugin extends Plugin {
         // 内存响应缓存与规则单例持有 App/整章文本，卸载时不能留给下一次热重载
         getPromptCache().clear();
         RulesService.resetInstance();
+        // 2026-11-28 修真实缺陷：`GenreConfigRegistry.registerCustomConfig` 只 set 不删，
+        // `genre-detector` 在 LLM 识别出新题材时**生产路径**就会写入。而
+        // `resetInstance` 定义了却从不被调用（grep main.ts 为 0）——热重载/切 vault
+        // 后，A vault 的 LLM 自创 genreId 会留在 B vault，污染 getGenreConfig 的回退。
+        GenreConfigRegistry.resetInstance();
         // P0-14/16 + O-3: 不向 localStorage 保存恢复状态。
         // 热重载交接由按钮 handler 写入 sessionStorage（10 分钟 TTL、读取即删），
         // 新实例 onload 消费一次；Obsidian 正常关闭→启动时 sessionStorage 已随窗口清空，
