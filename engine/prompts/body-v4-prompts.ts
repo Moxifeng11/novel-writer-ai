@@ -44,6 +44,8 @@ export const BODY_GENERATION_USER_TEMPLATE_V4 = `【台词清单（按编号顺�
 
 \${infoPlan}
 
+\${writingAnnotations}
+
 \${entityRelations}
 
 \${distilledContent}

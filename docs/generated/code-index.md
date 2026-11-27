@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148622 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148626 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 270 | 54077 | 2306 | 1790 | 78% |
+| `shared/` | 271 | 54207 | 2311 | 1794 | 78% |
 | `core/` | 7 | 3399 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114244 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114256 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -267,9 +267,9 @@
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
-| `engine/prompts/body-v2-prompts.ts` | 146 | 3 | 3 |
+| `engine/prompts/body-v2-prompts.ts` | 148 | 3 | 3 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
-| `engine/prompts/body-v4-prompts.ts` | 93 | 3 | 3 |
+| `engine/prompts/body-v4-prompts.ts` | 95 | 3 | 3 |
 | `engine/prompts/chapter-pipeline-prompts.ts` | 641 | 11 | 11 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
@@ -468,6 +468,7 @@
 | `shared/adaptive-debounce-manager.ts` | 315 | 2 | 2 |
 | `shared/ai-credentials.ts` | 96 | 4 | 4 |
 | `shared/ai-task-profile.ts` | 133 | 5 | 3 |
+| `shared/annotation-marker.ts` | 130 | 5 | 4 |
 | `shared/api-format.ts` | 603 | 21 | 20 |
 | `shared/api-response-utils.ts` | 253 | 10 | 10 |
 | `shared/api-types.ts` | 24 | 1 | 1 |
@@ -876,7 +877,7 @@
 | `ui/full-writer/step-render-controller.ts` | 679 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1260 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1272 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |

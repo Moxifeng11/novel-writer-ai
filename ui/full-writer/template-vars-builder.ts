@@ -22,6 +22,7 @@ import { buildTimeContextMessage } from '@/shared/time-context';
 import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
 import { PROTOCOL_LINES_INSTRUCTION } from '@/shared/protocol-lines';
+import { buildAnnotationParts } from '@/shared/annotation-marker';
 
 /**
  * 后章约束（nextChapterHook）的最大字符数。
@@ -768,6 +769,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "prevChapterStateSnapshot",
   "nextChapterHook",
   "protocolLines",
+  "writingAnnotations",
   "unrevealedForeshadow",
   "timelineEvents",
   "sceneCardDigest",
@@ -917,7 +919,16 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
   if (!vars["nextChapterHook"])
     vars["nextChapterHook"] = "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   if (deps.stepResults["infoPlan"]) {
-    vars["infoPlan"] = deps.stepResults["infoPlan"];
+    /**
+     * ⟨✍⟩ 批注分离（2026-11-27）。
+     *
+     * 摘要里可以嵌「导演批注」（如 `⟨✍ 此处不展开战斗细节 ⟩`）：
+     * 摘要说「发生什么」，批注说「怎么处理这一段」。
+     * 这里剥离批注，让 infoPlan 保持干净，批注单独注入 ${writingAnnotations}。
+     */
+    const annotationParts = buildAnnotationParts(deps.stepResults["infoPlan"]);
+    vars["infoPlan"] = annotationParts.cleanSummary;
+    vars["writingAnnotations"] = annotationParts.annotationBlock;
     // v4.20 章纲数据字段：开头承接/章末钩子/伏笔操作 解析成硬要求块，
     // 随 ${infoPlan} 一路进入正文与结算提示词（数据级反 AI，见 shared/info-plan-fields）。
     const planFields = parseInfoPlanFields(deps.stepResults["infoPlan"]);
@@ -931,6 +942,7 @@ export async function buildTemplateVars(deps: TemplateVarsDeps): Promise<Record<
   } else {
     vars["infoPlan"] = "（未执行信息规划：仅按分卷大纲推进，不得自行新增情节节点、反转或信息释放）";
     vars["chapterHook"] = "";
+    vars["writingAnnotations"] = "";
   }
   // v4.20 实体状态速览：出场角色的境界/位置/所有权/近况（结算回写 + 图谱反查，零 AI）。
   // 数据缺失时为空串，正文模板里的 ${entityRelations} 占位自然消失。
