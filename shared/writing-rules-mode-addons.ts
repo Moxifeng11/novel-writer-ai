@@ -64,6 +64,25 @@ export function getWritingRulesModeAddon(mode: CreationMode | (string & {}) | un
 }
 
 /**
+ * 剥掉 Markdown 文件头的 YAML frontmatter。
+ *
+ * 规则文件是 Obsidian 笔记，开头通常有 `---\nversion: ...\ntags: [...]\n---`。
+ * 这段是给 Obsidian 和插件自己读的元数据，**不该进模型 prompt**：
+ * 既占 token，又会让模型把 `---` 当成正文分隔符。
+ *
+ * @param text - 原始文件内容
+ * @returns 去掉 frontmatter 后的正文
+ * @example
+ * stripFrontmatter('---\nversion: "1"\n---\n# 规则') // '# 规则'
+ */
+export function stripFrontmatter(text: string): string {
+    const raw = String(text || '');
+    // 必须从第 0 行开始，且闭合分隔线存在；否则原样返回（不误伤正文里的水平线）
+    const m = /^\uFEFF?---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(raw);
+    return m ? raw.slice(m[0].length) : raw;
+}
+
+/**
  * 组合最终注入文本：主文档 + 模式附录。
  * 保持「单一变量、单一文本」：所有注入点拿到的都是这一份。
  *
@@ -72,6 +91,7 @@ export function getWritingRulesModeAddon(mode: CreationMode | (string & {}) | un
  * @returns 组合后的完整规则文本
  */
 export function composeWritingRules(baseRules: string, mode: CreationMode | (string & {}) | undefined): string {
-    const base = String(baseRules || '').trimEnd();
+    // 2026-11-28 修真实缺陷：vault 规则文件带 YAML frontmatter，此前原样进 system prompt。
+    const base = stripFrontmatter(String(baseRules || '')).trim();
     return `${base}\n${getWritingRulesModeAddon(mode)}`;
 }

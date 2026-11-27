@@ -25,6 +25,7 @@
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
 | `npm run check:engine-msg` | — |
+| `npm run check:func` | — |
 | `npm run check:hotpaths` | 热路径全库扫描检查 |
 | `npm run check:i18n` | — |
 | `npm run check:inline-styles` | 内联样式基线棘轮 |
