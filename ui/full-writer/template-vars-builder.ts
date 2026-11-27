@@ -23,6 +23,7 @@ import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
 import { PROTOCOL_LINES_INSTRUCTION } from '@/shared/protocol-lines';
 import { buildAnnotationParts } from '@/shared/annotation-marker';
+import { auditContextBudget, formatBudgetLine } from '@/shared/context-budget';
 
 /**
  * 后章约束（nextChapterHook）的最大字符数。
@@ -671,6 +672,16 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   vars["nextChapterHook"] = nextHook.trim()
     || "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
+  // ContextBudget (2026-11-27, T2 phase-1: measure only, no trimming).
+  // See shared/context-budget.ts for why: full module toggling is costly,
+  // so observe first, decide what to trim later.
+
+  try {
+    const budget = auditContextBudget(vars);
+    log.info(`[ContextBudget] ${deps.chapterName}: ${formatBudgetLine(budget)}`);
+  } catch (e) { // silent-ok: audit failure must not break prompt assembly; only one log line is lost
+    log.warn('[ContextBudget] audit failed:', e);
+  }
 }
 
 /**

@@ -8,10 +8,10 @@
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 359 | 148626 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 271 | 54207 | 2311 | 1794 | 78% |
+| `shared/` | 272 | 54381 | 2320 | 1799 | 78% |
 | `core/` | 7 | 3399 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114256 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114267 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -500,6 +500,7 @@
 | `shared/constraint-block-model.ts` | 109 | 7 | 3 |
 | `shared/content-classifier.ts` | 248 | 11 | 11 |
 | `shared/context-budget-policy.ts` | 148 | 7 | 6 |
+| `shared/context-budget.ts` | 174 | 9 | 5 |
 | `shared/context-hygiene.ts` | 282 | 11 | 11 |
 | `shared/context-metrics-model.ts` | 133 | 6 | 3 |
 | `shared/context-session-model.ts` | 265 | 16 | 9 |
@@ -877,7 +878,7 @@
 | `ui/full-writer/step-render-controller.ts` | 679 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1272 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1283 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
