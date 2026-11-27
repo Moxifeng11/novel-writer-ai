@@ -822,8 +822,16 @@ export class DeconstructionScheduler {
             this.stopWatchdog(taskId);
             this.stopHeartbeat(taskId);
             this.pauseResolvers.delete(taskId);
-            this.abortControllers.delete(taskId);
-            this.cleanupTaskMaps(taskId);
+            // 2026-11-28 修真实缺陷（并发计数变负）：
+            // paused 任务的 worker **还在跑**——它挂在 `waitForResume` 里。
+            // 上面 `controller.abort()` 会让那个 Promise reject，worker 接着走
+            // 自己的 `finally`，那里已经 `activeCount--` 并 `scheduleNext()`。
+            // 原实现在这里**又减一次**，计数变负 → `while (activeCount < concurrency)`
+            // 之后会一次启动超过上限的任务（默认 2 会变成 3+），重复计费 + 主线程卡死。
+            //
+            // 修法：这里绝不再碰 activeCount / scheduleNext，也**不能**提前删
+            // abortControllers / cleanupTaskMaps——worker 恢复执行时还要用它们
+            // （`abortControllers.delete` 在 worker 的 finally 里已有一份）。
             task.status = 'cancelled';
             task.completedAt = Date.now();
             emitter?.cancel();
@@ -831,8 +839,6 @@ export class DeconstructionScheduler {
                 phase: '已取消',
                 message: '任务已取消',
             });
-            this.activeCount--;
-            this.scheduleNext();
             return;
         }
 
@@ -1076,9 +1082,16 @@ export class DeconstructionScheduler {
         const effectiveConcurrency = Math.max(1, this.getMaxConcurrency() || this.options.concurrency);
         while (this.activeCount < effectiveConcurrency && this.queue.length > 0) {
             const taskId = this.queue.shift();
-            if (taskId) {
-                void this.runTask(taskId);
+            if (!taskId) break;
+            // 2026-11-28：防御性校验。当前 `removeTask` 会同步 `queue.filter`
+            // 清掉失效 id，所以正常流程下不会命中。但 `runTask` 遇到不存在的 task
+            // 会直接 return 而不 `activeCount++`——一旦将来新增「只删 tasks 不清队列」
+            // 的路径，这里就会变成自旋。校验成本是 O(1)，留着更稳。
+            if (!this.tasks.has(taskId)) {
+                log.info('[DeconstructionScheduler] 跳过失效队列项:', taskId);
+                continue;
             }
+            void this.runTask(taskId);
         }
     }
 
@@ -1087,441 +1100,485 @@ export class DeconstructionScheduler {
         if (!task) return;
 
         this.activeCount++;
-        task.status = 'running';
-        task.startedAt = Date.now();
-        this.startWatchdog(taskId, task.bookId);
-
-        const emitter = this.taskEmitters.get(taskId);
-        emitter?.start();
-
-        const controller = new AbortController();
-        this.abortControllers.set(taskId, controller);
-
-        const qualityLevel = this.getQualityLevel();
-        const vectorDimensions: BreakdownDimension[] = [];
-        const degradedDimensions: BreakdownDimension[] = [];
-        const degradationReasons: Array<{ dimension: string; reason: string }> = [];
-        // DSH-20261113-21：失败维度收集（拆解抛错或写入失败）——存在失败时任务
-        // 不得以 completed/100% 收尾，也不得弹「拆解完成」。
-        const failedDimensions: Array<{ dimension: BreakdownDimension; error: string }> = [];
-        const dimensionQualityScores = new Map<BreakdownDimension, DimensionQualityScore>();
-        const dimensionDurations = new Map<BreakdownDimension, number>();
-        const dimensionResults = new Map<BreakdownDimension, unknown>();
-        const sampleMode = this.isSampleModeEnabled();
-        const sampleLimit = this.getTextSampleLimit();
-        const rawWordCount = task.sourceText.length;
         /**
-         * 输入文本截断（2026-11-25 修复卡死）。
+         * 2026-11-28 修真实缺陷（队列永久死锁）：
          *
-         * 旧逻辑：`sampleMode ? slice(0, sampleLimit) : 全文`。
-         * 问题：`sampleMode` 默认 false，于是**整本书不截断**直接进 8 维拆解。
-         * 用户实测 93 万字书 + 8 维全开 + 向量增强（走主线程）→ Obsidian 卡死。
+         * `activeCount++` 之后、下方真正的 `try {` 之前还有 4 个 await
+         * （checkVectorAvailability / appendBreakdownLog ×2 / computeContentHash）。
+         * 其中 `appendBreakdownLog` 的首个 await 读 book 不在任何 try 内，
+         * `preprocessText` 在超大文本上也可能抛。任一 reject 都会**跳过 finally**
+         * → `activeCount` 永久 +1，watchdog / abortControllers 残留。
+         * 默认 maxConcurrency=2，累计两次后 `scheduleNext` 的
+         * `while (activeCount < concurrency)` 永不再成立，整个队列死锁，
+         * 且没有任何自愈路径（只在 finally 与 cancel/resume 里调度）。
          *
-         * 修复：无论 sampleMode 与否，都用 `KB_BREAKDOWN_HARD_LIMIT` 兜底。
-         * 采样模式仍按 sampleLimit 截；非采样模式按硬上限截并 warn 说明。
+         * 这里用 `settled` 标志加一层兜底 finally：正常路径由内层 finally
+         * 收尾并置 settled=true；前置阶段抛错时由外层收尾，不会重复递减。
          */
-        let inputText: string;
-        if (rawWordCount > KB_BREAKDOWN_HARD_LIMIT) {
-            inputText = task.sourceText.slice(0, KB_BREAKDOWN_HARD_LIMIT);
-            if (!sampleMode) {
-                log.warn(
-                    `[DeconstructionScheduler] 原文 ${rawWordCount} 字超过拆解硬上限 ${KB_BREAKDOWN_HARD_LIMIT} 字，`
-                    + `已截断。如需覆盖更多内容请开启采样模式并提高上限（注意：文本越长拆解越慢）。`,
-                );
-            }
-        } else {
-            inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
-        }
-        task.preprocessedText = this.preprocessText(inputText);
-        const wordCount = task.preprocessedText.cleaned.length;
-        let effectiveLevel: DeconstructionQualityLevel = qualityLevel;
-
-        // 预检向量模型可用性
-        const vectorCheck = await this.checkVectorAvailability();
-        const vectorAvailable = vectorCheck.available;
-
-        const qualityLevelLabels: Record<DeconstructionQualityLevel, string> = {
-            fast: '快速模式',
-            standard: '标准模式',
-            deep: '深度模式',
-        };
-
-        if (qualityLevel !== 'fast' && !vectorAvailable) {
-            emitter?.setProgress(0, `⚠️ 向量模型不可用（${vectorCheck.reason}），各维度向量增强将按需局部降级`);
-            this.emitProgress(task, {
-                phase: '降级提示',
-                message: `⚠️ 向量模型不可用（${vectorCheck.reason}），各维度向量增强将按需局部降级`,
-                totalProgress: 0,
-            });
-            await this.appendBreakdownLog(task.bookName, `## ⚠️ 向量模型不可用\n\n档位: ${qualityLevelLabels[qualityLevel]}\n原因: ${vectorCheck.reason}\n策略: 保持档位不变，各维度的向量增强按需局部降级\n\n`, task.bookId);
-        } else if (vectorAvailable) {
-            emitter?.setProgress(0, `${qualityLevelLabels[qualityLevel]}已就绪，开始拆解`);
-            this.emitProgress(task, {
-                phase: `${qualityLevelLabels[qualityLevel]}已就绪`,
-                message: `${qualityLevelLabels[qualityLevel]}已就绪，开始拆解`,
-                totalProgress: 0,
-            });
-        }
-
-        const workerMode = this.workerManager.isWorkerAvailable();
-        const modeLabel = workerMode ? 'Worker 线程' : '⚠️ 主线程模式';
-
-        emitter?.setProgress(0, `开始拆解《${task.bookName}》[${qualityLevelLabels[effectiveLevel]}] [${modeLabel}]`);
-        this.emitProgress(task, {
-            phase: '开始拆解',
-            message: `开始拆解《${task.bookName}》[${qualityLevelLabels[effectiveLevel]}] [${modeLabel}]`,
-            totalProgress: 0,
-        });
-
-        const segmentThreshold = sampleMode ? Math.min(this.getSegmentedBreakdownConfig().threshold, sampleLimit) : this.getSegmentedBreakdownConfig().threshold;
-        const isSegmented = this.isSegmentedBreakdownEnabled() && wordCount > segmentThreshold;
-        const estimatedSegments = isSegmented ? this.segmentedBreakdown.estimateSegments(task.preprocessedText.cleaned) : 1;
-        const coverageLine = sampleMode
-            ? `覆盖字数: ${wordCount} 字（采样模式，前 ${sampleLimit} 字，原文 ${rawWordCount} 字）`
-            : `覆盖字数: ${wordCount} 字（全本，原文 ${rawWordCount} 字）`;
-        let logContent = `## ${this.formatDate(new Date())} - 开始拆解\n\n任务ID: ${taskId}\n拆解维度: ${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}\n${coverageLine}\n分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n质量档位: ${qualityLevelLabels[qualityLevel]}${effectiveLevel !== qualityLevel ? `（实际: ${qualityLevelLabels[effectiveLevel]}）` : ''}\n向量增强: ${vectorAvailable && qualityLevel !== 'fast' ? '已启用' : '未启用'}\n执行模式: ${modeLabel}\n全文分批: ${isSegmented ? `是（预计 ${estimatedSegments} 段）` : '否'}\n结果聚合: ${isSegmented ? '待完成' : '不适用'}\n\n`;
-        await this.appendBreakdownLog(task.bookName, logContent, task.bookId);
-
+        let settled = false;
         try {
-            const contentHash = await this.computeContentHash(task.sourceText);
-            const totalDimensions = task.dimensions.length;
-            const dimConcurrency = Math.max(1, this.getDeconstructionEngineSettings().dimensionConcurrency);
-            const completedSet = new Set<BreakdownDimension>();
-            let aborted = false;
+            task.status = 'running';
+            task.startedAt = Date.now();
+            this.startWatchdog(taskId, task.bookId);
 
-            const processDimension = async (dimension: BreakdownDimension) => {
-                if (controller.signal.aborted || aborted) return;
+            const emitter = this.taskEmitters.get(taskId);
+            emitter?.start();
 
-                const currentStatus = task.status;
-                if (currentStatus === 'paused') {
-                    try {
-                        await this.waitForResume(taskId, controller.signal);
-                    } catch {
-                        aborted = true;
-                        return;
-                    }
+            const controller = new AbortController();
+            this.abortControllers.set(taskId, controller);
+
+            const qualityLevel = this.getQualityLevel();
+            const vectorDimensions: BreakdownDimension[] = [];
+            const degradedDimensions: BreakdownDimension[] = [];
+            const degradationReasons: Array<{ dimension: string; reason: string }> = [];
+            // DSH-20261113-21：失败维度收集（拆解抛错或写入失败）——存在失败时任务
+            // 不得以 completed/100% 收尾，也不得弹「拆解完成」。
+            const failedDimensions: Array<{ dimension: BreakdownDimension; error: string }> = [];
+            const dimensionQualityScores = new Map<BreakdownDimension, DimensionQualityScore>();
+            const dimensionDurations = new Map<BreakdownDimension, number>();
+            const dimensionResults = new Map<BreakdownDimension, unknown>();
+            const sampleMode = this.isSampleModeEnabled();
+            const sampleLimit = this.getTextSampleLimit();
+            const rawWordCount = task.sourceText.length;
+            /**
+             * 输入文本截断（2026-11-25 修复卡死）。
+             *
+             * 旧逻辑：`sampleMode ? slice(0, sampleLimit) : 全文`。
+             * 问题：`sampleMode` 默认 false，于是**整本书不截断**直接进 8 维拆解。
+             * 用户实测 93 万字书 + 8 维全开 + 向量增强（走主线程）→ Obsidian 卡死。
+             *
+             * 修复：无论 sampleMode 与否，都用 `KB_BREAKDOWN_HARD_LIMIT` 兜底。
+             * 采样模式仍按 sampleLimit 截；非采样模式按硬上限截并 warn 说明。
+             */
+            let inputText: string;
+            if (rawWordCount > KB_BREAKDOWN_HARD_LIMIT) {
+                inputText = task.sourceText.slice(0, KB_BREAKDOWN_HARD_LIMIT);
+                if (!sampleMode) {
+                    log.warn(
+                        `[DeconstructionScheduler] 原文 ${rawWordCount} 字超过拆解硬上限 ${KB_BREAKDOWN_HARD_LIMIT} 字，`
+                        + `已截断。如需覆盖更多内容请开启采样模式并提高上限（注意：文本越长拆解越慢）。`,
+                    );
                 }
+            } else {
+                inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
+            }
+            task.preprocessedText = this.preprocessText(inputText);
+            const wordCount = task.preprocessedText.cleaned.length;
+            let effectiveLevel: DeconstructionQualityLevel = qualityLevel;
 
-                if (controller.signal.aborted) { aborted = true; return; }
+            // 预检向量模型可用性
+            const vectorCheck = await this.checkVectorAvailability();
+            const vectorAvailable = vectorCheck.available;
 
-                const cacheKey = `${task.bookId}:${dimension}`;
-                const cached = this.dimensionCache.get(cacheKey);
-                if (cached && cached.hash === contentHash) {
-                    const dimResult = { usedVector: false, result: cached.result };
-                    dimensionResults.set(dimension, dimResult);
-                    completedSet.add(dimension);
-                    const progress = Math.round((completedSet.size / totalDimensions) * 100);
-                    task.progress = progress;
-                    emitter?.nextStep(`${DIMENSION_LABELS[dimension]} (缓存命中)`);
-                    this.emitProgress(task, {
-                        currentDimension: dimension,
-                        dimensionProgress: 100,
-                        phase: DIMENSION_LABELS[dimension],
-                        message: `${DIMENSION_LABELS[dimension]} (缓存命中)`,
-                        totalProgress: progress,
-                    });
-                    return;
-                }
-
-                emitter?.nextStep(`正在进行${DIMENSION_LABELS[dimension]}...`);
-                const dimensionStartTime = Date.now();
-                this.dimensionStartTimes.set(`${taskId}:${dimension}`, dimensionStartTime);
-
-                this.emitProgress(task, {
-                    currentDimension: dimension,
-                    dimensionProgress: 0,
-                    phase: DIMENSION_LABELS[dimension],
-                    message: `正在进行${DIMENSION_LABELS[dimension]}...`,
-                    totalProgress: Math.round((completedSet.size / totalDimensions) * 100),
-                });
-
-                try {
-                    const breakdownOutput = await this.breakdownDimension(task, dimension, (dimProgress, message) => {
-                        const overallProgress = Math.round(
-                            ((completedSet.size + dimProgress / 100) / totalDimensions) * 100
-                        );
-                        task.progress = overallProgress;
-                        emitter?.setStepProgress(dimProgress, message);
-                        this.emitProgress(task, {
-                            currentDimension: dimension,
-                            dimensionProgress: dimProgress,
-                            phase: DIMENSION_LABELS[dimension],
-                            message,
-                            totalProgress: overallProgress,
-                        });
-                        this.scheduleProgressPersist(task.bookId, overallProgress);
-                    }, controller.signal, vectorAvailable && qualityLevel !== 'fast', degradedDimensions, degradationReasons);
-
-                    const usedVector = breakdownOutput.usedVector;
-                    const dimResult = breakdownOutput.result;
-
-                    const dimensionDuration = Date.now() - dimensionStartTime;
-                    dimensionDurations.set(dimension, dimensionDuration);
-                    this.timeEstimator.record({
-                        operationType: DIMENSION_OPERATION_TYPES[dimension],
-                        wordCount,
-                        mode: usedVector ? 'vector' : 'statistical',
-                        duration: dimensionDuration,
-                    });
-                    void this.timeEstimator.saveHistory();
-
-                    if (dimResult !== undefined && dimResult !== null) {
-                        dimensionResults.set(dimension, dimResult);
-                        this.dimensionCache.set(cacheKey, { hash: contentHash, result: dimResult });
-                    }
-
-                    const isDegraded = degradedDimensions.includes(dimension);
-                    const scoringInput: QualityScoringInput = {
-                        dimension,
-                        result: dimResult,
-                        textLength: wordCount,
-                        usedLevel: effectiveLevel,
-                        elapsedTime: dimensionDuration,
-                    };
-                    const qualityScore = this.qualityScorer.calculateQualityScore(scoringInput);
-                    if (isDegraded) {
-                        const adjusted: DimensionQualityScore = {
-                            ...qualityScore,
-                            confidence: Math.max(30, qualityScore.confidence - 15),
-                            completeness: Math.max(40, qualityScore.completeness - 10),
-                        };
-                        adjusted.overall = Math.round(0.4 * adjusted.completeness + 0.3 * adjusted.consistency + 0.3 * adjusted.confidence);
-                        adjusted.level = adjusted.overall >= 80 ? 'high' : adjusted.overall >= 50 ? 'medium' : 'low';
-                        dimensionQualityScores.set(dimension, adjusted);
-                    } else {
-                        dimensionQualityScores.set(dimension, qualityScore);
-                    }
-                    const finalScore = dimensionQualityScores.get(dimension)!;
-                    const needUpgrade = this.qualityScorer.shouldUpgrade(finalScore);
-                    const suggestedLevel = this.qualityScorer.suggestLevel(finalScore);
-
-                    let dimLog = `### ${DIMENSION_LABELS[dimension]} - 完成\n`;
-                    dimLog += `耗时: ${dimensionDuration}ms\n`;
-                    dimLog += `向量增强: ${usedVector ? '已使用' : '未使用'}\n`;
-                    dimLog += `质量评分: ${finalScore.overall}/100 (${finalScore.level})\n`;
-                    dimLog += `  - 完整性: ${finalScore.completeness}/100\n`;
-                    dimLog += `  - 一致性: ${finalScore.consistency}/100\n`;
-                    dimLog += `  - 置信度: ${finalScore.confidence}/100\n`;
-                    dimLog += `实际档位: ${qualityLevelLabels[finalScore.usedLevel]}\n`;
-                    if (isDegraded) {
-                        const reason = degradationReasons.find(r => r.dimension === dimension)?.reason || '未知原因';
-                        dimLog += `降级原因: ${reason}\n`;
-                    }
-                    if (needUpgrade) {
-                        dimLog += `⚠️ 建议升级到 ${qualityLevelLabels[suggestedLevel]}（综合评分 < 60，暂不自动重跑，仅标记）\n`;
-                    }
-                    dimLog += `\n`;
-                    await this.appendBreakdownLog(task.bookName, dimLog, task.bookId);
-
-                    const filePathFn = DIMENSION_FILE_MAP[dimension];
-                    if (filePathFn && dimResult !== undefined && dimResult !== null) {
-                        const filePath = filePathFn(task.bookName, this.baseDir);
-                        await this.injectQualityScoreToFrontmatter(filePath, finalScore);
-                    }
-
-                    if (usedVector) {
-                        vectorDimensions.push(dimension);
-                    }
-
-                    await yieldToUI();
-                } catch (dimError) {
-                    if (controller.signal.aborted) {
-                        aborted = true;
-                        return;
-                    }
-                    const dimErrorMessage = dimError instanceof Error ? dimError.message : String(dimError);
-                    log.warn(`[DeconstructionScheduler] 维度 ${dimension} 拆解失败:`, dimError);
-                    // DSH-20261113-21 ①②：失败维度不得进 completedSet（否则循环结束
-                    // 无条件 completed/100% 弹「拆解完成」），必须进 failedDimensions
-                    // 供任务状态与 UI 提示使用；进度只按成功维度计数。
-                    if (!task.failedDimensions) task.failedDimensions = [];
-                    task.failedDimensions.push({ dimension, error: dimErrorMessage });
-                    failedDimensions.push({ dimension, error: dimErrorMessage });
-                    await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimErrorMessage}\n\n`, task.bookId);
-                    task.progress = Math.round((completedSet.size / totalDimensions) * 100);
-                    return;
-                }
-
-                completedSet.add(dimension);
-                task.progress = Math.round((completedSet.size / totalDimensions) * 100);
+            const qualityLevelLabels: Record<DeconstructionQualityLevel, string> = {
+                fast: '快速模式',
+                standard: '标准模式',
+                deep: '深度模式',
             };
 
-            await this.runWithConcurrencyLimit(task.dimensions, dimConcurrency, processDimension);
-
-            if (aborted) {
-                throw new Error('任务已取消');
-            }
-
-            // 朱雀人味检测（2026-11-25）：作为**独立后置检查**，不混进 8 个统计维度。
-            //
-            // 为什么独立：
-            // 1. 8 维都是本地统计（可降级到纯统计），朱雀是外部 API（拿不到就是拿不到）
-            // 2. 它测的是「人味」这个单一整体属性，不是可拆解的维度
-            // 3. 混进 BreakdownDimension 要改 6 处 Record 类型，且会污染维度计数/进度
-            //
-            // 失败不影响主流程：朱雀不可用只记日志，不让整个拆解失败。
-            await this.runZhuquePostCheck(task, inputText, emitter);
-
-            // 先落批量写（成功维度的质量分 frontmatter），再判定失败——
-            // 失败早退不能把成功维度已产出的数据留在 pending 里丢掉。
-            await this.flushBatchWrites();
-            await yieldToUI();
-
-            // DSH-20261113-21 ②：存在失败维度时不得以 completed/100% 收尾，也不得弹
-            // 「拆解完成」。结局由 resolveDimensionTaskOutcome 统一判定（failed 档位，
-            // 进度按成功维度计数）。
-            const outcome = resolveDimensionTaskOutcome(totalDimensions, failedDimensions);
-            if (outcome.status === 'failed') {
-                task.status = outcome.status;
-                task.completedAt = Date.now();
-                task.progress = outcome.progress;
-                task.error = outcome.errorSummary;
-                emitter?.setProgress(outcome.progress, `《${task.bookName}》${outcome.message}`);
+            if (qualityLevel !== 'fast' && !vectorAvailable) {
+                emitter?.setProgress(0, `⚠️ 向量模型不可用（${vectorCheck.reason}），各维度向量增强将按需局部降级`);
                 this.emitProgress(task, {
-                    totalProgress: outcome.progress,
-                    phase: '拆解失败',
-                    message: `《${task.bookName}》${outcome.message}`,
+                    phase: '降级提示',
+                    message: `⚠️ 向量模型不可用（${vectorCheck.reason}），各维度向量增强将按需局部降级`,
+                    totalProgress: 0,
                 });
-                this.flushProgressPersist(task.bookId);
-                await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', outcome.progress, outcome.errorSummary);
-                log.warn(`[DeconstructionScheduler] 《${task.bookName}》${outcome.message}`);
-                return;
+                await this.appendBreakdownLog(task.bookName, `## ⚠️ 向量模型不可用\n\n档位: ${qualityLevelLabels[qualityLevel]}\n原因: ${vectorCheck.reason}\n策略: 保持档位不变，各维度的向量增强按需局部降级\n\n`, task.bookId);
+            } else if (vectorAvailable) {
+                emitter?.setProgress(0, `${qualityLevelLabels[qualityLevel]}已就绪，开始拆解`);
+                this.emitProgress(task, {
+                    phase: `${qualityLevelLabels[qualityLevel]}已就绪`,
+                    message: `${qualityLevelLabels[qualityLevel]}已就绪，开始拆解`,
+                    totalProgress: 0,
+                });
             }
 
-            const crossValidationResults = this.qualityScorer.crossValidate(dimensionResults as unknown as Partial<Record<BreakdownDimension, unknown>>);
+            const workerMode = this.workerManager.isWorkerAvailable();
+            const modeLabel = workerMode ? 'Worker 线程' : '⚠️ 主线程模式';
 
-            task.status = 'completed';
-            task.completedAt = Date.now();
-            task.progress = 100;
-
-            const finishMessage = degradedDimensions.length > 0
-                ? `《${task.bookName}》拆解完成（${qualityLevelLabels[effectiveLevel]}，向量增强 ${vectorDimensions.length}/${totalDimensions}，${degradedDimensions.length} 维度降级）`
-                : `《${task.bookName}》拆解完成（${qualityLevelLabels[effectiveLevel]}，向量增强 ${vectorDimensions.length}/${totalDimensions}）`;
-
-            emitter?.setProgress(100, finishMessage);
-            emitter?.complete();
+            emitter?.setProgress(0, `开始拆解《${task.bookName}》[${qualityLevelLabels[effectiveLevel]}] [${modeLabel}]`);
             this.emitProgress(task, {
-                totalProgress: 100,
-                phase: '拆解完成',
-                message: finishMessage,
+                phase: '开始拆解',
+                message: `开始拆解《${task.bookName}》[${qualityLevelLabels[effectiveLevel]}] [${modeLabel}]`,
+                totalProgress: 0,
             });
 
-            this.flushProgressPersist(task.bookId);
-            await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'completed', 100);
-            
-            let finishLog = `## 拆解完成\n\n`;
-            finishLog += `质量档位: ${qualityLevelLabels[effectiveLevel]}\n`;
-            finishLog += `分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n`;
-            finishLog += `实际覆盖字数: ${wordCount} 字${sampleMode ? `（采样，原文 ${rawWordCount} 字）` : `（全本，原文 ${rawWordCount} 字）`}\n`;
-            finishLog += `全文分批: ${isSegmented ? `是（${estimatedSegments} 段）` : '否'}\n`;
-            finishLog += `结果聚合: ${isSegmented ? '已完成' : '不适用'}\n`;
-            finishLog += `向量增强维度: ${vectorDimensions.length > 0 ? vectorDimensions.map(d => DIMENSION_LABELS[d]).join('、') : '无'}\n\n`;
-            
-            finishLog += `### 质量评分总览\n\n| 维度 | 综合评分 | 等级 | 完整性 | 一致性 | 置信度 | 耗时 |\n|------|----------|------|--------|--------|--------|------|\n`;
-            for (const dim of task.dimensions) {
-                const score = dimensionQualityScores.get(dim);
-                const duration = dimensionDurations.get(dim);
-                if (score && duration !== undefined) {
-                    finishLog += `| ${DIMENSION_LABELS[dim]} | ${score.overall} | ${score.level} | ${score.completeness} | ${score.consistency} | ${score.confidence} | ${duration}ms |\n`;
-                }
-            }
-            finishLog += `\n`;
-
-            if (crossValidationResults.length > 0) {
-                const passedCount = crossValidationResults.filter(r => r.passed).length;
-                finishLog += `### 交叉验证（${passedCount}/${crossValidationResults.length} 通过）\n\n| 规则 | 维度A→B | 值A | 值B | 结果 | 说明 |\n|------|---------|------|------|------|------|\n`;
-                for (const cv of crossValidationResults) {
-                    const dimPair = `${cv.rule.dimensionA}→${cv.rule.dimensionB}`;
-                    finishLog += `| ${cv.rule.name} | ${dimPair} | ${cv.valueA} | ${cv.valueB} | ${cv.passed ? '✅' : '❌'} | ${cv.message} |\n`;
-                }
-                finishLog += `\n`;
-            } else {
-                finishLog += `### 交叉验证\n\n无可执行的交叉验证规则（缺少必要维度结果）\n\n`;
-            }
-
-            await this.appendBreakdownLog(task.bookName, finishLog, task.bookId);
-
-            if (degradedDimensions.length > 0) {
-                let summary = `## 降级摘要\n\n| 维度 | 降级原因 |\n|------|----------|\n`;
-                for (const dr of degradationReasons) {
-                    summary += `| ${DIMENSION_LABELS[dr.dimension as BreakdownDimension]} | ${dr.reason} |\n`;
-                }
-                await this.appendBreakdownLog(task.bookName, summary, task.bookId);
-            }
+            const segmentThreshold = sampleMode ? Math.min(this.getSegmentedBreakdownConfig().threshold, sampleLimit) : this.getSegmentedBreakdownConfig().threshold;
+            const isSegmented = this.isSegmentedBreakdownEnabled() && wordCount > segmentThreshold;
+            const estimatedSegments = isSegmented ? this.segmentedBreakdown.estimateSegments(task.preprocessedText.cleaned) : 1;
+            const coverageLine = sampleMode
+                ? `覆盖字数: ${wordCount} 字（采样模式，前 ${sampleLimit} 字，原文 ${rawWordCount} 字）`
+                : `覆盖字数: ${wordCount} 字（全本，原文 ${rawWordCount} 字）`;
+            let logContent = `## ${this.formatDate(new Date())} - 开始拆解\n\n任务ID: ${taskId}\n拆解维度: ${task.dimensions.map(d => DIMENSION_LABELS[d]).join('、')}\n${coverageLine}\n分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n质量档位: ${qualityLevelLabels[qualityLevel]}${effectiveLevel !== qualityLevel ? `（实际: ${qualityLevelLabels[effectiveLevel]}）` : ''}\n向量增强: ${vectorAvailable && qualityLevel !== 'fast' ? '已启用' : '未启用'}\n执行模式: ${modeLabel}\n全文分批: ${isSegmented ? `是（预计 ${estimatedSegments} 段）` : '否'}\n结果聚合: ${isSegmented ? '待完成' : '不适用'}\n\n`;
+            await this.appendBreakdownLog(task.bookName, logContent, task.bookId);
 
             try {
-                if (this.vectorStore && typeof this.vectorStore.addBookSamples === 'function') {
-                    emitter?.nextStep('正在向量化...');
-                    this.startHeartbeat(taskId, 0, 100, '向量化处理中...', true);
-                    await this.vectorizeBook(task.bookId, task.bookName);
-                    this.stopHeartbeat(taskId);
-                    await this.recordVectorOutcome(task);
-                    emitter?.setStepProgress(100, '向量化完成');
-                    log.info(`[DeconstructionScheduler] 《${task.bookName}》向量化完成`);
-                }
-            } catch (vecError) {
-                this.stopHeartbeat(taskId);
-                await this.recordVectorOutcome(task, vecError);
-            }
+                const contentHash = await this.computeContentHash(task.sourceText);
+                const totalDimensions = task.dimensions.length;
+                const dimConcurrency = Math.max(1, this.getDeconstructionEngineSettings().dimensionConcurrency);
+                const completedSet = new Set<BreakdownDimension>();
+                let aborted = false;
 
-            for (const cb of this.completeCallbacks) {
-                try {
-                    cb(task);
-                } catch (e) {
-                    log.warn('[DeconstructionScheduler] 完成回调执行失败:', e);
-                }
-            }
+                const processDimension = async (dimension: BreakdownDimension) => {
+                    if (controller.signal.aborted || aborted) return;
 
-            try {
-                // A5: 向量化失败不能再提示「拆解完成」了事，必须说明参考内容不可检索并指路重试
-                new Notice(
-                    buildBreakdownFinishNotice(task.bookName, {
-                        status: task.vectorStatus,
-                        error: task.vectorError,
-                    }),
-                    task.vectorStatus === 'failed' ? 10000 : 6000,
-                );
-            } catch { // silent-ok: 通知构造失败不能把已完成的任务改成失败
-            }
-        } catch (error) {
-            this.stopHeartbeat(taskId);
-            const finalStatus = task.status as TaskStatus;
-            if (finalStatus === 'cancelled') {
-                emitter?.cancel();
-                this.cancelProgressPersist(task.bookId);
-                await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'pending', task.progress);
-            } else {
-                task.status = 'failed';
+                    const currentStatus = task.status;
+                    if (currentStatus === 'paused') {
+                        try {
+                            await this.waitForResume(taskId, controller.signal);
+                        } catch {
+                            aborted = true;
+                            return;
+                        }
+                    }
+
+                    if (controller.signal.aborted) { aborted = true; return; }
+
+                    const cacheKey = `${task.bookId}:${dimension}`;
+                    const cached = this.dimensionCache.get(cacheKey);
+                    if (cached && cached.hash === contentHash) {
+                        const dimResult = { usedVector: false, result: cached.result };
+                        dimensionResults.set(dimension, dimResult);
+                        completedSet.add(dimension);
+                        const progress = Math.round((completedSet.size / totalDimensions) * 100);
+                        task.progress = progress;
+                        emitter?.nextStep(`${DIMENSION_LABELS[dimension]} (缓存命中)`);
+                        this.emitProgress(task, {
+                            currentDimension: dimension,
+                            dimensionProgress: 100,
+                            phase: DIMENSION_LABELS[dimension],
+                            message: `${DIMENSION_LABELS[dimension]} (缓存命中)`,
+                            totalProgress: progress,
+                        });
+                        return;
+                    }
+
+                    emitter?.nextStep(`正在进行${DIMENSION_LABELS[dimension]}...`);
+                    const dimensionStartTime = Date.now();
+                    this.dimensionStartTimes.set(`${taskId}:${dimension}`, dimensionStartTime);
+
+                    this.emitProgress(task, {
+                        currentDimension: dimension,
+                        dimensionProgress: 0,
+                        phase: DIMENSION_LABELS[dimension],
+                        message: `正在进行${DIMENSION_LABELS[dimension]}...`,
+                        totalProgress: Math.round((completedSet.size / totalDimensions) * 100),
+                    });
+
+                    try {
+                        const breakdownOutput = await this.breakdownDimension(task, dimension, (dimProgress, message) => {
+                            const overallProgress = Math.round(
+                                ((completedSet.size + dimProgress / 100) / totalDimensions) * 100
+                            );
+                            task.progress = overallProgress;
+                            emitter?.setStepProgress(dimProgress, message);
+                            this.emitProgress(task, {
+                                currentDimension: dimension,
+                                dimensionProgress: dimProgress,
+                                phase: DIMENSION_LABELS[dimension],
+                                message,
+                                totalProgress: overallProgress,
+                            });
+                            this.scheduleProgressPersist(task.bookId, overallProgress);
+                        }, controller.signal, vectorAvailable && qualityLevel !== 'fast', degradedDimensions, degradationReasons);
+
+                        const usedVector = breakdownOutput.usedVector;
+                        const dimResult = breakdownOutput.result;
+
+                        const dimensionDuration = Date.now() - dimensionStartTime;
+                        dimensionDurations.set(dimension, dimensionDuration);
+                        this.timeEstimator.record({
+                            operationType: DIMENSION_OPERATION_TYPES[dimension],
+                            wordCount,
+                            mode: usedVector ? 'vector' : 'statistical',
+                            duration: dimensionDuration,
+                        });
+                        void this.timeEstimator.saveHistory();
+
+                        if (dimResult !== undefined && dimResult !== null) {
+                            dimensionResults.set(dimension, dimResult);
+                            this.dimensionCache.set(cacheKey, { hash: contentHash, result: dimResult });
+                        }
+
+                        const isDegraded = degradedDimensions.includes(dimension);
+                        const scoringInput: QualityScoringInput = {
+                            dimension,
+                            result: dimResult,
+                            textLength: wordCount,
+                            usedLevel: effectiveLevel,
+                            elapsedTime: dimensionDuration,
+                        };
+                        const qualityScore = this.qualityScorer.calculateQualityScore(scoringInput);
+                        if (isDegraded) {
+                            const adjusted: DimensionQualityScore = {
+                                ...qualityScore,
+                                confidence: Math.max(30, qualityScore.confidence - 15),
+                                completeness: Math.max(40, qualityScore.completeness - 10),
+                            };
+                            adjusted.overall = Math.round(0.4 * adjusted.completeness + 0.3 * adjusted.consistency + 0.3 * adjusted.confidence);
+                            adjusted.level = adjusted.overall >= 80 ? 'high' : adjusted.overall >= 50 ? 'medium' : 'low';
+                            dimensionQualityScores.set(dimension, adjusted);
+                        } else {
+                            dimensionQualityScores.set(dimension, qualityScore);
+                        }
+                        const finalScore = dimensionQualityScores.get(dimension)!;
+                        const needUpgrade = this.qualityScorer.shouldUpgrade(finalScore);
+                        const suggestedLevel = this.qualityScorer.suggestLevel(finalScore);
+
+                        let dimLog = `### ${DIMENSION_LABELS[dimension]} - 完成\n`;
+                        dimLog += `耗时: ${dimensionDuration}ms\n`;
+                        dimLog += `向量增强: ${usedVector ? '已使用' : '未使用'}\n`;
+                        dimLog += `质量评分: ${finalScore.overall}/100 (${finalScore.level})\n`;
+                        dimLog += `  - 完整性: ${finalScore.completeness}/100\n`;
+                        dimLog += `  - 一致性: ${finalScore.consistency}/100\n`;
+                        dimLog += `  - 置信度: ${finalScore.confidence}/100\n`;
+                        dimLog += `实际档位: ${qualityLevelLabels[finalScore.usedLevel]}\n`;
+                        if (isDegraded) {
+                            const reason = degradationReasons.find(r => r.dimension === dimension)?.reason || '未知原因';
+                            dimLog += `降级原因: ${reason}\n`;
+                        }
+                        if (needUpgrade) {
+                            dimLog += `⚠️ 建议升级到 ${qualityLevelLabels[suggestedLevel]}（综合评分 < 60，暂不自动重跑，仅标记）\n`;
+                        }
+                        dimLog += `\n`;
+                        await this.appendBreakdownLog(task.bookName, dimLog, task.bookId);
+
+                        const filePathFn = DIMENSION_FILE_MAP[dimension];
+                        if (filePathFn && dimResult !== undefined && dimResult !== null) {
+                            const filePath = filePathFn(task.bookName, this.baseDir);
+                            await this.injectQualityScoreToFrontmatter(filePath, finalScore);
+                        }
+
+                        if (usedVector) {
+                            vectorDimensions.push(dimension);
+                        }
+
+                        await yieldToUI();
+                    } catch (dimError) {
+                        if (controller.signal.aborted) {
+                            aborted = true;
+                            return;
+                        }
+                        const dimErrorMessage = dimError instanceof Error ? dimError.message : String(dimError);
+                        log.warn(`[DeconstructionScheduler] 维度 ${dimension} 拆解失败:`, dimError);
+                        // DSH-20261113-21 ①②：失败维度不得进 completedSet（否则循环结束
+                        // 无条件 completed/100% 弹「拆解完成」），必须进 failedDimensions
+                        // 供任务状态与 UI 提示使用；进度只按成功维度计数。
+                        if (!task.failedDimensions) task.failedDimensions = [];
+                        task.failedDimensions.push({ dimension, error: dimErrorMessage });
+                        failedDimensions.push({ dimension, error: dimErrorMessage });
+                        await this.appendBreakdownLog(task.bookName, `### ${DIMENSION_LABELS[dimension]} - 失败\n\n错误: ${dimErrorMessage}\n\n`, task.bookId);
+                        task.progress = Math.round((completedSet.size / totalDimensions) * 100);
+                        return;
+                    }
+
+                    completedSet.add(dimension);
+                    task.progress = Math.round((completedSet.size / totalDimensions) * 100);
+                };
+
+                await this.runWithConcurrencyLimit(task.dimensions, dimConcurrency, processDimension);
+
+                if (aborted) {
+                    throw new Error('任务已取消');
+                }
+
+                // 朱雀人味检测（2026-11-25）：作为**独立后置检查**，不混进 8 个统计维度。
+                //
+                // 为什么独立：
+                // 1. 8 维都是本地统计（可降级到纯统计），朱雀是外部 API（拿不到就是拿不到）
+                // 2. 它测的是「人味」这个单一整体属性，不是可拆解的维度
+                // 3. 混进 BreakdownDimension 要改 6 处 Record 类型，且会污染维度计数/进度
+                //
+                // 失败不影响主流程：朱雀不可用只记日志，不让整个拆解失败。
+                await this.runZhuquePostCheck(task, inputText, emitter);
+
+                // 先落批量写（成功维度的质量分 frontmatter），再判定失败——
+                // 失败早退不能把成功维度已产出的数据留在 pending 里丢掉。
+                await this.flushBatchWrites();
+                await yieldToUI();
+
+                // DSH-20261113-21 ②：存在失败维度时不得以 completed/100% 收尾，也不得弹
+                // 「拆解完成」。结局由 resolveDimensionTaskOutcome 统一判定（failed 档位，
+                // 进度按成功维度计数）。
+                const outcome = resolveDimensionTaskOutcome(totalDimensions, failedDimensions);
+                if (outcome.status === 'failed') {
+                    task.status = outcome.status;
+                    task.completedAt = Date.now();
+                    task.progress = outcome.progress;
+                    task.error = outcome.errorSummary;
+                    emitter?.setProgress(outcome.progress, `《${task.bookName}》${outcome.message}`);
+                    this.emitProgress(task, {
+                        totalProgress: outcome.progress,
+                        phase: '拆解失败',
+                        message: `《${task.bookName}》${outcome.message}`,
+                    });
+                    this.flushProgressPersist(task.bookId);
+                    await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', outcome.progress, outcome.errorSummary);
+                    log.warn(`[DeconstructionScheduler] 《${task.bookName}》${outcome.message}`);
+                    return;
+                }
+
+                const crossValidationResults = this.qualityScorer.crossValidate(dimensionResults as unknown as Partial<Record<BreakdownDimension, unknown>>);
+
+                task.status = 'completed';
                 task.completedAt = Date.now();
-                task.error = error instanceof Error ? error.message : String(error);
+                task.progress = 100;
 
-                emitter?.fail(task.error);
+                const finishMessage = degradedDimensions.length > 0
+                    ? `《${task.bookName}》拆解完成（${qualityLevelLabels[effectiveLevel]}，向量增强 ${vectorDimensions.length}/${totalDimensions}，${degradedDimensions.length} 维度降级）`
+                    : `《${task.bookName}》拆解完成（${qualityLevelLabels[effectiveLevel]}，向量增强 ${vectorDimensions.length}/${totalDimensions}）`;
+
+                emitter?.setProgress(100, finishMessage);
+                emitter?.complete();
                 this.emitProgress(task, {
-                    phase: '拆解失败',
-                    message: `《${task.bookName}》拆解失败`,
-                    error: task.error,
+                    totalProgress: 100,
+                    phase: '拆解完成',
+                    message: finishMessage,
                 });
 
                 this.flushProgressPersist(task.bookId);
-                await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', task.progress, task.error);
-                await this.appendBreakdownLog(task.bookName, `## 拆解失败\n\n错误: ${task.error}\n\n`, task.bookId);
+                await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'completed', 100);
+            
+                let finishLog = `## 拆解完成\n\n`;
+                finishLog += `质量档位: ${qualityLevelLabels[effectiveLevel]}\n`;
+                finishLog += `分析模式: ${sampleMode ? '采样模式' : '全本模式'}\n`;
+                finishLog += `实际覆盖字数: ${wordCount} 字${sampleMode ? `（采样，原文 ${rawWordCount} 字）` : `（全本，原文 ${rawWordCount} 字）`}\n`;
+                finishLog += `全文分批: ${isSegmented ? `是（${estimatedSegments} 段）` : '否'}\n`;
+                finishLog += `结果聚合: ${isSegmented ? '已完成' : '不适用'}\n`;
+                finishLog += `向量增强维度: ${vectorDimensions.length > 0 ? vectorDimensions.map(d => DIMENSION_LABELS[d]).join('、') : '无'}\n\n`;
+            
+                finishLog += `### 质量评分总览\n\n| 维度 | 综合评分 | 等级 | 完整性 | 一致性 | 置信度 | 耗时 |\n|------|----------|------|--------|--------|--------|------|\n`;
+                for (const dim of task.dimensions) {
+                    const score = dimensionQualityScores.get(dim);
+                    const duration = dimensionDurations.get(dim);
+                    if (score && duration !== undefined) {
+                        finishLog += `| ${DIMENSION_LABELS[dim]} | ${score.overall} | ${score.level} | ${score.completeness} | ${score.consistency} | ${score.confidence} | ${duration}ms |\n`;
+                    }
+                }
+                finishLog += `\n`;
 
-                for (const cb of this.failedCallbacks) {
+                if (crossValidationResults.length > 0) {
+                    const passedCount = crossValidationResults.filter(r => r.passed).length;
+                    finishLog += `### 交叉验证（${passedCount}/${crossValidationResults.length} 通过）\n\n| 规则 | 维度A→B | 值A | 值B | 结果 | 说明 |\n|------|---------|------|------|------|------|\n`;
+                    for (const cv of crossValidationResults) {
+                        const dimPair = `${cv.rule.dimensionA}→${cv.rule.dimensionB}`;
+                        finishLog += `| ${cv.rule.name} | ${dimPair} | ${cv.valueA} | ${cv.valueB} | ${cv.passed ? '✅' : '❌'} | ${cv.message} |\n`;
+                    }
+                    finishLog += `\n`;
+                } else {
+                    finishLog += `### 交叉验证\n\n无可执行的交叉验证规则（缺少必要维度结果）\n\n`;
+                }
+
+                await this.appendBreakdownLog(task.bookName, finishLog, task.bookId);
+
+                if (degradedDimensions.length > 0) {
+                    let summary = `## 降级摘要\n\n| 维度 | 降级原因 |\n|------|----------|\n`;
+                    for (const dr of degradationReasons) {
+                        summary += `| ${DIMENSION_LABELS[dr.dimension as BreakdownDimension]} | ${dr.reason} |\n`;
+                    }
+                    await this.appendBreakdownLog(task.bookName, summary, task.bookId);
+                }
+
+                try {
+                    if (this.vectorStore && typeof this.vectorStore.addBookSamples === 'function') {
+                        emitter?.nextStep('正在向量化...');
+                        this.startHeartbeat(taskId, 0, 100, '向量化处理中...', true);
+                        await this.vectorizeBook(task.bookId, task.bookName);
+                        this.stopHeartbeat(taskId);
+                        await this.recordVectorOutcome(task);
+                        emitter?.setStepProgress(100, '向量化完成');
+                        log.info(`[DeconstructionScheduler] 《${task.bookName}》向量化完成`);
+                    }
+                } catch (vecError) {
+                    this.stopHeartbeat(taskId);
+                    await this.recordVectorOutcome(task, vecError);
+                }
+
+                for (const cb of this.completeCallbacks) {
                     try {
                         cb(task);
                     } catch (e) {
-                        log.warn('[DeconstructionScheduler] 失败回调执行失败:', e);
+                        log.warn('[DeconstructionScheduler] 完成回调执行失败:', e);
                     }
                 }
+
+                try {
+                    // A5: 向量化失败不能再提示「拆解完成」了事，必须说明参考内容不可检索并指路重试
+                    new Notice(
+                        buildBreakdownFinishNotice(task.bookName, {
+                            status: task.vectorStatus,
+                            error: task.vectorError,
+                        }),
+                        task.vectorStatus === 'failed' ? 10000 : 6000,
+                    );
+                } catch { // silent-ok: 通知构造失败不能把已完成的任务改成失败
+                }
+            } catch (error) {
+                // 先置 settled：下面的状态写盘/日志 await 若再次抛错，
+                // 内层 finally 仍会跑（finally 一定执行），但外层兜底 finally
+                // 不该再减一次 activeCount——否则计数变负、并发上限被突破。
+                settled = true;
+                this.stopHeartbeat(taskId);
+                const finalStatus = task.status as TaskStatus;
+                if (finalStatus === 'cancelled') {
+                    emitter?.cancel();
+                    this.cancelProgressPersist(task.bookId);
+                    await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'pending', task.progress);
+                } else {
+                    task.status = 'failed';
+                    task.completedAt = Date.now();
+                    task.error = error instanceof Error ? error.message : String(error);
+
+                    emitter?.fail(task.error);
+                    this.emitProgress(task, {
+                        phase: '拆解失败',
+                        message: `《${task.bookName}》拆解失败`,
+                        error: task.error,
+                    });
+
+                    this.flushProgressPersist(task.bookId);
+                    await this.knowledgeBaseManager.setBreakdownStatus(task.bookId, 'failed', task.progress, task.error);
+                    await this.appendBreakdownLog(task.bookName, `## 拆解失败\n\n错误: ${task.error}\n\n`, task.bookId);
+
+                    for (const cb of this.failedCallbacks) {
+                        try {
+                            cb(task);
+                        } catch (e) {
+                            log.warn('[DeconstructionScheduler] 失败回调执行失败:', e);
+                        }
+                    }
+                }
+            } finally {
+                settled = true;
+                this.stopHeartbeat(taskId);
+                this.stopWatchdog(taskId);
+                this.abortControllers.delete(taskId);
+                this.pauseResolvers.delete(taskId);
+                this.cleanupTaskMaps(taskId);
+                this.activeCount--;
+                this.scheduleNext();
             }
+        } catch (prepError) {
+            // 只在「前置准备阶段就已失败」时进入：内层 try 尚未开始，
+            // 内层 finally 没跑过，所以这里必须自己收尾。
+            log.error('[DeconstructionScheduler] 拆解前置准备失败，任务终止:', prepError);
+            task.status = 'failed';
+            task.error = prepError instanceof Error ? prepError.message : String(prepError);
+            void this.appendBreakdownLog(
+                task.bookName,
+                `## 拆解失败（前置准备）\n\n错误: ${task.error}\n\n`,
+                task.bookId,
+            ).catch(() => { /* silent-ok: 日志写入失败不能再次抛出，否则外层 catch 逃逸 */ });
         } finally {
-            this.stopHeartbeat(taskId);
-            this.stopWatchdog(taskId);
-            this.abortControllers.delete(taskId);
-            this.pauseResolvers.delete(taskId);
-            this.cleanupTaskMaps(taskId);
-            this.activeCount--;
-            this.scheduleNext();
+            if (!settled) {
+                this.stopHeartbeat(taskId);
+                this.stopWatchdog(taskId);
+                this.abortControllers.delete(taskId);
+                this.pauseResolvers.delete(taskId);
+                this.cleanupTaskMaps(taskId);
+                this.activeCount--;
+                this.scheduleNext();
+            }
         }
     }
 
@@ -2716,6 +2773,15 @@ export class DeconstructionScheduler {
 
         const timer = window.setInterval(() => {
             currentProgress = Math.min(currentProgress + incrementPerStep, maxProgress - 0.5);
+            // 2026-11-28 修真实缺陷（长向量化被误判中断）：
+            // watchdog 只看 `lastSeenAlive`，而此前只有 `emitProgress` 与
+            // `startWatchdog` 会写它。向量化阶段（vectorizeBook 全程）**没有任何
+            // emitProgress 调用**，只靠 startHeartbeat 推进展示进度——于是超过
+            // WATCHDOG_TIMEOUT(120s) 就会被判「任务已中断」，把已经跑到 100% 的
+            // 任务改成 failed 并 abort，向量库还会记录一次失败。
+            //
+            // 心跳定时器本身就是「任务还活着」的权威信号，同一个 tick 里喂一次。
+            this.lastSeenAlive.set(taskId, Date.now());
             if (isStepProgress) {
                 emitter.setStepProgress(currentProgress, message);
             } else {

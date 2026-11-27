@@ -177,12 +177,14 @@ async function fetchOnDesktop(url: string, options: HttpTransportOptions, allowU
         // 实测 opencode.ai 在 Obsidian 渲染进程里 fetch 直接失败，而同一 requestUrl 能通。
         // 旧实现只在移动端用 requestUrl，桌面遇到 CORS 就完全没救。
         //
-        // 回退条件：**仅非流式**（allowUrlFallback）。requestUrl 把响应缓冲成整段文本，
-        // 返回的对象没有 body.getReader()，流式调用方会在 `body?.getReader()` 处
-        // 以「ReadableStream 不可用」失败——那样反而把 CORS 错误伪装成了另一条错误。
-        // 流式场景由 openStreamResponse 单独处理并给出明确指引。
+        // 回退条件：仅非流式（allowUrlFallback）。流式由 openStreamResponse 自己
+        // 捕获后调用 bufferedStreamViaUrl（同样走 requestUrl 缓冲），不复用这条分支。
+        //
+        // signal 要原样传下去：requestUrl 本身不可中断，但 abortable() 至少能做到
+        // 「用户取消后立即不再等待」。此前这里传 `signal: undefined`，等于连这一点
+        // 都放弃了——取消后仍会挂到请求自然结束才返回。
         if (allowUrlFallback && isNetworkLevelFailure(error)) {
-            return (await requestViaUrl(url, { ...options, signal: undefined })) as unknown as Response;
+            return (await requestViaUrl(url, options)) as unknown as Response;
         }
         throw error;
     } finally {
