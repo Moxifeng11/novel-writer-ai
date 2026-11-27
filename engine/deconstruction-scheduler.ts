@@ -55,6 +55,29 @@ export function resetLlmLocalModelNoticeForTest(): void {
 }
 
 /**
+ * 模型名本身是否像本地模型（用于「未登记 provider」时的兜底判定）。
+ *
+ * 只做保守识别，宁可漏判也不误判云端模型：
+ * - 常见本地推理服务名（ollama / lmstudio / llama.cpp / vllm）
+ * - Ollama 常见的 `xxx:7b` 这类尺寸标签
+ * - 带端口/主机写进名字的情况（`localhost:11434`）
+ *
+ * @param model - 模型名
+ * @returns 是否像本地模型
+ * @example
+ * looksLikeLocalModelName('deepseek-r1:7b') // true
+ * looksLikeLocalModelName('deepseek-v4-pro') // false
+ */
+export function looksLikeLocalModelName(model: string): boolean {
+    const name = String(model || '').toLowerCase();
+    if (!name) return false;
+    if (/ollama|lmstudio|llama\s*\.?cpp|vllm|text-generation-webui/.test(name)) return true;
+    if (/localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]|:11434/.test(name)) return true;
+    // `xxx:7b` / `xxx:13b` / `xxx:70b-instruct`：Ollama 的尺寸标签
+    return /:\d+(?:\.\d+)?b(?:[-_.]|$)/.test(name);
+}
+
+/**
  * 通知「LLM 增强不支持本地模型」。
  *
  * 用户明确要求 LLM 增强必须用云端模型（本地会出错）。
@@ -1767,7 +1790,17 @@ export class DeconstructionScheduler {
         const owner = providers.find(p =>
             Array.isArray(p.models) && p.models.includes(model),
         );
-        if (!owner) return undefined; // 不在自定义 provider 里 → 走 caller 默认（云端）
+        if (!owner) {
+            // 2026-11-28 补漏：模型没登记在自定义 provider 里时，此前直接放行。
+            // 但用户很可能手填一个 `deepseek-r1:7b` 却忘了建 provider——那会
+            // 请求到默认云端端点并稳定失败（模型不存在），比明确拒绝更难排查。
+            // 名字像本地模型时同样拒绝，与 provider 判定口径一致。
+            if (looksLikeLocalModelName(model)) {
+                log.warn(`[DeconstructionScheduler] LLM 增强不支持本地模型「${model}」，已跳过增强（请改用云端模型）`);
+                return { disableFallback: true, localModelRejected: true };
+            }
+            return undefined; // 其余情况 → 走 caller 默认（云端）
+        }
         const sourceType = resolveProviderSourceType({
             id: owner.id,
             endpoint: owner.endpoint,

@@ -101,3 +101,41 @@ describe('拆解卡死修复：重负载预检', () => {
         expect(() => mod.resetLlmLocalModelNoticeForTest()).not.toThrow();
     });
 });
+
+/**
+ * 2026-11-28 补漏：模型没登记在 customProviders 里时的本地识别。
+ *
+ * 原实现只在 `customProviders` 里查 owner，查不到就直接放行（当云端）。
+ * 但用户手填 `deepseek-r1:7b` 却忘了建 provider 时，请求会打到默认云端端点
+ * 并稳定失败（模型不存在）——比明确拒绝更难排查。
+ */
+describe('拆解本地模型识别：未登记 provider 时的兜底', () => {
+    it('识别 Ollama 尺寸标签', async () => {
+        const { looksLikeLocalModelName } = await import('../../../engine/deconstruction-scheduler');
+        expect(looksLikeLocalModelName('deepseek-r1:7b')).toBe(true);
+        expect(looksLikeLocalModelName('qwen2.5:14b-instruct')).toBe(true);
+        expect(looksLikeLocalModelName('llama3:70b')).toBe(true);
+    });
+
+    it('识别本地推理服务名', async () => {
+        const { looksLikeLocalModelName } = await import('../../../engine/deconstruction-scheduler');
+        expect(looksLikeLocalModelName('ollama/llama3')).toBe(true);
+        expect(looksLikeLocalModelName('lmstudio-community/qwen')).toBe(true);
+        expect(looksLikeLocalModelName('vllm-model')).toBe(true);
+    });
+
+    it('识别带端口的写法', async () => {
+        const { looksLikeLocalModelName } = await import('../../../engine/deconstruction-scheduler');
+        expect(looksLikeLocalModelName('localhost:11434/llama3')).toBe(true);
+        expect(looksLikeLocalModelName('127.0.0.1:8080/v1')).toBe(true);
+    });
+
+    it('云端模型名不得误判（宁可漏判也不误伤）', async () => {
+        const { looksLikeLocalModelName } = await import('../../../engine/deconstruction-scheduler');
+        expect(looksLikeLocalModelName('deepseek-v4-pro')).toBe(false);
+        expect(looksLikeLocalModelName('glm-5.2')).toBe(false);
+        expect(looksLikeLocalModelName('gpt-4o')).toBe(false);
+        expect(looksLikeLocalModelName('claude-sonnet-4.5')).toBe(false);
+        expect(looksLikeLocalModelName('')).toBe(false);
+    });
+});
