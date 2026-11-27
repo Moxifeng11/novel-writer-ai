@@ -9,6 +9,15 @@ import { resolveProviderHeaders, resolveThinkingCapability } from '@/shared/prov
 import type { ThinkingMode } from '@/shared/task-model';
 import type { APIResponse } from './ai-engine';
 
+/**
+ * 降级链最多尝试的模型数（含主模型）。
+ *
+ * 2026-11-28：从「遍历 provider 全部模型」收紧到 4。
+ * 实测 opencode provider 有 32 个模型，混有已弃用（410）与地区不可用（403 RegionError）
+ * 的条目；逐个撞过去会让用户以为「一直卡在调用」。宁可快速给出明确失败。
+ */
+const MAX_FALLBACK_MODELS = 4;
+
 import type { Notifier } from '@/shared/types';
 import { NOOP_NOTIFIER } from '@/shared/types';
 import { performanceMonitor } from '@/services/performance-monitor';
@@ -160,6 +169,36 @@ export class AIApiClient {
     private isDisconnectionError(error: unknown, statusCode?: number): boolean {
         if (statusCode === 500 || statusCode === 502 || statusCode === 503 || statusCode === 504) return true;
         if (statusCode === 408) return true;
+        /**
+         * 2026-11-28 修真实缺陷：**410 ModelDeprecated 之前被当成「4xx 不可恢复」直接失败**。
+         *
+         * 实测（生产冒烟）：流式调用降级到 `glm-5.2` 时服务端返回
+         * `HTTP 410 ModelDeprecated: Model glm-5.2 has been deprecated. Use glm-5.3 instead.`
+         * 这是**换模型就能自愈**的场景——provider 的模型清单里残留了已下线模型名，
+         * 而降级链正好命中它，导致整个流式调用失败且不重试。
+         *
+         * 语义上 410 Gone 与 404 不同：404 是「路径错了」（重试无意义），
+         * 410 在这个 API 上是「这个模型没了，请换一个」（降级有意义）。
+         * 所以把 410 提到 4xx 拦截之前。
+         */
+        if (statusCode === 410) return true;
+        /**
+         * 2026-11-28 补：**403 RegionError 也应降级**。
+         *
+         * 实测：降级链换到某模型时返回
+         * `HTTP 403 RegionError: This model is not available in your country`。
+         * 这不是鉴权问题（鉴权失败是 401），而是「这个模型在本地区不提供」——
+         * 换一个模型可能可用，所以应当继续降级而不是整体失败。
+         *
+         * 注意：真正的鉴权 403（invalid api key / forbidden）不该降级——
+         * 那种情况换模型也没用，且会白打 N 次请求。
+         * 这里只对明确的地区/可用性语义放开。
+         */
+        if (statusCode === 403) {
+            const lower = errorMessage(error).toLowerCase();
+            if (/region|country|not available|unsupported|not supported/i.test(lower)) return true;
+            return false;
+        }
         if (statusCode && statusCode >= 400 && statusCode < 500) return false;
         if (error && typeof error === 'object' && 'name' in error && (error as { name: string }).name === 'AbortError') return true;
         const msg = errorMessage(error).toLowerCase();
@@ -196,11 +235,22 @@ export class AIApiClient {
         const models: string[] = [effectiveModel];
         if (!fallbackEnabled) return models;
 
+        /**
+         * 2026-11-28 真实缺陷修复：降级链此前是「整个 provider 模型清单」，不设上限。
+         *
+         * 实测（生产冒烟）：opencode provider 有 32 个模型，其中混有已弃用（glm-5.2 → 410）
+         * 和地区不可用（403 RegionError）的条目。流式调用会逐个撞过去，
+         * 每次都要等超时/错误返回，用户体验是「一直卡在调用」。
+         *
+         * 现在截断到 MAX_FALLBACK_MODELS：主模型 + 最多 3 个备选。
+         * 宁可快速给出明确失败，也不要静默尝试 32 次。
+         */
+        const room = Math.max(0, MAX_FALLBACK_MODELS - 1);
         const others = availableModels.filter(m => m !== effectiveModel);
         if (includeAllWhenMissing && !availableModels.includes(effectiveModel) && availableModels.length > 0) {
-            return models.concat(availableModels);
+            return models.concat(availableModels.slice(0, room));
         }
-        return models.concat(others);
+        return models.concat(others.slice(0, room));
     }
 
     /** 构造请求体（统一 Ollama 原生 / OpenAI 兼容 / Anthropic Messages / Responses 四种格式） */

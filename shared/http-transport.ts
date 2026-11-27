@@ -17,6 +17,15 @@ import { Platform, requestUrl } from 'obsidian';
 import type { RequestUrlParam, RequestUrlResponse } from 'obsidian';
 import { HttpRequestTimeoutError } from './http-request';
 
+/**
+ * 缓冲式「流式」请求的超时预算。
+ *
+ * 缓冲模式下首字节 = 整段生成完成，不能用常规 60s 预算（长章节必超）。
+ * 取 10 分钟：与引擎侧长文本生成的看门狗同一量级。
+ */
+const STREAM_BUFFER_TIMEOUT_MS = 600_000;
+
+
 /** 传输请求参数（fetch 与 requestUrl 的公共子集） */
 export interface HttpTransportOptions {
     /** HTTP 方法，默认 POST */
@@ -49,6 +58,13 @@ export interface StreamTransportResponse {
     ok: boolean;
     text(): Promise<string>;
     body: { getReader(): ByteReader } | null;
+    /**
+     * 本次流式是否已降级为「缓冲整段再解析」（无逐字动效）。
+     *
+     * 桌面端 fetch 被 CORS 拦时回退 `requestUrl`，此时仍能正常生成，
+     * 但内容是在请求结束后一次性出现的。UI 可据此给出「已降级」提示。
+     */
+    buffered?: boolean;
 }
 
 function isMobile(): boolean {
@@ -133,7 +149,7 @@ async function requestViaUrl(url: string, options: HttpTransportOptions): Promis
     return toTransportResponse(response);
 }
 
-async function fetchOnDesktop(url: string, options: HttpTransportOptions): Promise<Response> {
+async function fetchOnDesktop(url: string, options: HttpTransportOptions, allowUrlFallback = true): Promise<Response> {
     const controller = new AbortController();
     let timedOut = false;
     const timer = options.timeoutMs && options.timeoutMs > 0
@@ -157,11 +173,40 @@ async function fetchOnDesktop(url: string, options: HttpTransportOptions): Promi
         });
     } catch (error) {
         if (timedOut && options.timeoutMs) throw new HttpRequestTimeoutError(url, options.timeoutMs);
+        // 2026-11-28 修真实缺陷：桌面端原生 fetch 会被 CORS 拦（TypeError: Failed to fetch），
+        // 实测 opencode.ai 在 Obsidian 渲染进程里 fetch 直接失败，而同一 requestUrl 能通。
+        // 旧实现只在移动端用 requestUrl，桌面遇到 CORS 就完全没救。
+        //
+        // 回退条件：**仅非流式**（allowUrlFallback）。requestUrl 把响应缓冲成整段文本，
+        // 返回的对象没有 body.getReader()，流式调用方会在 `body?.getReader()` 处
+        // 以「ReadableStream 不可用」失败——那样反而把 CORS 错误伪装成了另一条错误。
+        // 流式场景由 openStreamResponse 单独处理并给出明确指引。
+        if (allowUrlFallback && isNetworkLevelFailure(error)) {
+            return (await requestViaUrl(url, { ...options, signal: undefined })) as unknown as Response;
+        }
         throw error;
     } finally {
         if (timer) window.clearTimeout(timer);
         options.signal?.removeEventListener('abort', onAbort);
     }
+}
+
+/**
+ * 判断是否为「网络层失败」（而非 HTTP 状态错误或业务错误）。
+ *
+ * 只在真正的连接级失败时回退 `requestUrl`——
+ * 不能把 4xx/5xx 也当网络失败重发（那会重复计费且掩盖真实状态码）。
+ *
+ * @param error - 捕获的错误
+ * @returns 是否应回退到 requestUrl
+ * @example
+ * isNetworkLevelFailure(new TypeError('Failed to fetch')) // true
+ * isNetworkLevelFailure(new HttpRequestTimeoutError(url, 1000)) // false
+ */
+function isNetworkLevelFailure(error: unknown): boolean {
+    if (error instanceof HttpRequestTimeoutError) return false;
+    const msg = error instanceof Error ? error.message : String(error);
+    return /Failed to fetch|NetworkError|ERR_NETWORK|ERR_CONNECTION|net::|ECONNREFUSED|ECONNRESET|CORS/i.test(msg);
 }
 
 /**
@@ -205,8 +250,11 @@ function createOneShotReader(text: string): ByteReader {
 /**
  * 打开一个「流式」响应。
  *
- * 桌面端返回原生 fetch Response；移动端用 `requestUrl` 缓冲整段 SSE，
- * 再合成一个一次性 reader 交给现有 SSE 解析循环（兼容已有协议代码）。
+ * 桌面端优先返回原生 fetch Response（保留 ReadableStream 与取消语义）；
+ * 若渲染进程被 CORS 拦（TypeError: Failed to fetch），回退 `requestUrl`
+ * 缓冲整段 SSE，再合成一次性 reader 交给同一个解析循环——功能等价，
+ * 只是没有逐字动效（`buffered: true`）。
+ * 移动端一律走 `requestUrl`。
  *
  * @param url - 请求地址
  * @param options - 方法/头/体/取消
@@ -221,14 +269,41 @@ export async function openStreamResponse(
     options: HttpTransportOptions = {},
 ): Promise<StreamTransportResponse> {
     if (!isMobile()) {
-        return await fetchOnDesktop(url, options);
+        try {
+            return await fetchOnDesktop(url, options, false);
+        } catch (e) {
+            // 2026-11-28 修真实缺陷：此前这里只抛「请改用非流式」的指引，等于把
+            // 一个本可工作的路径彻底关掉。requestUrl 拿不到 ReadableStream，但
+            // SSE 是一段完整文本，缓冲后一次性喂给现有解析循环完全够用（移动端
+            // 分支早就这么做了）。真正不可恢复的只有「用户主动取消」。
+            if (options.signal?.aborted || (e instanceof Error && e.name === 'AbortError')) throw e;
+            if (!isNetworkLevelFailure(e)) throw e;
+            return await bufferedStreamViaUrl(url, options);
+        }
     }
-    const buffered = await requestViaUrl(url, options);
+    return await bufferedStreamViaUrl(url, options);
+}
+
+/**
+ * 用 `requestUrl` 缓冲整段 SSE 并合成为一次性 reader。
+ *
+ * 超时用 `options.timeoutMs`（缺省 10 分钟）：非流式请求的首字节延迟就是
+ * 整段生成耗时，沿用常规 60s 预算会在长章节上稳定误杀。
+ */
+async function bufferedStreamViaUrl(
+    url: string,
+    options: HttpTransportOptions,
+): Promise<StreamTransportResponse> {
+    const buffered = await requestViaUrl(url, {
+        ...options,
+        timeoutMs: options.timeoutMs ?? STREAM_BUFFER_TIMEOUT_MS,
+    });
     const text = await buffered.text();
     return {
         status: buffered.status,
         ok: buffered.ok,
         text: async () => text,
         body: { getReader: () => createOneShotReader(text) },
+        buffered: true,
     };
 }

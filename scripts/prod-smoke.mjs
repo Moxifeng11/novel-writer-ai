@@ -78,6 +78,59 @@ function obsidianEval(code) {
     return { ok: true, raw: line.replace(/^=>\s*/, '') };
 }
 
+/**
+ * 执行异步 eval 并等待结果（2026-11-28 修真实缺陷）。
+ *
+ * 为什么需要：`obsidian eval` **不等待 Promise**——传 `(async()=>{...})()`
+ * 会立刻返回 `=> undefined` 或直接无输出，永远拿不到结果。
+ * （真实实例实测：连 `await new Promise(r=>setTimeout(r,2000))` 都不返回。）
+ * 这导致本脚本的 AI 冒烟两步长期「假失败」（spawnSync ETIMEDOUT）。
+ *
+ * 做法：eval 里只「启动并把结果写进 window[key]」，本地轮询读取。
+ *
+ * @param code - 返回 Promise 的表达式
+ * @param options - 轮询参数（pollMs / timeoutMs）
+ * @returns 与 obsidianEval 同形
+ * @example
+ * const r = obsidianEvalAsync("p.aiEngine.callAI('s','u').then(x=>JSON.stringify(x))");
+ */
+function obsidianEvalAsync(code, options = {}) {
+    const key = `__nwSmoke_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const pollMs = options.pollMs ?? 1000;
+    const timeoutMs = options.timeoutMs ?? 150_000;
+
+    const starter = obsidianEval(
+        `(function(){window['${key}']={state:'pending'};`
+        + `Promise.resolve(${code}).then(v=>{window['${key}']={state:'done',value:v};})`
+        + `.catch(e=>{window['${key}']={state:'error',error:String((e&&e.message)||e)};});`
+        + `return 'started';})()`,
+    );
+    if (!starter.ok) return starter;
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const probe = obsidianEval(`JSON.stringify(window['${key}']||{state:'missing'})`);
+        if (probe.ok) {
+            let parsed = null;
+            try {
+                parsed = JSON.parse(probe.raw);
+            } catch {
+                parsed = null;
+            }
+            if (parsed?.state === 'done') {
+                const v = parsed.value;
+                return { ok: true, raw: typeof v === 'string' ? v : JSON.stringify(v) };
+            }
+            if (parsed?.state === 'error') {
+                return { ok: false, raw: String(parsed.error || 'async eval error'), error: 'async' };
+            }
+        }
+        // 同步 sleep（本脚本是同步 CLI，不能 await）
+        spawnSync(process.execPath, ['-e', `Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,${pollMs})`]);
+    }
+    return { ok: false, raw: `async eval 超时（${timeoutMs}ms）`, error: 'timeout' };
+}
+
 // ── 0. 环境检查：Obsidian CLI 可用吗 ─────────────────────────────
 const version = obsidian(['version']);
 if (!version.ok || !/\d+\.\d+/.test(version.stdout)) {
@@ -125,10 +178,12 @@ if (NO_AI) {
     record('AI 冒烟', SMOKE_STATUS.SKIP, '--no-ai：跳过真实 AI 调用（零 token 模式）');
 } else {
     // 非流式
-    const nonStream = obsidianEval(
-        "(async()=>{const p=app.plugins.plugins['novel-writer-ai'];"
-        + "const r=await p.aiEngine.callAI('你是测试助手。','请只回复两个字母：OK',undefined,undefined,32);"
-        + 'return JSON.stringify({content:r?r.content:null,error:r?r.error:null,finishReason:r?r.finishReason:null});})()',
+    // 2026-11-28：改用 obsidianEvalAsync（obsidian eval 不等待 Promise）。
+    // maxTokens 从 32 提到 300：reasoning 模型会把 32 全用在 reasoning_content 上，content 恒空。
+    const nonStream = obsidianEvalAsync(
+        "(function(){const p=app.plugins.plugins['novel-writer-ai'];"
+        + "return p.aiEngine.callAI('你是测试助手。','请只回复两个字母：OK',undefined,undefined,300,{bypassCache:true})"
+        + ".then(r=>JSON.stringify({content:r?r.content:null,error:r?r.error:null,finishReason:r?r.finishReason:null}));})()",
     );
     let nonStreamResult = null;
     try {
@@ -148,10 +203,10 @@ if (NO_AI) {
     }
 
     // 流式（写章/共写主路径）
-    const stream = obsidianEval(
-        "(async()=>{const p=app.plugins.plugins['novel-writer-ai'];"
-        + "const r=await p.aiEngine.callAIStream('你是测试助手。','请只回复：流式成功',undefined,undefined,48);"
-        + 'return JSON.stringify({content:r?r.content:null,error:r?r.error:null,finishReason:r?r.finishReason:null});})()',
+    const stream = obsidianEvalAsync(
+        "(function(){const p=app.plugins.plugins['novel-writer-ai'];"
+        + "return p.aiEngine.callAIStream('你是测试助手。','请只回复：流式成功',undefined,undefined,300)"
+        + ".then(r=>JSON.stringify({content:r?r.content:null,error:r?r.error:null,finishReason:r?r.finishReason:null}));})()",
     );
     let streamResult = null;
     try {

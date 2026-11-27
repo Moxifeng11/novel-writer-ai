@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148669 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148719 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 273 | 54493 | 2326 | 1803 | 78% |
+| `shared/` | 273 | 54568 | 2326 | 1803 | 78% |
 | `core/` | 7 | 3400 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114293 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114300 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -70,7 +70,7 @@
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 1048 | 2 | 2 |
+| `engine/ai-api-client.ts` | 1098 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1034 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 577 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 335 | 1 | 1 |
@@ -559,7 +559,7 @@
 | `shared/goal-model.ts` | 177 | 12 | 7 |
 | `shared/host-timers.ts` | 56 | 3 | 3 |
 | `shared/http-request.ts` | 124 | 7 | 3 |
-| `shared/http-transport.ts` | 235 | 6 | 2 |
+| `shared/http-transport.ts` | 310 | 6 | 2 |
 | `shared/human-feature-rubric.ts` | 180 | 7 | 6 |
 | `shared/human-similarity.ts` | 332 | 11 | 11 |
 | `shared/id-migration-model.ts` | 113 | 6 | 4 |
@@ -756,7 +756,7 @@
 | `ui/chapter-version-modal.ts` | 542 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3948 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3955 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |

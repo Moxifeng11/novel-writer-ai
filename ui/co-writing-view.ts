@@ -2528,7 +2528,14 @@ ${text}`;
     // v4.76.0：`MarkdownRenderer.renderMarkdown` 自 1.4 起弃用（官方审查会报），
     // 换成新签名 render(app, markdown, el, sourcePath, component)；异步语义不变，
     // 仍先渲染到 detached 容器，代次匹配才整体搬运。
-    const staging = this.previewContent.ownerDocument.createDiv();
+    //
+    // `ownerDocument.createDiv()` 会把元素**挂到该 document 的 body**，而 popout/
+    // 视图重建期间 body 可能已被替换，导致
+    // `HierarchyRequestError: Only one element on document allowed`
+    // （真实实例实测加载期连报 63 次）。
+    // 用 obsidian 导出的 `createDiv()`：创建**游离元素**（不挂父节点），
+    // MarkdownRenderer 往里 appendChild 完全合法，也不污染 document。
+    const staging = createDiv();
     await MarkdownRenderer.render(this.app, content, staging, this.getBodyPath(), this);
     if (token !== this.previewSeq) return;
     this.previewContent.empty();
