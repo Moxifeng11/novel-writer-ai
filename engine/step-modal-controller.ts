@@ -147,13 +147,16 @@ export class StepModalController {
         ]);
 
         const deaiCheckSystemPrompt = deaiCheckTemplate.system;
-        deaiCheckTemplate.user.replace('${bodyText}', bodyText);
+        // 2026-11-28：此处原有一行 `deaiCheckTemplate.user.replace('${bodyText}', bodyText);`
+        // —— 丢弃返回值的死表达式，且该值从未传给弹窗（弹窗硬编码常量）。
+        // 现在弹窗里的 user 框直接由实际传下去的模板渲染，这一行删除。
+        const deaiCheckUserTemplate = deaiCheckTemplate.user;
         const deaiRewriteSystemPrompt = deaiRewriteTemplate.system;
         const deaiRewriteUserTemplate = deaiRewriteTemplate.user;
 
         this.showDeaiTwoPhaseModal(
             bodyText, stepResults, renderInContainer, tabContent, setIsLoading, chapDir, chapterName, volume, stepCompleted,
-            deaiCheckSystemPrompt, deaiRewriteSystemPrompt, deaiRewriteUserTemplate
+            deaiCheckSystemPrompt, deaiCheckUserTemplate, deaiRewriteSystemPrompt, deaiRewriteUserTemplate
         );
     }
 
@@ -171,12 +174,13 @@ export class StepModalController {
         volume: string,
         stepCompleted: Set<string>,
         deaiCheckSystemPrompt: string,
+        deaiCheckUserTemplate: string,
         deaiRewriteSystemPrompt: string,
         deaiRewriteUserTemplate: string,
     ): void {
         const { overlay, panel } = this.createStepOverlay(tabContent);
         panel.createEl('h3', { text: '🧹 AI消痕改写 — 提示词预览' });
-        panel.createEl('p', { text: '可在下方编辑提示词后点击执行，非黑盒。自定义模板：prompts/deaiCheck-system.md', cls: 'novel-writer-fw-step-hint' });
+        panel.createEl('p', { text: '下方提示词可编辑，点「单次完成消痕」时按你编辑的内容执行。自定义模板：prompts/deaiCheck-system.md', cls: 'novel-writer-fw-step-hint' });
 
         const sectionSys = panel.createDiv({ cls: 'novel-writer-fw-deai-section' });
         sectionSys.createEl('label', { text: '检测系统提示词', cls: 'novel-writer-fw-step-label' });
@@ -190,7 +194,8 @@ export class StepModalController {
         const detectUserTA = sectionUser.createEl('textarea', {
             cls: 'novel-writer-fw-step-textarea nw-is-h200'
         }) as HTMLTextAreaElement;
-        detectUserTA.value = DEAI_CHECK_USER_TEMPLATE.replace('${bodyText}', bodyText);
+        // 用实际会传下去的模板渲染（此前硬编码常量，自定义模板不生效）
+        detectUserTA.value = deaiCheckUserTemplate.replace('${bodyText}', () => bodyText);
 
         const rewriteSection = panel.createDiv({ cls: 'novel-writer-fw-deai-section nw-u-d-none' });
         rewriteSection.createEl('label', { text: '改写系统提示词', cls: 'novel-writer-fw-step-label' });
@@ -249,7 +254,13 @@ export class StepModalController {
             try {
                 const tasks = this.createTasks();
                 const writingRules = await RulesService.getInstance(this.deps.getPlugin().app).getWritingRules(projectIdFromPath(chapDir));
-                const result = await tasks.deai(bodyText, { writingRules });
+                // 2026-11-28 修真实缺陷：弹窗里两个提示词编辑框此前完全不生效
+                // （tasks.deai 自己拼死提示词），本次把用户实际编辑的内容传下去。
+                const result = await tasks.deai(bodyText, {
+                    writingRules,
+                    systemPromptOverride: detectSysTA.value,
+                    userPromptOverride: detectUserTA.value,
+                });
 
                 reportEl.setText([
                     result.ok ? '✅ 单次消痕完成' : '❌ 单次消痕失败',

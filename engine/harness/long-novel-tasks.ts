@@ -150,9 +150,25 @@ export class LongNovelSingleCallTasks {
      */
     async deai(
         bodyText: string,
-        options?: { mode?: CreationMode; projectId?: string; writingRules?: string; signal?: AbortSignal }
+        options?: {
+            mode?: CreationMode;
+            projectId?: string;
+            writingRules?: string;
+            signal?: AbortSignal;
+            /**
+             * 外部覆盖的提示词（2026-11-28）。
+             *
+             * 消痕弹窗里给了用户两个可编辑的提示词框，但此前**完全不生效**——
+             * 这里原本自己拼死提示词，弹窗里的编辑是纯摆设。现在传入即用。
+             * 不传时保持原内置提示词，行为不变。
+             */
+            systemPromptOverride?: string;
+            userPromptOverride?: string;
+        }
     ): Promise<SingleCallResult<DeaiSingleCallResult>> {
-        const systemPrompt = `你是一位小说编辑，负责把一篇有 AI 腔的稿子改回人写的语感。
+        const systemPrompt = options?.systemPromptOverride?.trim()
+            ? options.systemPromptOverride
+            : `你是一位小说编辑，负责把一篇有 AI 腔的稿子改回人写的语感。
 ${options?.writingRules ? `\n【写作规则】\n${options.writingRules}` : ''}
 
 要求（按顺序做，不要跳步）：
@@ -165,7 +181,9 @@ ${this.voiceBlock()}
 
 ${describeContract(deaiContract)}`;
 
-        const userPrompt = `【原文（需要改回人味）】\n${bodyText}`;
+        const userPrompt = options?.userPromptOverride?.trim()
+            ? options.userPromptOverride
+            : `【原文（需要改回人味）】\n${bodyText}`;
 
         return singleCallRunner.run<DeaiSingleCallResult>({
             taskId: 'long.deai',

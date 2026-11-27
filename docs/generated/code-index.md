@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148749 | 1974 | 1559 | 79% |
+| `engine/` | 359 | 148778 | 1974 | 1559 | 79% |
 | `services/` | 66 | 19682 | 298 | 206 | 69% |
 | `shared/` | 273 | 54588 | 2327 | 1804 | 78% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
@@ -214,7 +214,7 @@
 | `engine/harness/creative-frameworks.ts` | 201 | 6 | 6 |
 | `engine/harness/creative-randomizer.ts` | 155 | 4 | 4 |
 | `engine/harness/domain-profile.ts` | 56 | 3 | 2 |
-| `engine/harness/long-novel-tasks.ts` | 285 | 5 | 5 |
+| `engine/harness/long-novel-tasks.ts` | 303 | 5 | 5 |
 | `engine/harness/rule-engine.ts` | 186 | 8 | 8 |
 | `engine/harness/single-call-runner.ts` | 222 | 7 | 7 |
 | `engine/harness/structured-output.ts` | 118 | 6 | 6 |
@@ -351,7 +351,7 @@
 | `engine/settlement/settlement-table-writer.ts` | 79 | 3 | 2 |
 | `engine/settlement/settlement-types.ts` | 46 | 2 | 1 |
 | `engine/step-definitions.ts` | 297 | 13 | 11 |
-| `engine/step-modal-controller.ts` | 662 | 2 | 2 |
+| `engine/step-modal-controller.ts` | 673 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
 | `engine/step-result-saver.ts` | 623 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 160 | 5 | 0 |
