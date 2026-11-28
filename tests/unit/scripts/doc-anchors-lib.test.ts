@@ -19,6 +19,10 @@ describe('isLivingDoc — 活文档/快照区分', () => {
         expect(isLivingDoc('2026-11-25-contracts-reference.md')).toBe(true);
     });
 
+    it('STANDARD.md 是活文档（规矩文档本身引用代码路径）', () => {
+        expect(isLivingDoc('STANDARD.md')).toBe(true);
+    });
+
     it('audit 与其它后缀是快照', () => {
         expect(isLivingDoc('2026-11-28-plugin-full-audit.md')).toBe(false);
         expect(isLivingDoc('2026-11-25-zhuque-criteria-correction.md')).toBe(false);

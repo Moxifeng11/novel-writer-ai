@@ -32,7 +32,8 @@
 - **不要再往写作 vault 塞测试数据**（示例项目、测试书、缓存、视觉基线中间产物一律放开发 vault）。
 - **`obsidian eval` 的路径口径不受工作区 cwd 影响**：它运行在 vault 内，
   读脚本仍用 vault 相对路径，如 `.obsidian/plugins/novel-writer-ai/scripts/xxx.js`。
-- 提交前跑 `npm run preflight`（含 30+ 项门禁），视觉改动另跑 `node scripts/check-visual-diff.mjs`。
+- 提交前跑 `npm run preflight`（门禁清单以 `docs/STANDARD.md` §三 与 `package.json` 为准），视觉改动另跑 `node scripts/check-visual-diff.mjs`。
+- **开发规矩与验收标准唯一口径**：`docs/STANDARD.md`（元规则 / 规矩 R-ID / 三级 DoD / 门禁表 / 豁免机制）。与其冲突时按该文 §0.1 仲裁顺序处理；新增门禁不登记 §三 会被 `check:standard-map` 拦下。
 
 ## 附：固化文档随码更新（2026-11-28 规矩，用户要求固化）
 

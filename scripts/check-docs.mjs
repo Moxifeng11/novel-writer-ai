@@ -38,6 +38,8 @@ const VERSION_FILES = {
 const LINK_SCOPE = [
     'README.md',
     'CONTRIBUTING.md',
+    'AGENTS.md',
+    'docs/STANDARD.md',
     'docs/README.md',
     'docs/glossary.md',
     'docs/adr/README.md',
@@ -85,6 +87,8 @@ for (const rel of STATUS_SCOPE) {
 
 // 1c) 计数不写死：现状类文档只允许指向真相源，不允许抄「N 步 / N 个用例」
 const COUNT_SCOPE = [
+    'AGENTS.md',
+    'docs/STANDARD.md',
     'docs/CURRENT.md',
     'docs/README.md',
     'docs/BASELINE.md',
@@ -96,6 +100,7 @@ const COUNT_SCOPE = [
 const COUNT_RULES = [
     [/\d+\s*步\s*(?:的)?\s*preflight/, '「N 步 preflight」'],
     [/\d+\s*道门/, '「N 道门」'],
+    [/\d+\s*[+＋]?\s*项门禁/, '「N 项门禁」'],
     [/\d+\s*个测试文件/, '「N 个测试文件」'],
     [/\d+\s*(?:个|条)用例/, '「N 个用例」'],
     [/\d+\s*个源码文件/, '「N 个源码文件」'],

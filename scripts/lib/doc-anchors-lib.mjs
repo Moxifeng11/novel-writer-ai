@@ -18,7 +18,10 @@
  * isLivingDoc('2026-11-28-plugin-full-audit.md') // false（历史快照）
  */
 export function isLivingDoc(filename) {
-    return /-(flow|map|reference|guide)\.md$/i.test(String(filename || ''));
+    const name = String(filename || '');
+    // 规矩文档本身也引用代码路径/设置字段，必须同样随码更新（2026-11-28）
+    if (name === 'STANDARD.md') return true;
+    return /-(flow|map|reference|guide)\.md$/i.test(name);
 }
 
 /**

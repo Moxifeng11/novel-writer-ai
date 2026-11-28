@@ -1,7 +1,7 @@
 # 开发文档总索引
 
 > 状态：活跃 · 2026-11-17
-> 本文件是 `docs/` 的唯一入口。新增文档必须在这里登记，否则 `npm run check:docs` 会失败。
+> 本文件是 `docs/` 的唯一入口。新增的**手册/ADR/术语**必须登记（逐文件由 `check:docs` 强制）；其余规范类文档同样应在此登记一行。`audits/` 下的一次性快照不需登记。
 > 版本：v4.97.5 · 2026-11-24 · 对应插件版本以 `package.json` 为准。
 > **先读 [CURRENT.md](CURRENT.md)**：它回答「现在是什么样」，其余文档回答「怎么做」或「当时怎么想」。
 
@@ -13,7 +13,8 @@
 |---|---|---|
 | **现状 / 规范** | `CURRENT.md`、`handbook/`、`modules/`、`planning/`（最新一篇）、`generated/`、`progress/` | ✅ 可以 |
 | **深度参考** | `ARCHITECTURE.md`、`DEVELOPMENT.md`、`API.md`、`PLAN.md` §一/§二/§五/§六、`adr/`、`research/` | ⚠️ 结构可信，细节可能过时；以代码为准 |
-| **历史（只读）** | `audits/`（含 2026-11-15 三份专项审计）、`analysis/`、`_archive/`、`design/` 旧方案、`releases/` 旧版、`changelog/archive-*`、`PROGRAM.md`、`PLAN.md` §三/§四 | ❌ 不作为现状，只用于追溯 |
+| **历史（只读）** | `audits/`（其中的**快照**：非 `-flow/-map/-reference/-guide` 后缀者）、`analysis/`、`_archive/`、`design/` 旧方案、`releases/` 旧版、`changelog/archive-*`、`PROGRAM.md`、`PLAN.md` §三/§四 | ❌ 不作为现状，只用于追溯 |
+| **活参考（随码更新）** | `STANDARD.md`、`CURRENT.md`、`audits/` 里后缀为 `-flow`/`-map`/`-reference`/`-guide` 的文档 | ✅ 可以，且引用失效会被 `check:doc-anchors` 拦下 |
 
 历史文档头部会写「状态：历史」。发现历史文档被当成现状引用，直接改引用，不要改历史文档本身。
 
@@ -23,7 +24,8 @@
 
 | 你的目标 | 先读 |
 |---|---|
-| **搞清楚现状（第一步）** | [CURRENT.md](CURRENT.md) |
+| **搞清规矩与验收标准（第一步）** | [STANDARD.md](STANDARD.md) |
+| **搞清楚现状（第二步）** | [CURRENT.md](CURRENT.md) |
 | 第一次参与开发 | [handbook/00-onboarding.md](handbook/00-onboarding.md) |
 | 在本机跑起来 | [handbook/01-environment.md](handbook/01-environment.md) |
 | 弄清分层与依赖 | [handbook/02-architecture.md](handbook/02-architecture.md) |
@@ -130,7 +132,8 @@
 4. **状态头**：`docs/` 下每个 `.md`（历史目录除外）必须有 `> 状态：活跃 | 参考 | 历史` 之一；`check:docs` 强制。
 5. **链接可达**：`check:docs` 校验本索引与 handbook 内的相对链接。
 6. **编码**：文档不得含 NUL、U+FFFD 或典型乱码特征；`check:docs` 会拦截。
-7. **历史文档冻结**：`docs/audits/`、`docs/analysis/`、`docs/_archive/`、旧版 `docs/releases/` 按日期冻结，只追加不改写。
+7. **历史文档冻结**：`docs/audits/`（快照）、`docs/analysis/`、`docs/_archive/`、旧版 `docs/releases/` 按日期冻结，只追加不改写。
+   例外：`audits/` 内后缀为 `-flow`/`-map`/`-reference`/`-guide` 的是**活文档**，必须随码更新（`check:doc-anchors` 强制），不再适用冻结条款；历史记述用 `<!-- anchor-ok: 理由 -->` 豁免。
 
 ---
 

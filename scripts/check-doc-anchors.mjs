@@ -25,7 +25,16 @@ if (!fs.existsSync(AUDIT_DIR)) {
     process.exit(2);
 }
 
-const docs = fs.readdirSync(AUDIT_DIR).filter(f => f.endsWith('.md') && isLivingDoc(f));
+// 扫描范围：docs/audits/（活文档与快照混放，按文件名区分）+ docs/ 顶层（STANDARD.md 等）
+const docPaths = [
+    ...fs.readdirSync(AUDIT_DIR)
+        .filter(f => f.endsWith('.md') && isLivingDoc(f))
+        .map(f => path.join(AUDIT_DIR, f)),
+    ...fs.readdirSync(path.join(ROOT, 'docs'))
+        .filter(f => f.endsWith('.md') && isLivingDoc(f))
+        .map(f => path.join(ROOT, 'docs', f)),
+];
+const docs = docPaths;
 if (docs.length === 0) {
     console.log('[doc-anchors] ✅ 当前无活文档（*-flow/*-map/*-reference/*-guide）');
     process.exit(0);
@@ -43,8 +52,8 @@ for (const f of repoTextSources) {
 }
 
 let failed = 0;
-for (const doc of docs.sort()) {
-    const full = path.join(AUDIT_DIR, doc);
+for (const full of docs.sort()) {
+    const doc = path.relative(ROOT, full).split(path.sep).join('/');
     const content = fs.readFileSync(full, 'utf8');
     const anchors = {
         paths: extractPathAnchors(content),

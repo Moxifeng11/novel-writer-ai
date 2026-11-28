@@ -45,6 +45,7 @@
 | `npm run check:review-warn` | — |
 | `npm run check:secrets` | — |
 | `npm run check:silent-failures` | 用户操作型静默失败检查 |
+| `npm run check:standard-map` | — |
 | `npm run check:styles` | 校验 styles.css 与 styles-src 一致 |
 | `npm run check:support-qr` | — |
 | `npm run check:template-parity` | — |
@@ -121,11 +122,12 @@
 31. npm run check:changelog
 32. npm run check:docs
 33. npm run check:doc-anchors
-34. npm run check:support-qr
-35. npm run check:workers-inline
-36. npm run build
-37. npm run check:bundle
-38. npm run check:release
+34. npm run check:standard-map
+35. npm run check:support-qr
+36. npm run check:workers-inline
+37. npm run build
+38. npm run check:bundle
+39. npm run check:release
 ```
 
 ## 说明

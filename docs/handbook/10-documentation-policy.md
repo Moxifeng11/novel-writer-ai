@@ -19,7 +19,8 @@
 |---|---|---|
 | `> 状态：活跃` | 现行规范/现状，可以据此开发 | CURRENT、README、BASELINE、handbook、modules、guides |
 | `> 状态：参考` | 结构可信、细节可能过时，冲突时以代码为准 | ARCHITECTURE、DEVELOPMENT、API、PLAN、PERFORMANCE、CODE-INDEX |
-| `> 状态：历史` | 某一时点的快照，只用于追溯 | PROGRAM、audits、analysis、_archive、旧 releases |
+| `> 状态：历史` | 某一时点的快照，只用于追溯 | PROGRAM、`audits/` 内的快照、analysis、_archive、旧 releases |
+| `> 状态：活跃`（活文档） | 会被后续开发当设计依据，**必须随码更新** | `audits/` 内后缀 `-flow`/`-map`/`-reference`/`-guide` 者 |
 
 现状总入口是 [../CURRENT.md](../CURRENT.md)；文档怎么读见 [../README.md](../README.md) §〇。缺状态头的文档由 `check:docs` 直接拦下。
 
@@ -61,7 +62,8 @@ CI 用 `gen:docs --check` / `check:program` 比对；手改生成物会在下一
 - `docs/CODE-INDEX.md`
 - `docs/CURRENT.md`
 
-历史文档（`docs/audits/`、`docs/design/*/`、`docs/releases/` 旧版本）不参与校验，保持原样。
+历史快照（`docs/audits/` 内非活文档、`docs/design/*/`、`docs/releases/` 旧版本）不参与版本戳校验，保持原样。
+**例外**：`docs/audits/` 内后缀 `-flow`/`-map`/`-reference`/`-guide` 的活文档受 `check:doc-anchors` 管辖——其引用的代码路径与设置字段失效时必须同步更新（见 [../STANDARD.md](../STANDARD.md) §0.4 与 R-O3）。
 
 ## 5. 归档
 
