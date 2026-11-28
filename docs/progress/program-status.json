@@ -1,12 +1,12 @@
 {
   "program": "全系统业务板块优化专项",
   "rev": "v5-plan-1",
-  "updatedAt": "2026-11-17",
+  "updatedAt": "2026-11-28",
   "baseline": {
     "version": "4.97.5",
     "tests": {
-      "files": 1024,
-      "cases": 10621
+      "files": 1039,
+      "cases": 10780
     },
     "e2e": 0,
     "e2eNote": "E2E 通过总数 42（2026-11-09 实测）：full-journey 1 + mode-journey 3（短篇/剧本闭环）+ button-states 4 + view-lifecycle 3 + lifecycle 2 + obsidian-electron 26 + review-fixes 3（右栏折叠展开 + 两个 Modal 连续开关）；perf-smoke 1 条单独执行不计入；real-ai 需 E2E_REAL_AI=1 且消耗 API 额度不默认跑",
@@ -19,7 +19,7 @@
       "check:write-entry"
     ],
     "localCommitsAhead": 0,
-    "localCommitsAheadNote": "2026-11-24 4.97.5：正文四项校验链路（软聚合 / 按磁盘正文重算 / 偏离定位与对话剔重），测试基线 1024 文件 / 10621 用例。",
+    "localCommitsAheadNote": "2026-11-28 三轮纠错 + 两项收敛：CLI 实测运行期缺陷 ×5 /「写了没接上」×5 / 拆解并发计数不守恒 ×3 / 第六节五项收敛（死代码·双路径·端点判定·模板单一来源·expectedRhythm）/ 生命周期内存 ×7；功能增强：Rev186 关联索引接入活路径、千万字全本拆解改造（15 万截断只护非分段路径、LLM 输入抽样上界）；新增零成本探针 check:func(8)+check:decon(6)。测试基线 1039 文件 / 10780 用例。",
     "ahead": 0
   },
   "groups": [
@@ -571,6 +571,12 @@
   },
   "changelog": [
     {
+      "date": "2026-11-28",
+      "group": "G7",
+      "summary": "第 118-121 轮（全量纠错与优化迭代，四轮提交 ea3bfbbe..fee23e00）：①CLI 实测修 5 处运行期缺陷（HierarchyRequestError×63 / obsidian eval 不 await Promise / 渲染进程 CORS 回退 requestUrl / 410·403 断联判定 / 流式缓冲兜底）；②系统排查修「修复写在死路径上」类 5 处（finishReason 兜 stop、桌宠吸附、重建护栏、fillTemplate $& 注入、消痕弹窗编辑框）+ 协议行开关化（structuredChangeLines）+ 规则 frontmatter 剥离；③拆解链路并发计数三处不守恒（activeCount 泄漏致队列永久死锁 ×2）+ 取消后仍写盘/计费；④审计第六节五项收敛（AIEngine 12 死门面 + ai-prompt-builder 孤岛清理 / 场景路径补写作规则 / isPrivateNetworkEndpoint 端点判定统一 / V2 模板单一来源化 / expectedRhythm 接线）；⑤生命周期内存 ×7（tasks 原文释放 / dimensionCache 上限 / 监听器累积 ×3 / perf finally / sharedProvider 清除）；⑥功能增强：Rev186 关联索引接入活路径（四模板 ${storyLinkage}）、千万字全本拆解改造（分段启用不截断、sampleTextForLLM 上界、preprocess 瘦身）；⑦新增零成本探针 check:func(8 项)+check:decon(6 项)+check:prod(6 项)。知识库模块全链路参考固化：docs/audits/2026-11-28-kb-deconstruction-flow.md；全量排查报告：docs/audits/2026-11-28-plugin-full-audit.md。测试基线 1039 文件 / 10780 用例，preflight EXIT=0。",
+      "evidence": "ea3bfbbe 604fa411 0e5486e2 671c8e92 31cf582f 24c0f1f0 87e8f166 a752b243 68dd64f6 1c95ddb6 03e19600 11b3dbab fee23e00 + tests/unit/engine/deconstruction-full-book-coverage.test.ts 等 16 条新回归"
+    },
+    {
       "date": "2026-11-08",
       "group": "G7",
       "summary": "第 117 轮（advisor-logic + test-hardening，兑现 ZCode 派工两项）：①gate:any 分桶新增 frozen 桶——CLI 以 `FROZEN_ANY_PATHS`（当前 `ui/batch-deconstruct-modal.ts`）识别用户冻结路径，advisor 判分前从可动面扣除；可动有效值为 0 时不再产出 gate:any 候选（实测 any 108 = 红线 100 + 设计性 6 + 可动 2 − 冻结 2 → 候选消失，消除每轮「可动 2」复现噪声）；advisor 不进 main.js，零体积影响。②store/logger 中间件转发契约补 3 例真实语义（name 透传前缀 / 未传 name 默认 `[Store]` / 函数式 setState 透传函数名并转发新状态）。定向 79/79（advisor 33 + store 46）；全量 594 文件 / 6,570 用例",
@@ -991,5 +997,5 @@
       "evidence": "knowledge-detail-state.ts + test"
     }
   ],
-  "version": "4.97.4"
+  "version": "4.97.5"
 }

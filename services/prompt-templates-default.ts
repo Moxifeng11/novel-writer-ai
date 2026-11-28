@@ -1,5 +1,7 @@
 import type { PromptTemplate, PromptCategory } from '@/shared/prompt-manager-types';
 import { BODY_GENERATION_SYSTEM_PROMPT_V2, BODY_GENERATION_USER_TEMPLATE_V2 } from '@/shared/prompts/body-v2-prompts';
+import { INFO_PLAN_PROMPTS, PLOT_DISTILL_PROMPTS, OUTLINE_PROMPTS } from '@/shared/prompts/chapter-pipeline-prompts';
+import { EMOTION_PLAN_PROMPTS, SCENE_EXPAND_PROMPTS } from '@/shared/prompts/soul-driven-prompts';
 
 const now = Date.now();
 
@@ -47,50 +49,27 @@ function createTemplate(
 export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
     createTemplate(
         'info-plan',
-        '章节信息规划',
+        '信息规划',
         'chapter',
-        '规划本章的核心冲突、信息释放节奏',
-        `你是一位经验丰富的故事编辑，负责为单章做信息释放节奏规划。你的目标是确保读者每读一段都有新收获，不会被无聊或重复的信息拖垮。
-
-【核心输出——按以下4个模块组织】
-1. 章名与核心冲突：一句话概括本章最大矛盾
-2. 情感与冲突量化：情感温度(0-10级+说明)、冲突强度(1-5级+阶梯描述)
-3. 信息释放计划：本章计划释放的新信息点（3-5个）+ 每个信息点的出现位置和方式
-4. 伏笔操作：埋入X条/揭示Y条/升级Z条（具体到伏笔名称）
-
-【可选模块——如与本章关联度低可简写】
-- 关系推进：本章中哪两个实体之间的关系必须推进（如无明确关联可略）
-
-⚠️ 本章特殊指令（最高优先级）
-\${forcedRevealHint}
-
-【引导】
-- 从已有的实体中选角，他们足够丰富（见 entityContext）
-- ⚠️ 严格使用已有实体。不在此步骤创造新角色/新势力/新地点。所有人物、势力、地点必须从 entityContext 中选择
-- 情感温度0级=平静日常，10级=生死决战；冲突强度1级=口角，5级=生死存亡`,
-        `根据以下素材，为第\${chapNum}章生成「章节信息规划」。
-【分卷规划】\${chapPlan}
-【大纲摘要】\${outlineContent}
-【前文摘要】\${prevChaptersSummary}
-【未揭示伏笔】\${unrevealedForeshadow}
-【时间线】\${timelineEvents}
-\${forcedRevealHint}
-【已有实体上下文】\${entityContext}
-
-请用 Markdown 输出，包含：章名、核心冲突、情感与冲突量化、信息释放计划、关系推进、伏笔操作。
-【特别要求】为本章输出三个量化指标（程序按标签读取）：
-- 情感温度（0-10级，如：8级-高度紧张/愤怒）
-- 冲突强度阶梯（1-5级，如：3级-地位与权力斗争）
-- 节奏模式（如：起承转爽 / 过山车模式）`,
+        '章节信息规划（核心冲突/熵预算/信息释放）。文本与引擎 getStepTemplate 同源（2026-11-28 修复漂移）',
+        INFO_PLAN_PROMPTS.systemPrompt,
+        INFO_PLAN_PROMPTS.userPrompt,
         [
+            { name: 'forcedRevealHint', description: '强制揭示提示', required: false },
             { name: 'chapNum', description: '章节号', required: true },
-            { name: 'chapPlan', description: '分卷规划' },
-            { name: 'outlineContent', description: '大纲摘要' },
-            { name: 'prevChaptersSummary', description: '前文摘要' },
-            { name: 'unrevealedForeshadow', description: '未揭示伏笔' },
-            { name: 'timelineEvents', description: '时间线事件' },
-            { name: 'forcedRevealHint', description: '强制揭示提示' },
-            { name: 'entityContext', description: '实体上下文' },
+            { name: 'chapPlan', description: '分卷规划', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
+            { name: 'worldView', description: '世界观', required: false },
+            { name: 'settingLib', description: '设定库', required: false },
+            { name: 'writingStyleContent', description: '文笔风格', required: false },
+            { name: 'outlineContent', description: '大纲内容', required: false },
+            { name: 'prevChaptersSummary', description: '前文摘要', required: false },
+            { name: 'prevChapEnding', description: '上一章结尾', required: false },
+            { name: 'unrevealedForeshadow', description: '未揭示伏笔', required: false },
+            { name: 'openPromises', description: '未兑现承诺', required: false },
+            { name: 'characterArcs', description: '角色弧线', required: false },
+            { name: 'timelineEvents', description: '时间线事件', required: false },
+            { name: 'entityContext', description: '已有实体上下文', required: false },
         ]
     ),
 
@@ -98,91 +77,46 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
         'plot-distill',
         '情节蒸馏',
         'chapter',
-        '将信息规划转化为具体情节节点，提升密度',
-        `你是一位故事节奏设计师。你的任务是把信息规划中的抽象目标，转化为具体可感的情节节点。
-
-【每个情节节点必须包括】
-- 触发事件：什么打破了现状
-- 参与者：哪些角色卷入（必须是已有实体）
-- 冲突升级点：比上一节点更激烈的变化
-- 信息增量：读者从本节点获得了什么新认知
-- 爽点判定：是否构成逆袭/打脸/成长/揭秘/情感爆发中的一种
-
-【爽点分类参考】
-- 逆袭：弱者反杀强者，建议铺垫≥2个节点
-- 打脸：公开场合被羞辱后当场证明，最好有人围观
-- 成长：能力/地位实质性提升
-- 揭秘：隐藏真相被揭露，会颠覆读者此前认知
-- 情感爆发：压抑情绪找到出口，建议前有≥3个节点铺垫
-
-【信息密度提示】
-- 节点数量跟着本章体量走
-- 相邻节点之间尽量有因果链
-- 每个节点结束时留下一个"然后呢？"的钩子
-- 参与者用已有实体（见 entityContext），不在此步骤创造新角色
-
-【写作规则（全书唯一来源）】
-\${writingRules}`,
-        `根据以下素材，为第\${chapNum}章进行「情节蒸馏」，提升情节密度。
-【信息规划】\${infoPlan}
-【分卷规划】\${chapPlan}
-【大纲摘要】\${outlineContent}
-【人物状态】\${allChars}
-
-请用 Markdown 输出，包含以下部分：
-1. 核心情节节点列表（每个节点包含触发事件、参与者、冲突升级点、信息增量、爽点判定）
-2. 因果链说明（节点之间如何串联）
-3. 密度评估（预估字数和节点数是否达标）`,
+        '情节蒸馏（场景与信息提炼）。文本与引擎 getStepTemplate 同源（2026-11-28 修复漂移）',
+        PLOT_DISTILL_PROMPTS.systemPrompt,
+        PLOT_DISTILL_PROMPTS.userPrompt,
         [
             { name: 'chapNum', description: '章节号', required: true },
-            { name: 'infoPlan', description: '信息规划' },
-            { name: 'chapPlan', description: '分卷规划' },
-            { name: 'outlineContent', description: '大纲摘要' },
-            { name: 'allChars', description: '人物状态' },
+            { name: 'infoPlan', description: '信息规划', required: false },
+            { name: 'chapPlan', description: '分卷规划', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
+            { name: 'worldView', description: '世界观', required: false },
+            { name: 'settingLib', description: '设定库', required: false },
+            { name: 'outlineContent', description: '大纲内容', required: false },
+            { name: 'prevChaptersSummary', description: '前文摘要', required: false },
+            { name: 'prevChapEnding', description: '上一章结尾', required: false },
+            { name: 'unrevealedForeshadow', description: '未揭示伏笔', required: false },
+            { name: 'timelineEvents', description: '时间线事件', required: false },
+            { name: 'allChars', description: '人物状态', required: false },
         ]
     ),
 
     createTemplate(
         'outline-generation',
-        '章节大纲生成',
-        'outline',
-        '生成章节详细大纲',
-        `你是一位资深小说大纲设计师。请根据提供的信息，为章节生成详细、可执行的大纲。
-
-【大纲要求】
-- 场景清晰：每个场景有明确的地点、人物、事件
-- 节奏有致：张弛有度，有起有伏
-- 信息有序：新信息按节奏释放，不扎堆不遗漏
-- 伏笔到位：该埋的埋，该揭的揭
-- 人物在线：出场人物符合其性格和动机`,
-        `请为第\${chapNum}章生成详细大纲。
-
-【分卷规划】\${chapPlan}
-【信息规划】\${infoPlan}
-【情节蒸馏】\${distilledContent}
-【前文摘要】\${prevChaptersSummary}
-【人物状态】\${allChars}
-【世界观】\${worldView}
-
-输出格式：
-## 第\${chapNum}章 章节名
-
-### 场景1：场景名
-- 地点：
-- 出场人物：
-- 事件：
-- 情绪变化：
-- 伏笔操作：
-
-（根据需要增加更多场景）`,
+        '大纲生成',
+        'chapter',
+        '章节大纲（关键场景路线图）。文本与引擎 getStepTemplate 同源（2026-11-28 修复漂移）',
+        OUTLINE_PROMPTS.systemPrompt,
+        OUTLINE_PROMPTS.userPrompt,
         [
-            { name: 'chapNum', description: '章节号', required: true },
-            { name: 'chapPlan', description: '分卷规划' },
-            { name: 'infoPlan', description: '信息规划' },
-            { name: 'distilledContent', description: '情节蒸馏内容' },
-            { name: 'prevChaptersSummary', description: '前文摘要' },
-            { name: 'allChars', description: '人物状态' },
-            { name: 'worldView', description: '世界观' },
+            { name: 'infoPlan', description: '信息规划', required: false },
+            { name: 'distilledContent', description: '情节蒸馏内容', required: false },
+            { name: 'worldView', description: '世界观', required: false },
+            { name: 'settingLib', description: '设定库', required: false },
+            { name: 'writingStyleContent', description: '文笔风格', required: false },
+            { name: 'prevChaptersSummary', description: '前文摘要', required: false },
+            { name: 'prevChapEnding', description: '上一章结尾', required: false },
+            { name: 'unrevealedForeshadow', description: '未揭示伏笔', required: false },
+            { name: 'timelineEvents', description: '时间线事件', required: false },
+            { name: 'entityContext', description: '已有实体上下文', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
+            { name: 'protagonistName', description: '主角名字', required: true },
+            { name: 'protagonistSoulDetail', description: '主角灵魂细节', required: false },
         ]
     ),
 
@@ -327,66 +261,22 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
 
     createTemplate(
         'scene-expand',
-        '场景展开',
-        'expand',
-        '将大纲场景展开为详细设计',
-        `\${lensDeclaration}
-你就是主角本人。现在你需要把你的记忆碎片和当前场景揉在一起——不是规划，是在头脑里预演即将发生的事。
-
-\${protagonistSoul}
-
-\${triggeredMemories}
-
-【预演要求——每场景尽量覆盖这8个要素】
-1. objective: 你走进这个场景是为了什么？
-2. emotion_arc: 进来时什么感觉 → 出去时变成什么感觉（尽量不同）
-3. conflict: 什么在挡你的路？
-4. sensory_hook: 你身体第一个感受到的是什么？（气味/温度/声音/触感）
-5. memory_trigger: 这个场景有没有让你想起什么？如果某个感官元素触发了你的创伤记忆——写出来。
-6. body_reaction: 你的身体怎么反应的？（不自觉的——手指/呼吸/肩膀/胃）
-7. subtext: 你说的话和你想说的话之间差了多少？
-8. relationship_shift: 和在场的人之间——关系有变化吗？
-
-【输出格式——严格遵循】
-## sceneN: 场景名
-objective: ...
-emotion_arc: XXX(N) → XXX(N) — 原因
-conflict: ...
-sensory_hook: ...
-memory_trigger: 无 / 触发 m00X — 什么触发的
-body_reaction: ...
-subtext: ...
-relationship_shift: ...
-
-【约束】
-- objective 从主角的动机里长出来，而不是作者指派的
-- emotion_arc 的两个情绪尽量不同
-- sensory_hook 写具体——比如"闻到铁锈味""手摸到冰凉的金属"，而不是"气氛紧张"
-- body_reaction 是不自觉的——不是"他决定握紧拳头"，是"拳头自己收紧了，他发现时指甲已掐进掌心"
-- subtext 是说vs想的差距——说了什么，心里真正想的是什么`,
-        `你是\${protagonistName}本人。现在预演你即将经历的第\${chapNum}章。
-
-【你要经历的大纲】
-\${outlineContent}
-
-【你的情绪规划】
-\${emotionPlan}
-
-【你的记忆碎片——如果场景中出现相似元素会触发】
-\${triggeredMemories}
-
-【身边的人】
-\${allChars}
-
-请按规范格式输出每场景的展开设计。`,
+        'Scene 展开',
+        'chapter',
+        '场景任务卡展开。文本与引擎 getStepTemplate 同源（2026-11-28 修复漂移）',
+        SCENE_EXPAND_PROMPTS.systemPrompt,
+        SCENE_EXPAND_PROMPTS.userPrompt,
         [
-            { name: 'chapNum', description: '章节号', required: true },
+            { name: 'protagonistSoul', description: 'protagonistSoul', required: false },
+            { name: 'triggeredMemories', description: '触发的记忆', required: false },
             { name: 'protagonistName', description: '主角名字', required: true },
-            { name: 'protagonistSoul', description: '主角灵魂' },
-            { name: 'outlineContent', description: '大纲内容' },
-            { name: 'emotionPlan', description: '情绪规划' },
-            { name: 'triggeredMemories', description: '触发的记忆' },
-            { name: 'allChars', description: '所有角色' },
+            { name: 'chapNum', description: '章节号', required: true },
+            { name: 'outlineContent', description: '大纲内容', required: false },
+            { name: 'prevChapEnding', description: '上一章结尾', required: false },
+            { name: 'emotionPlan', description: '情绪规划', required: false },
+            { name: 'allChars', description: '人物状态', required: false },
+            { name: 'timelineEvents', description: '时间线事件', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
         ]
     ),
 
@@ -394,64 +284,17 @@ relationship_shift: ...
         'emotion-plan',
         '情绪规划',
         'chapter',
-        '为章节中每个场景规划情绪弧',
-        `你是一位情绪规划师。你的任务——为章节中每个场景规划情绪弧。
-
-【核心原则】
-- 情绪是变化，不是状态：emotion_start 和 emotion_end 尽量不同。
-- 情绪要具体：不是"愤怒"，是"指甲掐进掌心的隐忍愤怒"
-- 每个场景的情绪变化必须有原因：因为发生了什么事？因为想起了什么？
-- 总体情绪曲线要有起伏：不能从头到尾一个调
-
-【角色灵魂层——你必须理解】
-\${characterSouls}
-这些角色不是 NPC。他们有欲望、恐惧、创伤。他们的情绪反应源于这些深层动力。
-- 如果一个角色的 trauma 被触发 → 情绪会剧烈波动
-- 如果一个角色的 soft_spot 受到威胁 → 会产生保护欲或暴怒
-- 如果触及 moral_boundary → 会产生内心撕裂
-
-【输出格式——严格遵循】
-## 总体情绪曲线
-开篇情绪: XXX(X/10) | 高潮情绪: XXX(X/10) | 结尾情绪: XXX(X/10)
-情绪总变化次数: N
-
-## 场景级情绪规划
-
-### sceneN: 场景名
-emotion_start: XXX(N/10) — 原因
-emotion_end: XXX(N/10) — 原因（尽量与 start 不同）
-emotion_delta: +N 或 -N
-body_reaction: 身体反应（写一处具体的）
-relationship_change: 本场景导致角色间关系如何变化（如有互动）
-
-【校验规则——违反即判定失败】
-1. 每个scene的emotion_start ≠ emotion_end
-3. 高潮的情绪落点，通常在开篇与结尾的最大值之上`,
-        `根据以下素材，为第\${chapNum}章生成「情绪规划」。
-
-【信息规划】
-\${infoPlan}
-
-【情节蒸馏】
-\${distilledContent}
-
-【大纲摘要】
-\${outlineContent}
-
-【分卷规划】
-\${chapPlan}
-
-【角色灵魂层】
-\${characterSouls}
-
-请按规范格式输出：总体情绪曲线 + 每个场景的详细情绪规划。`,
+        '情绪弧规划。文本与引擎 getStepTemplate 同源（2026-11-28 修复漂移）',
+        EMOTION_PLAN_PROMPTS.systemPrompt,
+        EMOTION_PLAN_PROMPTS.userPrompt,
         [
+            { name: 'characterSouls', description: 'characterSouls', required: false },
             { name: 'chapNum', description: '章节号', required: true },
-            { name: 'infoPlan', description: '信息规划' },
-            { name: 'distilledContent', description: '情节蒸馏内容' },
-            { name: 'outlineContent', description: '大纲摘要' },
-            { name: 'chapPlan', description: '分卷规划' },
-            { name: 'characterSouls', description: '角色灵魂' },
+            { name: 'infoPlan', description: '信息规划', required: false },
+            { name: 'distilledContent', description: '情节蒸馏内容', required: false },
+            { name: 'outlineContent', description: '大纲内容', required: false },
+            { name: 'chapPlan', description: '分卷规划', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
         ]
     ),
 

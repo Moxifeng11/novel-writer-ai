@@ -6,9 +6,9 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148243 | 1969 | 1554 | 79% |
-| `services/` | 66 | 19646 | 298 | 206 | 69% |
-| `shared/` | 273 | 54519 | 2327 | 1803 | 77% |
+| `engine/` | 359 | 147432 | 1955 | 1540 | 79% |
+| `services/` | 66 | 19489 | 298 | 206 | 69% |
+| `shared/` | 275 | 55350 | 2341 | 1817 | 78% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
 | `ui/` | 309 | 114416 | 1185 | 946 | 80% |
@@ -269,7 +269,7 @@
 | `engine/prompts/body-v2-prompts.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v3-prompts.ts` | 100 | 3 | 3 |
 | `engine/prompts/body-v4-prompts.ts` | 96 | 3 | 3 |
-| `engine/prompts/chapter-pipeline-prompts.ts` | 642 | 11 | 11 |
+| `engine/prompts/chapter-pipeline-prompts.ts` | 10 | 0 | 0 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
 | `engine/prompts/human-countable-hints.ts` | 15 | 1 | 1 |
@@ -278,7 +278,7 @@
 | `engine/prompts/memory-prompts.ts` | 66 | 3 | 3 |
 | `engine/prompts/priority-system.ts` | 85 | 2 | 2 |
 | `engine/prompts/prompt-registry.ts` | 210 | 8 | 8 |
-| `engine/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
+| `engine/prompts/soul-driven-prompts.ts` | 10 | 0 | 0 |
 | `engine/prompts/story-linkage-vars.ts` | 41 | 1 | 1 |
 | `engine/prompts/style-exemplars.ts` | 134 | 8 | 7 |
 | `engine/prompts/template-utils.ts` | 187 | 4 | 4 |
@@ -438,7 +438,7 @@
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 880 | 6 | 5 |
-| `services/prompt-templates-default.ts` | 598 | 1 | 1 |
+| `services/prompt-templates-default.ts` | 441 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/quality-panel-service.ts` | 113 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
@@ -632,6 +632,8 @@
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
 | `shared/prompts/body-v2-prompts.ts` | 149 | 3 | 3 |
+| `shared/prompts/chapter-pipeline-prompts.ts` | 642 | 11 | 11 |
+| `shared/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
 | `shared/prose-metrics.ts` | 587 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
