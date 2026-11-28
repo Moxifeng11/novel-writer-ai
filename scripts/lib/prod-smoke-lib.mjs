@@ -94,12 +94,58 @@ export function evaluateAiCall({ label, result, minContentLength = 1 }) {
  * @param stdout - CLI 输出
  * @returns 错误条数；无法判断返回 null
  */
-export function countCapturedErrors(stdout) {
+/**
+ * 解析 `dev:errors` 输出并区分「插件相关」与「环境性」条目。
+ *
+ * 2026-11-28 修真实误报：系统代理失效时 Obsidian 自身（app://obsidian.md/app.js，
+ * 如账号同步 getUserInfo）也会报 Failed to fetch——那是环境问题，不是插件缺陷，
+ * 不该让冒烟假失败。条目按时间戳行分组；只含 app.js 栈且未提及插件的条目
+ * 归为环境性；其余（含无栈未知来源）保守计入插件。
+ *
+ * @param stdout - CLI 输出
+ * @returns {{pluginCount: number, environmentalCount: number}} 无法判断返回 null
+ */
+export function splitCapturedErrors(stdout) {
     const text = String(stdout || '').trim();
     if (!text) return null;
-    if (/No errors captured/i.test(text)) return 0;
-    // 其余情况按「有错误」处理（保守），并返回行数作为规模参考
-    return text.split('\n').filter(Boolean).length;
+    if (/No errors captured/i.test(text)) return { pluginCount: 0, environmentalCount: 0 };
+    const lines = text.split('\n').filter(Boolean);
+    const entries = [];
+    let current = null;
+    for (const line of lines) {
+        if (/^\d{2}:\d{2}:\d{2}/.test(line)) {
+            if (current) entries.push(current);
+            current = [line];
+        } else if (current) {
+            current.push(line);
+        } else {
+            // 首个时间戳之前出现的裸行：各自成条（无时间戳来源的独立错误）
+            entries.push([line]);
+        }
+    }
+    if (current) entries.push(current);
+    const PLUGIN_RE = /novel-writer-ai|\[小说工坊\]/i;
+    const APP_ONLY_RE = /app:\/\/obsidian\.md\/app\.js/;
+    let pluginCount = 0;
+    let environmentalCount = 0;
+    for (const entry of entries) {
+        const joined = entry.join('\n');
+        if (PLUGIN_RE.test(joined) || !APP_ONLY_RE.test(joined)) pluginCount++;
+        else environmentalCount++;
+    }
+    return { pluginCount, environmentalCount };
+}
+
+/**
+ * 解析 `dev:errors` 输出（兼容入口，只取插件相关条数）。
+ *
+ * @param stdout - CLI 输出
+ * @returns 错误条数；无法判断返回 null
+ */
+export function countCapturedErrors(stdout) {
+    const r = splitCapturedErrors(stdout);
+    if (!r) return null;
+    return r.pluginCount;
 }
 
 /**

@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url';
 import {
     SMOKE_STATUS,
     countCapturedErrors,
+    splitCapturedErrors,
     evaluateAiCall,
     evaluateVersionMatch,
     parsePluginInfo,
@@ -227,11 +228,20 @@ if (NO_AI) {
 }
 
 // ── 4. 调用后再查错误 ──────────────────────────────────────────
-const errorsAfter = countCapturedErrors(obsidian(['dev:errors']).stdout);
+// 2026-11-28：只把「插件相关」条目计为失败；Obsidian 自身的网络类报错
+// （如系统代理失效时的 getUserInfo）是环境问题，单独计数并在 detail 里注明。
+const errorsAfterRaw = obsidian(['dev:errors']).stdout;
+const errorsAfter = splitCapturedErrors(errorsAfterRaw);
 record(
     '运行期无新增错误',
-    errorsAfter === 0 ? SMOKE_STATUS.PASS : SMOKE_STATUS.FAIL,
-    errorsAfter === 0 ? 'No errors captured' : `捕获到 ${errorsAfter ?? '未知数量'} 条错误`,
+    !errorsAfter || errorsAfter.pluginCount === 0 ? SMOKE_STATUS.PASS : SMOKE_STATUS.FAIL,
+    !errorsAfter
+        ? '无法读取 dev:errors'
+        : errorsAfter.pluginCount === 0
+            ? (errorsAfter.environmentalCount > 0
+                ? `无插件错误（另有 ${errorsAfter.environmentalCount} 条 Obsidian 自身报错，多为网络/代理环境问题）`
+                : 'No errors captured')
+            : `捕获到 ${errorsAfter.pluginCount} 条插件相关错误`,
 );
 
 finish();

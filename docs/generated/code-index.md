@@ -6,7 +6,7 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148121 | 1968 | 1553 | 79% |
+| `engine/` | 359 | 148243 | 1969 | 1554 | 79% |
 | `services/` | 66 | 19646 | 298 | 206 | 69% |
 | `shared/` | 273 | 54519 | 2327 | 1803 | 77% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
@@ -158,7 +158,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 3368 | 14 | 10 |
+| `engine/deconstruction-scheduler.ts` | 3455 | 14 | 10 |
 | `engine/deconstruction-worker-manager.ts` | 695 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4062 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
@@ -236,7 +236,7 @@
 | `engine/ledger/ledger-parse.ts` | 452 | 4 | 2 |
 | `engine/ledger/ledger-write.ts` | 421 | 8 | 5 |
 | `engine/llm-enhancer.ts` | 691 | 8 | 4 |
-| `engine/llm-prompts.ts` | 364 | 7 | 3 |
+| `engine/llm-prompts.ts` | 368 | 7 | 3 |
 | `engine/local-vector-store.ts` | 338 | 3 | 2 |
 | `engine/logic-consistency-checker.ts` | 168 | 4 | 4 |
 | `engine/long-term-memory.ts` | 152 | 6 | 3 |
@@ -337,7 +337,7 @@
 | `engine/scene-body-generator.ts` | 227 | 5 | 3 |
 | `engine/scene-expander.ts` | 460 | 11 | 7 |
 | `engine/scene-generation-loop.ts` | 256 | 7 | 4 |
-| `engine/scheduler-segment-integration.ts` | 289 | 2 | 2 |
+| `engine/scheduler-segment-integration.ts` | 320 | 3 | 3 |
 | `engine/segment-aware-breakdown.ts` | 158 | 3 | 3 |
 | `engine/semantic-analyzer.ts` | 1342 | 5 | 5 |
 | `engine/sentence-diversity-engine.ts` | 130 | 2 | 2 |

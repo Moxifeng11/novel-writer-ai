@@ -272,7 +272,11 @@ export function getDimensionPrompt(
     existingResult?: unknown
 ): LLMPromptPair {
     const builder = PROMPT_BUILDERS[dimension];
-    return builder(text, genreConfig, existingResult);
+    // 2026-11-28 防线：模板对 ${text} 无上限插值（「小说片段」语义本就应是有界
+    // 摘录）。调用方传整本书时（历史调用面存在），在此截断——2 万字 ≈ 1 万 token，
+    // 已足够 LLM 参考统计结果做增强。
+    const bounded = text.length > 20000 ? text.slice(0, 20000) : text;
+    return builder(bounded, genreConfig, existingResult);
 }
 
 /**

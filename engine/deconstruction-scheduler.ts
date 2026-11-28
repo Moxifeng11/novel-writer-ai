@@ -222,7 +222,7 @@ export interface BreakdownTask {
      * 存在失败时任务状态不得为 completed、进度不得按全部完成计 100%。
      */
     failedDimensions?: Array<{ dimension: BreakdownDimension; error: string }>;
-    preprocessedText?: { cleaned: string; segments: string[]; wordCount: number; paragraphCount: number };
+    preprocessedText?: { cleaned: string; wordCount: number; paragraphCount: number };
 }
 
 /**
@@ -612,12 +612,82 @@ export class DeconstructionScheduler {
         return task.preprocessedText?.cleaned ?? task.sourceText;
     }
 
-    private preprocessText(text: string): { cleaned: string; segments: string[]; wordCount: number; paragraphCount: number } {
+    /**
+     * 段落计数（不构建数组）。
+     *
+     * 2026-11-28：旧 preprocessText 会把千万字正文 split 成 ~10 万元素数组
+     * （~20MB 驻留），但全仓**没有任何消费者**——改成计数循环，
+     * 语义与 `split(/\n{2,}/).filter(trim).length` 完全一致。
+     *
+     * @param cleaned - 清洗后的正文
+     * @returns 非空段落数
+     */
+    private countParagraphs(cleaned: string): number {
+        let count = 0;
+        let hasContent = false;
+        let blankRun = 0;
+        for (let i = 0; i < cleaned.length; i++) {
+            const ch = cleaned[i];
+            if (ch === '\n') {
+                blankRun++;
+                if (blankRun === 2 && hasContent) {
+                    count++;
+                    hasContent = false;
+                }
+                continue;
+            }
+            blankRun = 0;
+            if (ch !== ' ' && ch !== '\t' && ch !== '\r') hasContent = true;
+        }
+        if (hasContent) count++;
+        return count;
+    }
+
+    /**
+     * 决定拆解输入文本（全本拆解改造，2026-11-28）。
+     *
+     * 决策矩阵：
+     * - 采样模式 → 截到 sampleLimit（mode='sample'）
+     * - 分段启用且超过分段阈值 → 全本不截（mode='segmented-full'），
+     *   SegmentAwareBreakdown 每段 5 万字进 Worker，逐段 yieldToUI
+     * - 分段关闭且超 15 万字硬上限 → 截断护栏（mode='truncated'；
+     *   老路径无分段，超限仍会卡，护栏保留）
+     * - 其余 → 直通（mode='direct'）
+     *
+     * @param cleaned - 清洗后的全文
+     * @param opts - 决策输入
+     * @returns 输入文本与决策模式
+     * @example
+     * resolveInputPolicy(cleaned, { sampleMode: false, sampleLimit: 100000, segEnabled: true, segmentThreshold: 100000 });
+     */
+    private resolveInputPolicy(
+        cleaned: string,
+        opts: { sampleMode: boolean; sampleLimit: number; segEnabled: boolean; segmentThreshold: number },
+    ): { inputText: string; mode: 'sample' | 'segmented-full' | 'truncated' | 'direct' } {
+        if (opts.sampleMode) {
+            if (cleaned.length > opts.sampleLimit) {
+                return { inputText: cleaned.slice(0, opts.sampleLimit), mode: 'sample' };
+            }
+            return { inputText: cleaned, mode: 'direct' };
+        }
+        if (opts.segEnabled && cleaned.length > opts.segmentThreshold) {
+            return { inputText: cleaned, mode: 'segmented-full' };
+        }
+        if (cleaned.length > KB_BREAKDOWN_HARD_LIMIT) {
+            log.warn(
+                `[DeconstructionScheduler] 原文 ${cleaned.length} 字超过拆解硬上限 ${KB_BREAKDOWN_HARD_LIMIT} 字，`
+                + `已截断。如需全本拆解请开启「全文分批拆解」（设置 → 知识库引擎）。`,
+            );
+            return { inputText: cleaned.slice(0, KB_BREAKDOWN_HARD_LIMIT), mode: 'truncated' };
+        }
+        return { inputText: cleaned, mode: 'direct' };
+    }
+
+    private preprocessText(text: string): { cleaned: string; wordCount: number; paragraphCount: number } {
         const cleaned = text.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
-        const segments = cleaned.split(/\n{2,}/).filter(s => s.trim().length > 0);
         const wordCount = cleaned.replace(/\s/g, '').length;
-        const paragraphCount = segments.length;
-        return { cleaned, segments, wordCount, paragraphCount };
+        const paragraphCount = this.countParagraphs(cleaned);
+        return { cleaned, wordCount, paragraphCount };
     }
 
     /**
@@ -1143,29 +1213,39 @@ export class DeconstructionScheduler {
             const sampleLimit = this.getTextSampleLimit();
             const rawWordCount = task.sourceText.length;
             /**
-             * 输入文本截断（2026-11-25 修复卡死）。
+             * 输入文本决策（2026-11-28 全本拆解改造）。
              *
-             * 旧逻辑：`sampleMode ? slice(0, sampleLimit) : 全文`。
-             * 问题：`sampleMode` 默认 false，于是**整本书不截断**直接进 8 维拆解。
-             * 用户实测 93 万字书 + 8 维全开 + 向量增强（走主线程）→ Obsidian 卡死。
+             * 2026-11-25 的修法：无论 sampleMode 与否都用 KB_BREAKDOWN_HARD_LIMIT
+             * （15 万字）兜底截断。这在当时是正确的冻结防护，但它让全本拆解变成
+             * 「只拆前 15 万字」——千万字的书只能覆盖 1.5%。
              *
-             * 修复：无论 sampleMode 与否，都用 `KB_BREAKDOWN_HARD_LIMIT` 兜底。
-             * 采样模式仍按 sampleLimit 截；非采样模式按硬上限截并 warn 说明。
+             * 现在分段链路（SegmentAwareBreakdown + Worker + yieldToUI）已经齐备，
+             * 且实测千万字的字符串清洗在主线程只有 ~5ms：截断护栏对「分段启用」
+             * 的场景不再必要，反而成为全本拆解的障碍。新决策：
+             * - 采样模式：按 sampleLimit 截（不变）
+             * - 分段启用且超过分段阈值：**全本不截**，交 SegmentAwareBreakdown
+             *   分段全量拆解（每段 5 万字进 Worker，逐段 yieldToUI）
+             * - 分段关闭：保留 15 万字硬上限护栏（老路径无分段，超限仍会卡）
              */
-            let inputText: string;
-            if (rawWordCount > KB_BREAKDOWN_HARD_LIMIT) {
-                inputText = task.sourceText.slice(0, KB_BREAKDOWN_HARD_LIMIT);
-                if (!sampleMode) {
-                    log.warn(
-                        `[DeconstructionScheduler] 原文 ${rawWordCount} 字超过拆解硬上限 ${KB_BREAKDOWN_HARD_LIMIT} 字，`
-                        + `已截断。如需覆盖更多内容请开启采样模式并提高上限（注意：文本越长拆解越慢）。`,
-                    );
-                }
-            } else {
-                inputText = sampleMode ? task.sourceText.slice(0, sampleLimit) : task.sourceText;
-            }
-            task.preprocessedText = this.preprocessText(inputText);
+            const pre = this.preprocessText(task.sourceText);
+            const segEnabled = this.isSegmentedBreakdownEnabled();
+            const segConfig = this.getSegmentedBreakdownConfig();
+            const segmentThreshold = sampleMode
+                ? Math.min(segConfig.threshold, sampleLimit)
+                : segConfig.threshold;
+            const inputPolicy = this.resolveInputPolicy(pre.cleaned, {
+                sampleMode,
+                sampleLimit,
+                segEnabled,
+                segmentThreshold,
+            });
+            const inputText = inputPolicy.inputText;
+            task.preprocessedText = inputPolicy.inputText === pre.cleaned
+                ? pre
+                : { cleaned: inputText, wordCount: inputText.length, paragraphCount: this.countParagraphs(inputText) };
             const wordCount = task.preprocessedText.cleaned.length;
+            const isSegmented = segEnabled && !sampleMode && wordCount > segmentThreshold;
+            const estimatedSegments = isSegmented ? this.segmentedBreakdown.estimateSegments(task.preprocessedText.cleaned) : 1;
             let effectiveLevel: DeconstructionQualityLevel = qualityLevel;
 
             // 预检向量模型可用性
@@ -1205,9 +1285,6 @@ export class DeconstructionScheduler {
                 totalProgress: 0,
             });
 
-            const segmentThreshold = sampleMode ? Math.min(this.getSegmentedBreakdownConfig().threshold, sampleLimit) : this.getSegmentedBreakdownConfig().threshold;
-            const isSegmented = this.isSegmentedBreakdownEnabled() && wordCount > segmentThreshold;
-            const estimatedSegments = isSegmented ? this.segmentedBreakdown.estimateSegments(task.preprocessedText.cleaned) : 1;
             const coverageLine = sampleMode
                 ? `覆盖字数: ${wordCount} 字（采样模式，前 ${sampleLimit} 字，原文 ${rawWordCount} 字）`
                 : `覆盖字数: ${wordCount} 字（全本，原文 ${rawWordCount} 字）`;
@@ -1830,30 +1907,40 @@ export class DeconstructionScheduler {
     ): void {
         const dimCount = dimensions.length;
         const isMainThread = engineSettings.vectorEnabled || engineSettings.llmEnabled;
-        const chars = Math.min(textLength, KB_BREAKDOWN_HARD_LIMIT);
+        const segEnabled = this.isSegmentedBreakdownEnabled();
+        const segConfig = this.getSegmentedBreakdownConfig();
+        const segmentedFullBook = segEnabled && textLength > segConfig.threshold;
         // 粗估：每维每 10 万字约 1 个「耗时单位」；style 维度含 4 次向量化权重加倍
         const weight = dimensions.reduce((n, d) => n + (d === 'style' ? 2 : 1), 0);
-        const cost = (chars / 100_000) * weight * (isMainThread ? 2 : 1);
+        // 2026-11-28 全本拆解改造：分段启用时按**全量字数**估（不再按截断后的 15 万），
+        // 但每段进 Worker（不占主线程），耗时单位与老口径对齐：5 万字/段 ≈ 0.5 单位
+        const estimatedSegments = Math.max(1, Math.ceil(textLength / segConfig.maxSegmentWords));
+        const cost = segmentedFullBook
+            ? estimatedSegments * (segConfig.maxSegmentWords / 100_000) * weight
+            : (Math.min(textLength, KB_BREAKDOWN_HARD_LIMIT) / 100_000) * weight * (isMainThread ? 2 : 1);
 
         // 分级阈值（按实测手感校准）：
         //   < 3   → 不打扰（小文件/少维度，用户无需关心）
         //   3–15  → info（告知即可，仍可正常跑完）
         //   ≥ 15  → warning（明确建议调整设置，否则很可能卡顿）
-        // 参考：93 万字 × 8 维 × 向量增强 = 27（必然卡死）
-        //       10 万字 × 8 维 × 向量增强 = 18（明显卡顿）
-        //       10 万字 × 8 维 × 关增强   =  9（慢但可接受）
-        //       1 万字 × 6 维 × 向量增强 = 1.4（无感）
         if (cost < 3) return; // 轻负载不打扰
 
         const reasons: string[] = [];
-        if (textLength > KB_BREAKDOWN_HARD_LIMIT) {
+        if (segmentedFullBook) {
+            reasons.push(
+                `全本分段拆解：原文 ${textLength.toLocaleString()} 字，约 ${estimatedSegments} 段/维`
+                + ` × ${dimCount} 维（Worker 执行，不阻塞界面，但总耗时会明显变长）`,
+            );
+        } else if (textLength > KB_BREAKDOWN_HARD_LIMIT) {
             reasons.push(`原文 ${textLength.toLocaleString()} 字，将按 ${KB_BREAKDOWN_HARD_LIMIT.toLocaleString()} 字截断处理`);
         }
         if (dimCount >= 7) reasons.push(`${dimCount} 个维度全开`);
         if (engineSettings.vectorEnabled) reasons.push('向量增强已开（部分任务退回主线程）');
         if (engineSettings.llmEnabled) reasons.push('LLM 增强已开（全部任务退回主线程）');
 
-        notifyHeavyDeconstruction(bookName, reasons, cost >= 15);
+        // 分段全本模式不阻塞主线程，warning 阈值放宽（40 单位 ≈ 千万字节最近）
+        const warningThreshold = segmentedFullBook ? 40 : 15;
+        notifyHeavyDeconstruction(bookName, reasons, cost >= warningThreshold);
     }
 
     /**

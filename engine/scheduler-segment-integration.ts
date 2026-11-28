@@ -100,7 +100,7 @@ export class SchedulerSegmentIntegration {
                 aggregator.addSegmentResult(dimension, result as unknown as AnalysisResult, 0, 1);
             }
 
-            result = await this.enhanceWithLLMIfNeeded(dimension, text, result, options);
+            result = await this.enhanceWithLLMIfNeeded(dimension, sampleTextForLLM(text), result, options);
 
             return {
                 segments: [result],
@@ -127,7 +127,10 @@ export class SchedulerSegmentIntegration {
                 },
                 async (results) => {
                     const combined = this.combineResults<T>(results, dimension);
-                    const enhanced = await this.enhanceWithLLMIfNeeded(dimension, text, combined, options);
+                    // 2026-11-28 修真实缺陷（无界 prompt）：合并后的 LLM 增强此前拿
+                    // **整本书文本**——llm-prompts 对 ${text} 无上限插值，千万字
+                    // 书会生成 1000 万字 prompt（上下文必炸）。改为抽样。
+                    const enhanced = await this.enhanceWithLLMIfNeeded(dimension, sampleTextForLLM(text), combined, options);
                     aggregator.markDimensionComplete(dimension);
                     return enhanced;
                 },
@@ -154,7 +157,7 @@ export class SchedulerSegmentIntegration {
             },
             async (results) => {
                 const combined = this.combineResults<T>(results, dimension);
-                const enhanced = await this.enhanceWithLLMIfNeeded(dimension, text, combined, options);
+                const enhanced = await this.enhanceWithLLMIfNeeded(dimension, sampleTextForLLM(text), combined, options);
                 aggregator.markDimensionComplete(dimension);
                 return enhanced;
             },
@@ -285,4 +288,32 @@ export class SchedulerSegmentIntegration {
         return dimension;
     }
 
+}
+
+/**
+ * LLM 增强的输入抽样上界。
+ *
+ * 2026-11-28 修真实缺陷：`llm-prompts` 对 `${text}` **无上限插值**，而
+ * `analyzeWithSegments` 的 LLM 增强此前把整本书文本（全本拆解时可达千万字）
+ * 直接传进来——生成 1000 万字 prompt，任何云端模型都无法处理。
+ * 抽样策略：开头 + 中部 + 结尾（LLM 需要文风参考，首尾与中段代表性最好）。
+ *
+ * @param text - 全文
+ * @returns ≤ LLM_TEXT_SAMPLE_MAX 字的抽样
+ * @example
+ * sampleTextForLLM(hugeBookText) // 约 1.6 万字
+ */
+export function sampleTextForLLM(text: string): string {
+    const MAX = 16000;
+    const raw = String(text || '');
+    if (raw.length <= MAX) return raw;
+    const head = raw.slice(0, 8000);
+    const tail = raw.slice(-4000);
+    const midStart = Math.floor(raw.length / 2) - 2000;
+    const mid = raw.slice(midStart, midStart + 4000);
+    return `${head}
+……（全文过长，中段有省略）……
+${mid}
+……（后段省略）……
+${tail}`;
 }
