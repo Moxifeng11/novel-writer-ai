@@ -1,12 +1,8 @@
 import { App } from 'obsidian';
 import NovelWriterPlugin from '@/main';
-import type { ChapterContext, ReviewContext, OutlineSettings, WorldElements } from './ai-types';
-import { buildChapterPrompts as buildChapterPromptsFn, buildUserPrompt as buildUserPromptFn } from './ai-prompt-builder';
+import type { ReviewContext, OutlineSettings, WorldElements } from './ai-types';
 import { clampBudgetToModelLimits } from '@/shared/prompt-budget';
 import { DEFAULT_CONTEXT_WINDOW } from '@/shared/thresholds';
-import { BodyWriter } from './body-writer';
-import { RulesService } from '@/services/rules-service';
-import type { BodyFormatContract } from '@/shared/body-format';
 import { AIApiClient } from './ai-api-client';
 import { ChapterHelpers } from './ai-chapter-helpers';
 import { WorldviewGenerator } from './ai-worldview-generator';
@@ -56,26 +52,7 @@ export class AIEngine {
     private characterGen: CharacterGenerator;
     private entityGen: EntityGenerator;
     private batchEntityGen: BatchEntityGenerator;
-    private bodyWriter: BodyWriter | null = null;
 
-    /**
-     * 当前最大并发数。
-     *
-     * @param modelId - 模型 ID
-     * @returns 并发数
-     */
-    static getMaxConcurrent(modelId: string): number {
-        return AIApiClient.getMaxConcurrent(modelId);
-    }
-
-    get sessionTokens() { return this.apiClient.sessionTokens; }
-
-    /**
-     * 重置本次会话的 token 用量累计。
-     */
-    resetSessionTokens(): void {
-        this.apiClient.resetSessionTokens();
-    }
 
     /**
      * 取所属插件实例（部分引擎调用需要组合根能力）。
@@ -102,13 +79,6 @@ export class AIEngine {
         }
     }
 
-    /** 正文 prompt 与落盘共用同一份格式契约（来自项目「写作规则.md」），懒加载以兼容原型实例化 */
-    private getBodyWriter(): BodyWriter {
-        if (!this.bodyWriter) {
-            this.bodyWriter = new BodyWriter({ app: this.plugin?.app });
-        }
-        return this.bodyWriter;
-    }
 
     /**
      * 调用模型（非流式），带缓存/重试/降级。
@@ -216,137 +186,6 @@ export class AIEngine {
         return yield* this.apiClient.callAIAsyncIterator(systemPrompt, userPrompt, model, temperature, effectiveMaxTokens, options);
     }
 
-    /**
-     * 生成一章正文（非流式）。
-     *
-     * @param context - 上下文
-     * @returns API 响应
-     */
-    async generateChapter(context: ChapterContext): Promise<APIResponse> {
-        let knowledgeInjection = '';
-        try {
-            // 通过 EngineRegistry 获取共享的 WritingProfileManager 实例，避免多实例状态不同步
-            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
-            const profile = await profileManager.load(context.project);
-            if (profile && profile.fingerprint.injectionStrength > 0) {
-                knowledgeInjection = await injector.injectForBodyGeneration(profile, {
-                    projectPath: context.project,
-                    chapterIndex: context.chapterNumber,
-                    outline: context.outline,
-                });
-            }
-        } catch (e) {
-            log.warn('[AIEngine] 知识注入失败，跳过:', e);
-        }
-
-        const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
-        const prompts = await this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
-        return this.callAI(prompts.system, prompts.user, this.plugin.settings.proModel, 0.7, this.plugin.settings.maxOutput, { isWritingTask: true });
-    }
-
-    /**
-     * 流式生成章节正文。
-     *
-     * @param context - 上下文
-     * @param onChunk - 分片回调
-     * @param signal - 取消信号
-     * @returns API 响应
-     */
-    async generateChapterStream(
-        context: ChapterContext,
-        onChunk: (text: string, done: boolean) => void,
-        signal?: AbortSignal
-    ): Promise<APIResponse> {
-        const MAX_CONTINUATIONS = 3;
-        const CONTINUE_PROMPT = '\n\n[继续无缝衔接上述内容，保持相同的风格、语气和叙事视角，不要重复已写内容，直接从中断处接续：]\n\n';
-
-        let knowledgeInjection = '';
-        try {
-            const profileManager = this.plugin.engineRegistry.get(ENGINE_NAMES.WRITING_PROFILE_MANAGER);
-            const injector = this.plugin.engineRegistry.get(ENGINE_NAMES.KNOWLEDGE_INJECTOR);
-            const profile = await profileManager.load(context.project);
-            if (profile && profile.fingerprint.injectionStrength > 0) {
-                knowledgeInjection = await injector.injectForBodyGeneration(profile, {
-                    projectPath: context.project,
-                    chapterIndex: context.chapterNumber,
-                    outline: context.outline,
-                });
-            }
-        } catch (e) {
-            log.warn('[AIEngine] 知识注入失败，跳过:', e);
-        }
-
-        const bodyFormat = await this.getBodyWriter().resolveContract(context.project);
-        const prompts = await this.buildChapterPrompts(context, knowledgeInjection, bodyFormat);
-        const systemPrompt = prompts.system;
-        const userPrompt = prompts.user;
-
-        let fullContent = '';
-        let totalUsage = { prompt: 0, completion: 0, total: 0 };
-        let finalFinishReason: 'stop' | 'length' | 'error' | 'aborted' | undefined;
-
-        let currentUserPrompt = userPrompt;
-        let previousChunkContent = '';
-
-        for (let attempt = 0; attempt <= MAX_CONTINUATIONS; attempt++) {
-            if (signal?.aborted) {
-                finalFinishReason = 'aborted';
-                break;
-            }
-
-            const result = await this.callAIStream(
-                systemPrompt,
-                currentUserPrompt,
-                this.plugin.settings.proModel,
-                0.7,
-                this.plugin.settings.maxOutput,
-                (chunkText, _isDone) => {
-                    if (!signal?.aborted) {
-                        onChunk(fullContent + chunkText, false);
-                    }
-                },
-                { isWritingTask: true, signal }
-            );
-
-            if (result.error) {
-                return { content: fullContent, error: result.error, finishReason: 'error' };
-            }
-
-            const chunkContent = result.content || '';
-            fullContent += chunkContent;
-            // DSH-20261113-20 缺陷：缺失的 finishReason 不得兜成 'stop'——
-            // undefined 只在流被截断/异常时出现，兜底会让续写逻辑失效、
-            // 半截正文被当作完整章节落盘。保持 undefined，循环按非 length 收尾。
-            finalFinishReason = (result as { finishReason?: 'length' | 'error' | 'stop' | 'aborted' })
-                .finishReason;
-
-            if (result.usage) {
-                totalUsage.prompt += result.usage.prompt;
-                totalUsage.completion += result.usage.completion;
-                totalUsage.total += result.usage.total;
-            }
-
-            if (finalFinishReason !== 'length') {
-                break;
-            }
-
-            if (chunkContent.length < 50 || chunkContent === previousChunkContent) {
-                break;
-            }
-
-            previousChunkContent = chunkContent;
-            currentUserPrompt = `${fullContent.slice(-500)}${CONTINUE_PROMPT}`;
-        }
-
-        onChunk(fullContent, true);
-
-        return {
-            content: fullContent,
-            finishReason: finalFinishReason,
-            usage: totalUsage,
-        };
-    }
 
     /**
      * 生成世界观骨架。
@@ -366,26 +205,6 @@ export class AIEngine {
         customPrompt?: string
     ): Promise<APIResponse> {
         return this.worldviewGen.generateWorldviewSkeleton(worldName, projectName, genre, theme, customPrompt);
-    }
-
-    /**
-     * 生成单个世界观模块。
-     *
-     * @param moduleName - 模块名
-     * @param skeleton - 骨架文本
-     * @param worldName - 世界名
-     * @param genre - 题材
-     * @param customPrompt - 自定义提示词
-     * @returns 模块文本
-     */
-    async generateWorldviewModule(
-        moduleName: string,
-        skeleton: string,
-        worldName: string,
-        genre: string,
-        customPrompt?: string
-    ): Promise<APIResponse> {
-        return this.worldviewGen.generateWorldviewModule(moduleName, skeleton, worldName, genre, customPrompt);
     }
 
     /**
@@ -465,29 +284,6 @@ export class AIEngine {
         return this.characterGen.generateCharacters(worldview, count, customPrompt, templateContent, isFirstCharacter, names, settingLib, signal, existingEntities);
     }
 
-    /**
-     * 生成分卷大纲。
-     *
-     * @param worldview - 世界观
-     * @param globalSkeleton - 全局骨架
-     * @param volumeNumber - 卷号
-     * @param totalVolumes - 总卷数
-     * @param chaptersPerVolume - 每卷章数
-     * @param contextPrompt - 参数
-     * @param existingElements - 参数
-     * @returns API 响应
-     */
-    async generateVolumeOutline(
-        worldview: string,
-        globalSkeleton: string,
-        volumeNumber: number,
-        totalVolumes: number,
-        chaptersPerVolume: number,
-        contextPrompt?: string,
-        existingElements?: { characters: string; factions: string; locations: string; items: string; foreshadows?: string; timelineEvents?: string }
-    ): Promise<APIResponse> {
-        return this.outlineGen.generateVolumeOutline(worldview, globalSkeleton, volumeNumber, totalVolumes, chaptersPerVolume, contextPrompt, existingElements);
-    }
 
     /**
      * 生成全书大纲。
@@ -630,25 +426,6 @@ export class AIEngine {
         return this.chapterHelpers.reviewChapter(chapterContent, context);
     }
 
-    /**
-     * 生成章节计划/细纲。
-     *
-     * @param context - 上下文
-     * @returns API 响应
-     */
-    async generateChapterPlan(context: ChapterContext): Promise<APIResponse> {
-        return this.chapterHelpers.generateChapterPlan(context);
-    }
-
-    /**
-     * 生成章节分析报告（结算输入）。
-     *
-     * @param bodyText - 正文文本
-     * @returns API 响应
-     */
-    async generateAnalysisReport(bodyText: string): Promise<APIResponse> {
-        return this.chapterHelpers.generateAnalysisReport(bodyText);
-    }
 
     /**
      * 从正文抽取实体/要素。
@@ -660,55 +437,6 @@ export class AIEngine {
         return this.chapterHelpers.extractElements(bodyText);
     }
 
-    /**
-     * 分析作品文笔风格。
-     *
-     * @param novelName - 小说名
-     * @param signal - 参数
-     * @returns API 响应
-     */
-    async analyzeStyle(novelName: string, signal?: AbortSignal): Promise<APIResponse> {
-        return this.chapterHelpers.analyzeStyle(novelName, signal);
-    }
-
-    /**
-     * 执行去 AI 味改写。
-     *
-     * @param bodyText - 正文文本
-     * @returns 改写结果
-     */
-    async deaiRewrite(bodyText: string): Promise<{
-        original: string;
-        checkReport: string;
-        rewritten: string;
-    }> {
-        return this.chapterHelpers.deaiRewrite(bodyText);
-    }
-
-    /**
-     * 迭代精修（审查-修复循环）。
-     *
-     * @param bodyText - 正文文本
-     * @param contextPrompt - 上下文提示词
-     * @param maxRounds - 最大轮次
-     * @param chapNum - 参数
-     * @param onProgress - 参数
-     * @returns 精修结果
-     */
-    async iterativeRefine(
-        bodyText: string, 
-        contextPrompt: string,
-        maxRounds: number = 3,
-        chapNum?: string,
-        onProgress?: (msg: string) => void,
-    ): Promise<{
-        finalBody: string;
-        rounds: number;
-        diffs: string[];
-        roundBodies: string[];
-    }> {
-        return this.chapterHelpers.iterativeRefine(bodyText, contextPrompt, maxRounds, chapNum, onProgress);
-    }
 
     /** 当前模型可用于输入的窗口（设置值作为成本上限，模型能力作为硬上限） */
     private resolvePromptLimits(model: string): { maxContext: number; maxOutput: number } {
@@ -733,31 +461,6 @@ export class AIEngine {
         return this.resolvePromptLimits(model || this.plugin.settings.proModel);
     }
 
-    private async buildChapterPrompts(
-        context: ChapterContext,
-        knowledgeInjection?: string,
-        bodyFormat?: BodyFormatContract,
-    ) {
-        // v4.26：规则文本唯一来源 RulesService（含模式附录），不再内嵌第二份
-        let writingRules = '';
-        try {
-            writingRules = await RulesService.getInstance(this.plugin.app).getWritingRules(context.project);
-        } catch (e) {
-            log.warn('[AIEngine] 读取写作规则失败，使用镜头兜底:', e);
-        }
-        return buildChapterPromptsFn(
-            context,
-            { minWordCount: this.plugin.settings.minWordCount, maxWordCount: this.plugin.settings.maxWordCount },
-            bodyFormat,
-            knowledgeInjection,
-            this.resolvePromptLimits(this.plugin.settings.proModel),
-            writingRules,
-        );
-    }
-
-    private buildUserPrompt(context: ChapterContext, bodyFormat?: BodyFormatContract): string {
-        return buildUserPromptFn(context, { minWordCount: this.plugin.settings.minWordCount }, bodyFormat);
-    }
 
 }
 

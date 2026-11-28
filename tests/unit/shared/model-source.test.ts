@@ -37,3 +37,22 @@ describe('resolveProviderSourceType — 模型源类型解析', () => {
         expect(resolveProviderSourceType({ id: 'volc', endpoint: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions' })).toBe('cloud');
     });
 });
+
+/**
+ * 2026-11-28：isPrivateNetworkEndpoint 成为「是否本地端点」的唯一口径
+ * （api-connectivity-service 此前自带一份只认 localhost 的实现，192.168.x 的
+ * 本地 Ollama 在连通性探测被判 cloud →「无 key」报错，与拆解链路判定相反）。
+ */
+describe('isPrivateNetworkEndpoint — 统一口径', () => {
+    it('私网段判定', async () => {
+        const { isPrivateNetworkEndpoint } = await import('../../../shared/model-source');
+        expect(isPrivateNetworkEndpoint('http://192.168.1.8:11434/v1')).toBe(true);
+        expect(isPrivateNetworkEndpoint('http://10.0.0.5:8080')).toBe(true);
+        expect(isPrivateNetworkEndpoint('http://172.16.1.1:1234')).toBe(true);
+        expect(isPrivateNetworkEndpoint('http://172.32.1.1:1234')).toBe(false); // 172.32 不在私网段
+        expect(isPrivateNetworkEndpoint('http://my-pc.local:11434')).toBe(true);
+        expect(isPrivateNetworkEndpoint('localhost:11434')).toBe(true); // 无协议也能判
+        expect(isPrivateNetworkEndpoint('https://api.example.com/v1')).toBe(false);
+        expect(isPrivateNetworkEndpoint('')).toBe(false);
+    });
+});

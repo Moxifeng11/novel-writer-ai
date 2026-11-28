@@ -24,6 +24,9 @@ import {
 } from '@/shared/body-format';
 import { getModelContextWindow } from '@/shared/token-estimator';
 import { buildCraftSystemBlock } from './craft-constraints';
+import { createLogger } from '@/shared/logger';
+
+const log = createLogger('SceneBodyGenerator');
 
 /** 知识注入段可占模型窗口的比例：其余留给任务卡、正文与输出 */
 const KNOWLEDGE_BUDGET_RATIO = 0.3;
@@ -56,6 +59,16 @@ export interface SceneBodyGeneratorDeps {
     beats?: StoryBeat[];
     /** 正文格式契约；不传则用默认契约 */
     bodyFormat?: BodyFormatContract;
+    /**
+     * 取写作规则（vault 唯一来源 RulesService）。
+     *
+     * 2026-11-28 修真实缺陷：逐场循环此前**完全不带写作规则**——主链路（11 步
+     * 流水线）每章 system 都注入 `RulesService.getWritingRules`，而这条路径只有
+     * 工艺块与任务卡，用户在 `元文件/00-系统模板/写作规则.md` 里定的单一镜头/
+     * 段落纪律逐场生成时全部失效。由调用方注入（engine 不直接依赖 vault 服务，
+     * 与 `callAI` 同一注入风格）；内部只取一次并缓存，规则服务自身有 TTL。
+     */
+    getWritingRules?: () => Promise<string>;
 }
 
 /**
@@ -91,6 +104,9 @@ export function createSceneBodyGenerator(deps: SceneBodyGeneratorDeps): Generate
         MIN_KNOWLEDGE_BUDGET_TOKENS,
         Math.floor(getModelContextWindow(deps.model) * KNOWLEDGE_BUDGET_RATIO),
     );
+    // 写作规则懒加载缓存：同一本书的规则整轮生成只需读一次（RulesService 也有 TTL，
+    // 这里再省一层 await；取失败按空处理——场景生成不因规则读取失败而中断）
+    let cachedRules: string | null = null;
 
     return async (task, prevEnding, directive) => {
         try {
@@ -109,6 +125,21 @@ export function createSceneBodyGenerator(deps: SceneBodyGeneratorDeps): Generate
             };
 
             let systemPrompt = buildSceneBodySystemPrompt(deps.bodyFormat);
+            if (deps.getWritingRules) {
+                if (cachedRules === null) {
+                    try {
+                        cachedRules = await deps.getWritingRules();
+                    } catch (e) {
+                        // silent-ok: 规则读取失败按「无规则」继续；主链路同口径（log.warn 后兜底）
+                        log.warn('[SceneBodyGenerator] 读取写作规则失败，本场景按无规则继续:', e);
+                        cachedRules = '';
+                    }
+                }
+                if (cachedRules.trim()) {
+                    // 与主链路 buildSystemPrompt 同位序：规则在格式契约之前
+                    systemPrompt = `${systemPrompt}\n\n【写作规则（必须遵循）】\n${cachedRules.trim()}`;
+                }
+            }
             let injectionUser: string;
             if (deps.injectForSceneBodyLayers) {
                 // 必须层（任务卡/禁止事项）进 system，避免被 user 尾部截断丢掉

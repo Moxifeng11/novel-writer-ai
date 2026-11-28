@@ -22,7 +22,6 @@ vi.mock('../../../main', () => ({
 
 import { AIEngine, APIResponse } from '../../../engine/ai-engine';
 import { AIApiClient } from '../../../engine/ai-api-client';
-import { buildChapterPrompts, buildSystemPrompt, buildUserPrompt } from '../../../engine/ai-prompt-builder';
 import type { ChapterContext } from '../../../engine/ai-types';
 
 function makeMockPlugin() {
@@ -71,164 +70,41 @@ function makeChapterContext(overrides: Partial<ChapterContext> = {}): ChapterCon
     };
 }
 
-describe('AIEngine.getMaxConcurrent', () => {
+describe('AIApiClient.getMaxConcurrent', () => {
     it('默认模型返回默认并发数 2', () => {
-        expect(AIEngine.getMaxConcurrent('gpt-3.5-turbo')).toBe(2);
-        expect(AIEngine.getMaxConcurrent('unknown-model')).toBe(2);
+        expect(AIApiClient.getMaxConcurrent('gpt-3.5-turbo')).toBe(2);
+        expect(AIApiClient.getMaxConcurrent('unknown-model')).toBe(2);
     });
 
     it('轻量模型（flash/mini/nano/haiku/air/1-8）返回并发数 4', () => {
-        expect(AIEngine.getMaxConcurrent('gpt-4o-mini')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('claude-3-haiku-20240307')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('gemini-1.5-flash')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('gemini-1.5-nano')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('gpt-4o-air')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('gpt-4o-mini')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('claude-3-haiku-20240307')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('gemini-1.5-flash')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('gemini-1.5-nano')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('gpt-4o-air')).toBe(4);
     });
 
     it('重型推理模型（reasoner/r1/opus/v4-pro）返回并发数 1', () => {
-        expect(AIEngine.getMaxConcurrent('deepseek-reasoner')).toBe(1);
-        expect(AIEngine.getMaxConcurrent('deepseek-r1')).toBe(1);
-        expect(AIEngine.getMaxConcurrent('claude-3-opus-20240229')).toBe(1);
-        expect(AIEngine.getMaxConcurrent('gpt-v4-pro')).toBe(1);
+        expect(AIApiClient.getMaxConcurrent('deepseek-reasoner')).toBe(1);
+        expect(AIApiClient.getMaxConcurrent('deepseek-r1')).toBe(1);
+        expect(AIApiClient.getMaxConcurrent('claude-3-opus-20240229')).toBe(1);
+        expect(AIApiClient.getMaxConcurrent('gpt-v4-pro')).toBe(1);
     });
 
     it('本地 Ollama 模型（qwen2.5/deepseek-r1:7b/ollama）返回并发数 4', () => {
-        expect(AIEngine.getMaxConcurrent('qwen2.5:7b')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('qwen2.5-coder:14b')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('ollama://llama3')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('qwen2.5:7b')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('qwen2.5-coder:14b')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('ollama://llama3')).toBe(4);
     });
 
     it('模型名称大小写不敏感', () => {
-        expect(AIEngine.getMaxConcurrent('GPT-4O-MINI')).toBe(4);
-        expect(AIEngine.getMaxConcurrent('DeepSeek-R1')).toBe(1);
-        expect(AIEngine.getMaxConcurrent('QWEN2.5:7B')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('GPT-4O-MINI')).toBe(4);
+        expect(AIApiClient.getMaxConcurrent('DeepSeek-R1')).toBe(1);
+        expect(AIApiClient.getMaxConcurrent('QWEN2.5:7B')).toBe(4);
     });
 });
 
-describe('buildSystemPrompt - 请求构建', () => {
-    it('注入唯一来源规则文本与单一镜头锚点（v4.26）', () => {
-        const ctx = makeChapterContext();
-        const rules = '【写作规则（唯一来源）】每章只有一个镜头。';
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 }, undefined, rules);
-        expect(prompt).toContain('【本章镜头】视角人物：主角');
-        expect(prompt).toContain('【写作规则（唯一来源）】');
-        expect(prompt).toContain('每章只有一个镜头');
-        // 不再内嵌第二份规则/数值禁令
-        expect(prompt).not.toContain('破折号偶尔用');
-        expect(prompt).not.toContain('每章至少回收1个旧伏笔');
-    });
 
-    it('包含世界观题材类型', () => {
-        const ctx = makeChapterContext({ worldType: '都市' });
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        expect(prompt).toContain('都市');
-        expect(prompt).toContain('题材世界');
-    });
-
-    it('传入空规则时使用镜头兜底引导（不注入第二份规则）', () => {
-        const ctx = makeChapterContext();
-        const prompt = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        expect(prompt).toContain('【本章镜头】视角人物：主角');
-        expect(prompt).toContain('别人的心思只从动作与语气里流露');
-    });
-
-    // B6：知识注入是 user 中的可裁剪层，不能拼到 system 尾部（否则窗口不足时最先被截掉）
-    it('知识注入进入 user 的可裁剪层而不是 system 尾部', () => {
-        const ctx = makeChapterContext();
-        const knowledge = '【文笔风格注入】主角说话习惯用短句';
-        const prompts = buildChapterPrompts(
-            ctx,
-            { minWordCount: 2000, maxWordCount: 4000 },
-            undefined,
-            knowledge,
-            { maxContext: 128000, maxOutput: 4096 },
-        );
-
-        expect(prompts.system).not.toContain('【文笔风格注入】');
-        expect(prompts.user).toContain('主角说话习惯用短句');
-        expect(prompts.droppedKnowledge).toBe(false);
-    });
-
-    it('空知识注入不改变 prompt 结构', () => {
-        const ctx = makeChapterContext();
-        const promptWithout = buildSystemPrompt(ctx, { minWordCount: 2000, maxWordCount: 4000 });
-        const prompts = buildChapterPrompts(
-            ctx,
-            { minWordCount: 2000, maxWordCount: 4000 },
-            undefined,
-            '   ',
-            { maxContext: 128000, maxOutput: 4096 },
-        );
-        expect(prompts.system).toBe(promptWithout);
-        expect(prompts.user).toBe(buildUserPrompt(ctx, { minWordCount: 2000 }));
-    });
-});
-
-describe('buildUserPrompt - 请求构建', () => {
-    it('包含章节号和标题格式要求', () => {
-        const ctx = makeChapterContext({ chapterNumber: 10 });
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('第10章');
-        expect(prompt).toContain('# 第10章 标题');
-        expect(prompt).toContain('标题 2-15 字');
-    });
-
-    it('包含世界观和设定库', () => {
-        const ctx = makeChapterContext({
-            worldView: '世界观完整内容',
-            settingLib: '设定库完整内容',
-        });
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【世界观】');
-        expect(prompt).toContain('世界观完整内容');
-        expect(prompt).toContain('【设定库】');
-        expect(prompt).toContain('设定库完整内容');
-    });
-
-    it('包含人物状态和大纲', () => {
-        const ctx = makeChapterContext({
-            characters: '林惊鸿：主角，剑修',
-            outline: '本章主角大战魔尊',
-        });
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【人物状态】');
-        expect(prompt).toContain('林惊鸿');
-        expect(prompt).toContain('【本章大纲】');
-        expect(prompt).toContain('大战魔尊');
-    });
-
-    it('强制揭示伏笔时列出具体伏笔名称', () => {
-        const ctx = makeChapterContext({
-            forcedReveal: ['神秘玉佩', '身世之谜'],
-        });
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【本章必须揭示的伏笔】');
-        expect(prompt).toContain('神秘玉佩');
-        expect(prompt).toContain('身世之谜');
-        expect(prompt).toContain('本章优先揭示以下伏笔');
-    });
-
-    it('包含最后指令和自查清单', () => {
-        const ctx = makeChapterContext();
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【最后指令】');
-        expect(prompt).toContain('【输出前检查】');
-        expect(prompt).toContain('标题必须完整');
-        expect(prompt).toContain('每段开头空两格');
-        // v4.26：不再把字数写死进自查项
-        expect(prompt).not.toContain('字数≥2000字');
-    });
-
-    it('前文摘要和分卷规划正确拼接', () => {
-        const ctx = makeChapterContext({
-            chapterPlan: '分卷规划：本卷主角升级',
-            previousChapters: '前文摘要：上一章结尾...',
-        });
-        const prompt = buildUserPrompt(ctx, { minWordCount: 2000 });
-        expect(prompt).toContain('【分卷规划】');
-        expect(prompt).toContain('【前文摘要】');
-    });
-});
 
 describe('APIResponse 类型与错误处理', () => {
     it('成功响应包含 content 和 usage', () => {
@@ -259,47 +135,6 @@ describe('APIResponse 类型与错误处理', () => {
     });
 });
 
-describe('AIEngine.generateChapterStream', () => {
-    it('截断后携带前文尾部继续生成并合并结果', async () => {
-        const plugin = makeMockPlugin();
-        const engine = Object.create(AIEngine.prototype) as AIEngine;
-        (engine as any).plugin = plugin;
-        const responses: APIResponse[] = [
-            { content: '第一段'.repeat(30), finishReason: 'length' },
-            { content: '第二段', finishReason: 'stop' },
-        ];
-        const prompts: string[] = [];
-        vi.spyOn(engine, 'callAIStream').mockImplementation(async (_system, userPrompt, _model, _temperature, _maxTokens, onChunk) => {
-            prompts.push(userPrompt);
-            const response = responses.shift()!;
-            onChunk?.(response.content, false);
-            onChunk?.(response.content, true);
-            return response;
-        });
-
-        const result = await engine.generateChapterStream(makeChapterContext(), vi.fn());
-
-        expect(result.content).toBe('第一段'.repeat(30) + '第二段');
-        expect(prompts).toHaveLength(2);
-        expect(prompts[1]).toContain('第一段'.repeat(30).slice(-500));
-    });
-
-    it('连续续写无新增内容时停止，避免无限调用', async () => {
-        const plugin = makeMockPlugin();
-        const engine = Object.create(AIEngine.prototype) as AIEngine;
-        (engine as any).plugin = plugin;
-        const content = '稳定内容'.repeat(20);
-        const callAIStream = vi.spyOn(engine, 'callAIStream').mockImplementation(async () => ({
-            content,
-            finishReason: 'length',
-        }));
-
-        const result = await engine.generateChapterStream(makeChapterContext(), vi.fn());
-
-        expect(callAIStream).toHaveBeenCalledTimes(2);
-        expect(result.content).toBe(content + content);
-    });
-});
 
 describe('AIEngine 构造与委托', () => {
     it('构造函数正常初始化，不抛出错误', () => {
@@ -313,21 +148,6 @@ describe('AIEngine 构造与委托', () => {
         const plugin = makeMockPlugin();
         const engine = new AIEngine(plugin);
         expect(engine.getPlugin()).toBe(plugin);
-    });
-
-    it('resetSessionTokens 重置会话 token 计数', () => {
-        const plugin = makeMockPlugin();
-        const engine = new AIEngine(plugin);
-        engine.resetSessionTokens();
-        expect(engine.sessionTokens).toEqual({ input: 0, output: 0 });
-    });
-
-    it('sessionTokens 返回副本，外部修改不影响内部状态', () => {
-        const plugin = makeMockPlugin();
-        const engine = new AIEngine(plugin);
-        const tokens = engine.sessionTokens;
-        tokens.input = 999;
-        expect(engine.sessionTokens.input).toBe(0);
     });
 
     it('callAI 未显式给 maxTokens 时使用 settings.maxOutput（不再被静态表压到 4096）', async () => {

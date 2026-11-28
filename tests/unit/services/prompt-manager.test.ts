@@ -5,6 +5,7 @@ import {
     validatePromptManagerImport,
 } from '../../../services/prompt-manager';
 import type { PromptManagerConfig, PromptTemplate } from '../../../shared/prompt-manager-types';
+import { BODY_GENERATION_SYSTEM_PROMPT_V2, BODY_GENERATION_USER_TEMPLATE_V2 } from '../../../shared/prompts/body-v2-prompts';
 
 /**
  * C2-4（覆盖率审计二轮）：PromptManager 整类此前零覆盖，`importConfig` 直接
@@ -197,5 +198,29 @@ describe('PromptManager — 导入 dry-run 与合并模式（功能缺口 ④）
         await tick();
         expect(manager.getAllTemplates().map(t => t.id)).not.toContain('keep');
         expect(manager.getAllTemplates().map(t => t.id)).toContain('custom-2');
+    });
+});
+
+/**
+ * 2026-11-28：body-generation-v2 默认文本此前是一份过期草稿（缺 humanVoice/
+ * protocolLines/timeContext 等，用户一旦编辑就会把过期文本整体顶掉真模板）。
+ * 现与 engine/prompts/body-v2-prompts.ts 同源。另锁 fillTemplate 的 $ 序列安全。
+ */
+describe('默认模板与 canonical 同源', () => {
+    it('body-generation-v2 默认文本必须等于 canonical 常量', () => {
+        const pm = new PromptManager({ getConfig: () => ({}), setConfig: async () => { /* test stub */ } });
+        const tpl = pm.getTemplateById('body-generation-v2');
+        expect(tpl).not.toBeNull();
+        const ver = (tpl as PromptTemplate).versions[0];
+        expect(ver.systemPrompt).toBe(BODY_GENERATION_SYSTEM_PROMPT_V2);
+        expect(ver.userPrompt).toBe(BODY_GENERATION_USER_TEMPLATE_V2);
+    });
+
+    it('fillTemplate 不解释 $& / $` / $\' / $$ 序列', () => {
+        const pm = new PromptManager({ getConfig: () => ({}), setConfig: async () => { /* test stub */ } });
+        const rendered = (pm as unknown as {
+            fillTemplate: (t: string, v: Record<string, string>) => string;
+        }).fillTemplate('${a}', { a: '$&' });
+        expect(rendered).toBe('$&');
     });
 });

@@ -1,4 +1,5 @@
 import type { PromptTemplate, PromptCategory } from '@/shared/prompt-manager-types';
+import { BODY_GENERATION_SYSTEM_PROMPT_V2, BODY_GENERATION_USER_TEMPLATE_V2 } from '@/shared/prompts/body-v2-prompts';
 
 const now = Date.now();
 
@@ -189,102 +190,54 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
         'body-generation-v2',
         '正文生成（V2小说家模式）',
         'chapter',
-        'V2版本正文生成，贴身镜头+灵魂+演变',
-        `\${lensDeclaration}
-你的镜头贴着 \${protagonistName}。你活在他身体里。
-
-【他的灵魂——他不是角色卡，他是活人】
-\${protagonistSoulDetail}
-
-【他这一章要经历的情绪弧】
-\${emotionPlan}
-
-【他身体里的记忆——如果场景中出现相似元素，他会想起】
-\${triggeredMemories}
-
-【你能看到什么】
-他用眼睛看，你用笔写。他用耳朵听，你用笔写。他的皮肤感受到的一切，你如实记下。
-他读不了别人心里在想什么——你只能从他的角度看到别人的脸、眼睛、手、声音。
-他不知道的世界藏着什么秘密——你也不知道。你只知道他亲身经历过的事。
-⚠️ 如果某个场景的感官元素触碰了他的创伤记忆——他的身体会先于他的大脑做出反应，你如实写下来。
-
-【现在开始】
-把 \${protagonistName} 刚刚经历的这段写出来。从身体第一刻感受到的东西开始。
-
-【每一段经历，问自己四件事】
-1. 他的身体感觉到了什么？（冷/热/痛/麻/紧/松/轻/重）
-2. 他的情绪变了吗？（进来时是警惕的→出去时变成害怕的？或者其他变化）
-3. 他和别人的关系动了吗？（谁让他更信任了一点？谁让他更讨厌了？）
-4. 他有没有想起什么？（某个声音/气味/触感，让他想起过去）
-
-\${writingRules}
-
-📌 世界观约束
-故事发生在 \${worldType} 题材的世界，时代背景是 \${worldEra}。
-- \${forbiddenElements} 这些东西不存在于主角的世界里，也不会进入他的视野。
-- 力量体系遵循 \${powerSystem}。
-
-📌 输出格式
-\${bodyFormat}
-- 字数跟随本章目标：约 \${baseWords} 字
-
-【永远记住】
-你的镜头贴着 \${protagonistName}。你不是在写小说。
-你在记录他刚刚经历过的、真实的、有质感的每一刻。
-身体感觉与情绪变化是“活着”的入口；哪段缺了，就回到镜头里再待一会儿。`,
-        `【他这章要经历的事——大纲】
-\${outlineContent}
-
-【分卷定位与信息规划】
-\${chapPlan}
-
-【情绪弧——他这章的情绪变化路线】
-\${emotionPlan}
-
-【场景展开——每个场景的感受设计】
-\${sceneExpansion}
-
-【前情提要】
-\${prevChaptersSummary}
-
-【这个世界】\${worldView}
-
-【人物与势力状态】\${allChars}
-\${allFactions}
-\${allLocs}
-\${allItems}
-
-【需要处理的伏笔】\${unrevealedForeshadow}
-\${forcedRevealHint}
-
-【文笔风格（请严格遵循）】\${writingStyleContent}
-
-镜头贴着\${protagonistName}。现在，写他刚经历的第\${chapNum}章。`,
+        'V2版本正文生成，贴身镜头+灵魂+演变。文本与 engine/prompts/body-v2-prompts.ts 同源（2026-11-28 修复两份漂移）',
+        BODY_GENERATION_SYSTEM_PROMPT_V2,
+        BODY_GENERATION_USER_TEMPLATE_V2,
         [
-            { name: 'chapNum', description: '章节号', required: true },
+            { name: 'lensDeclaration', description: '镜头声明（本章视角人物与感知边界）', required: false },
             { name: 'protagonistName', description: '主角名字', required: true },
-            { name: 'protagonistSoulDetail', description: '主角灵魂细节' },
-            { name: 'emotionPlan', description: '情绪规划' },
-            { name: 'triggeredMemories', description: '触发的记忆' },
-            { name: 'writingRules', description: '写作规则' },
-            { name: 'bodyFormat', description: '正文格式硬性约束' },
-            { name: 'worldType', description: '世界类型' },
-            { name: 'worldEra', description: '时代背景' },
-            { name: 'forbiddenElements', description: '禁忌元素' },
-            { name: 'powerSystem', description: '力量体系' },
-            { name: 'baseWords', description: '基础字数', default: '3000' },
-            { name: 'outlineContent', description: '大纲内容' },
-            { name: 'chapPlan', description: '分卷规划' },
-            { name: 'sceneExpansion', description: '场景展开' },
-            { name: 'prevChaptersSummary', description: '前情提要' },
-            { name: 'worldView', description: '世界观' },
-            { name: 'allChars', description: '所有角色' },
-            { name: 'allFactions', description: '所有势力' },
-            { name: 'allLocs', description: '所有地点' },
-            { name: 'allItems', description: '所有物品' },
-            { name: 'unrevealedForeshadow', description: '未揭示伏笔' },
-            { name: 'forcedRevealHint', description: '强制揭示提示' },
-            { name: 'writingStyleContent', description: '文笔风格' },
+            { name: 'protagonistSoulDetail', description: '主角灵魂细节', required: false },
+            { name: 'triggeredMemories', description: '触发的记忆', required: false },
+            { name: 'writingRules', description: '写作规则', required: false },
+            { name: 'worldType', description: '世界类型', required: false },
+            { name: 'worldEra', description: '时代背景', required: false },
+            { name: 'forbiddenElements', description: '禁忌元素', required: false },
+            { name: 'powerSystem', description: '力量体系', required: false },
+            { name: 'timeContext', description: '当前时间上下文', required: false },
+            { name: 'prevChapterStateSnapshot', description: '上一章状态快照', required: false },
+            { name: 'bodyFormat', description: '正文格式硬性约束', required: false },
+            { name: 'baseWords', description: '基础字数', default: '3000', required: false },
+            { name: 'humanVoice', description: '人味约束块（按 humanVoiceMode 组装）', required: false },
+            { name: 'protocolLines', description: '结构化变更行指令（structuredChangeLines 开启时非空）', required: false },
+            { name: 'outlineContent', description: '大纲内容', required: false },
+            { name: 'chapPlan', description: '分卷规划', required: false },
+            { name: 'infoPlan', description: '信息规划', required: false },
+            { name: 'writingAnnotations', description: '写作批注块（⟨✍⟩ 摘要批注）', required: false },
+            { name: 'entityRelations', description: '实体关系', required: false },
+            { name: 'emotionPlan', description: '情绪规划', required: false },
+            { name: 'sceneExpansion', description: '场景展开', required: false },
+            { name: 'sceneCardDigest', description: '场景卡摘要', required: false },
+            { name: 'storyContextPack', description: '故事上下文信息包', required: false },
+            { name: 'sceneStyleSnippet', description: '场景文风片段', required: false },
+            { name: 'suggestedRhythm', description: '建议节奏', required: false },
+            { name: 'distilledContent', description: '情节蒸馏内容', required: false },
+            { name: 'prevChaptersSummary', description: '前文摘要', required: false },
+            { name: 'prevChapEnding', description: '上一章结尾', required: false },
+            { name: 'nextChapterHook', description: '下一章开头钩子', required: false },
+            { name: 'longTermMemory', description: '长期记忆', required: false },
+            { name: 'worldView', description: '世界观', required: false },
+            { name: 'settingLib', description: '设定库', required: false },
+            { name: 'allChars', description: '人物状态', required: false },
+            { name: 'allFactions', description: '所有势力', required: false },
+            { name: 'allLocs', description: '所有地点', required: false },
+            { name: 'allItems', description: '所有物品', required: false },
+            { name: 'timelineEvents', description: '时间线事件', required: false },
+            { name: 'unrevealedForeshadow', description: '未揭示伏笔', required: false },
+            { name: 'forcedRevealHint', description: '强制揭示提示', required: false },
+            { name: 'dialogueSkeleton', description: '台词骨架', required: false },
+            { name: 'writingStyleContent', description: '文笔风格', required: false },
+            { name: 'fanficRules', description: '同人规则块', required: false },
+            { name: 'chapNum', description: '章节号', required: true },
         ]
     ),
 

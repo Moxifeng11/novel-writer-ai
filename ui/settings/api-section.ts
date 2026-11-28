@@ -770,7 +770,11 @@ export class ApiSection extends SettingsSection {
                         endpoint: raw.endpoint,
                         model: modelId,
                         apiKey: this.plugin.settings.providerKeys?.[raw.id] || '',
-                        sourceType: raw.sourceType === 'local' ? 'local' : 'cloud',
+                        // 2026-11-28 修真实缺陷：原来把「未设置」也强转成 'cloud'，
+                        // 旧数据的 192.168.x 本地 Ollama 会因「无 key」直接报错，
+                        // 端点启发式（isPrivateNetworkEndpoint）永远没机会兜底。
+                        // 未设置时传 undefined，让服务端按端点判定。
+                        sourceType: raw.sourceType === 'local' ? 'local' : (raw.sourceType === 'cloud' ? 'cloud' : undefined),
                         apiFormat: format,
                         headers: resolveProviderHeaders(raw),
                         requestUrl: resolveEffectiveRequestUrl(raw.endpoint, format, raw.requestUrlOverride),

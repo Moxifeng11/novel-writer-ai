@@ -1994,6 +1994,9 @@ export default class NovelWriterPlugin extends Plugin {
             injectForSceneBody: async () => [constraints.section, sceneHint].filter(Boolean).join('\n\n'),
             injectForSceneBodyLayers: async () => ({ system: '', user: [constraints.section, sceneHint].filter(Boolean).join('\n\n') }),
             callAI: (system, user, targetModel) => engine.callAI(system, user, targetModel, 0.7, undefined, { isWritingTask: true }),
+            // 2026-11-28：逐场循环此前不带写作规则（主链路每章都注入）。同一份
+            // RulesService 单一来源，缓存由生成器内部处理。
+            getWritingRules: () => RulesService.getInstance(this.app).getWritingRules(projectIdFromPath(project) || project),
         });
         const generateSceneBody = async (task: SceneTask, prevEnding: string, directive?: string) => {
             const info = await retrieval.retrieve(task);

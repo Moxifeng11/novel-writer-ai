@@ -22,6 +22,8 @@ import type { GenerationCheckpoint } from '@/engine/generation-checkpoint';
 import { ChapterSnapshotBuilder } from '@/engine/chapter-snapshot-builder';
 import { StoryBeatExtractor } from '@/engine/story-beat-extractor';
 import { createSceneBodyGenerator } from '@/engine/scene-body-generator';
+import { RulesService } from '@/services/rules-service';
+import { projectIdFromPath } from '@/shared/paths';
 import { BodyWriter, defaultBodyPath } from '@/engine/body-writer';
 import { findProtagonistName } from '@/shared/protagonist';
 import { findBodyFileV4 } from '@/engine/chapter-utils';
@@ -108,6 +110,8 @@ export async function openSceneConfirmWizard(opts: SceneConfirmWizardOptions): P
             ? injector.injectForSceneBodyLayers(ctx, o)
             : Promise.resolve({ system: '', user: '' }),
         callAI: (sys, usr, m) => plugin.aiEngine.callAI(sys, usr, m, 0.7, Math.min(bodyConfig.maxOutput, 8192), bodyCallOptions),
+        // 2026-11-28：逐场生成此前不带写作规则（主链路每章都注入），同一份单一来源补齐
+        getWritingRules: () => RulesService.getInstance(plugin.app).getWritingRules(projectIdFromPath(project) || project),
         snapshot,
         beats,
         bodyFormat,

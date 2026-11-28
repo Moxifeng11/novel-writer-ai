@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 148888 | 1975 | 1560 | 79% |
-| `services/` | 66 | 19682 | 298 | 206 | 69% |
-| `shared/` | 273 | 54590 | 2327 | 1804 | 78% |
+| `engine/` | 358 | 148011 | 1967 | 1552 | 79% |
+| `services/` | 66 | 19645 | 298 | 206 | 69% |
+| `shared/` | 273 | 54518 | 2327 | 1803 | 77% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114372 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114404 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -73,13 +73,12 @@
 | `engine/ai-api-client.ts` | 1098 | 2 | 2 |
 | `engine/ai-api-stream.ts` | 1034 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 577 | 1 | 1 |
-| `engine/ai-chapter-helpers.ts` | 335 | 1 | 1 |
+| `engine/ai-chapter-helpers.ts` | 89 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
-| `engine/ai-engine.ts` | 765 | 4 | 2 |
+| `engine/ai-engine.ts` | 468 | 4 | 2 |
 | `engine/ai-entity-generator.ts` | 227 | 1 | 1 |
 | `engine/ai-lexicon.ts` | 97 | 3 | 3 |
 | `engine/ai-outline-generator.ts` | 1416 | 1 | 1 |
-| `engine/ai-prompt-builder.ts` | 227 | 5 | 5 |
 | `engine/ai-scene-expander.ts` | 286 | 2 | 2 |
 | `engine/ai-scene-generator.ts` | 302 | 2 | 2 |
 | `engine/ai-types.ts` | 87 | 6 | 6 |
@@ -267,7 +266,7 @@
 | `engine/prompt-hash.ts` | 51 | 1 | 1 |
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
-| `engine/prompts/body-v2-prompts.ts` | 148 | 3 | 3 |
+| `engine/prompts/body-v2-prompts.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
 | `engine/prompts/body-v4-prompts.ts` | 95 | 3 | 3 |
 | `engine/prompts/chapter-pipeline-prompts.ts` | 641 | 11 | 11 |
@@ -334,7 +333,7 @@
 | `engine/revision/revision-types.ts` | 68 | 7 | 7 |
 | `engine/revision/targeted-revision.ts` | 212 | 4 | 4 |
 | `engine/rhythm-analyzer.ts` | 246 | 1 | 1 |
-| `engine/scene-body-generator.ts` | 196 | 5 | 3 |
+| `engine/scene-body-generator.ts` | 227 | 5 | 3 |
 | `engine/scene-expander.ts` | 460 | 11 | 7 |
 | `engine/scene-generation-loop.ts` | 256 | 7 | 4 |
 | `engine/scheduler-segment-integration.ts` | 289 | 2 | 2 |
@@ -398,7 +397,7 @@
 | `engine/writing-profile.ts` | 566 | 8 | 8 |
 | `engine/writing-quality-engine.ts` | 1376 | 14 | 13 |
 | `engine/zhuque-detector.ts` | 253 | 5 | 2 |
-| `services/api-connectivity-service.ts` | 437 | 9 | 9 |
+| `services/api-connectivity-service.ts` | 443 | 9 | 9 |
 | `services/assertion-context-service.ts` | 78 | 3 | 2 |
 | `services/attachment-service.ts` | 103 | 2 | 1 |
 | `services/backup-center-service.ts` | 182 | 4 | 1 |
@@ -437,8 +436,8 @@
 | `services/project-index-service.ts` | 232 | 1 | 1 |
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
-| `services/prompt-manager.ts` | 876 | 6 | 5 |
-| `services/prompt-templates-default.ts` | 644 | 1 | 1 |
+| `services/prompt-manager.ts` | 880 | 6 | 5 |
+| `services/prompt-templates-default.ts` | 597 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/quality-panel-service.ts` | 113 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
@@ -593,7 +592,7 @@
 | `shared/mode-unit-outline.ts` | 87 | 2 | 2 |
 | `shared/model-capabilities.ts` | 168 | 11 | 9 |
 | `shared/model-pricing.ts` | 266 | 10 | 6 |
-| `shared/model-source.ts` | 43 | 3 | 1 |
+| `shared/model-source.ts` | 63 | 4 | 1 |
 | `shared/multi-layer-cache.ts` | 556 | 6 | 6 |
 | `shared/narrative-number.ts` | 235 | 8 | 6 |
 | `shared/novel-format.ts` | 457 | 15 | 15 |
@@ -631,11 +630,11 @@
 | `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
+| `shared/prompts/body-v2-prompts.ts` | 148 | 3 | 3 |
 | `shared/prose-metrics.ts` | 587 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
 | `shared/protocol-lines.ts` | 181 | 8 | 4 |
-| `shared/provider-detection.ts` | 240 | 4 | 4 |
 | `shared/provider-settings-maintenance.ts` | 125 | 4 | 2 |
 | `shared/provider-ui-model.ts` | 420 | 24 | 17 |
 | `shared/publication-profile.ts` | 330 | 17 | 17 |
@@ -756,7 +755,7 @@
 | `ui/chapter-version-modal.ts` | 542 | 2 | 2 |
 | `ui/character-recognition-modal.ts` | 228 | 1 | 1 |
 | `ui/co-write/logic-check-format.ts` | 92 | 6 | 4 |
-| `ui/co-writing-view.ts` | 3955 | 3 | 2 |
+| `ui/co-writing-view.ts` | 3962 | 3 | 2 |
 | `ui/co-writing/asset-status.ts` | 167 | 7 | 5 |
 | `ui/co-writing/brief-panel.ts` | 248 | 9 | 8 |
 | `ui/co-writing/chapter-context.ts` | 273 | 15 | 11 |
@@ -921,7 +920,7 @@
 | `ui/model-picker-popover.ts` | 298 | 4 | 3 |
 | `ui/model-quick-switcher.ts` | 321 | 13 | 12 |
 | `ui/monitor-panel-a.ts` | 190 | 2 | 2 |
-| `ui/monitor-panel-b.ts` | 1892 | 2 | 2 |
+| `ui/monitor-panel-b.ts` | 1909 | 2 | 2 |
 | `ui/novel-analysis-modal.ts` | 267 | 1 | 1 |
 | `ui/novel-tags-modal.ts` | 259 | 1 | 1 |
 | `ui/onboarding-modal.ts` | 318 | 1 | 1 |
@@ -953,7 +952,7 @@
 | `ui/rendering/safe-html.ts` | 36 | 2 | 2 |
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
 | `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
-| `ui/scene-confirm-modal.ts` | 467 | 5 | 2 |
+| `ui/scene-confirm-modal.ts` | 471 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
 | `ui/services/agent-port.ts` | 776 | 3 | 3 |
 | `ui/services/agent-session-store.ts` | 211 | 5 | 5 |
@@ -967,7 +966,7 @@
 | `ui/settings-tab.ts` | 382 | 1 | 1 |
 | `ui/settings-utils.ts` | 64 | 2 | 2 |
 | `ui/settings/agent-section.ts` | 40 | 1 | 1 |
-| `ui/settings/api-section.ts` | 1741 | 1 | 1 |
+| `ui/settings/api-section.ts` | 1745 | 1 | 1 |
 | `ui/settings/autosave-hint.ts` | 29 | 1 | 1 |
 | `ui/settings/autosave-snapshot.ts` | 85 | 3 | 1 |
 | `ui/settings/deconstruction-section.ts` | 415 | 1 | 1 |

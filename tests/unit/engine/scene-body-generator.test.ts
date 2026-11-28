@@ -139,3 +139,47 @@ describe('buildUserPrompt — prompt 组装', () => {
         expect(prompt).not.toContain('【用户修正方向】');
     });
 });
+
+/**
+ * 2026-11-28：逐场循环此前完全不带写作规则（主链路每章 system 都注入
+ * RulesService.getWritingRules），用户规则文档对逐场生成整段失效。
+ * 以下锁定三件事：注入、只取一次（缓存）、读取失败按无规则继续。
+ */
+describe('createSceneBodyGenerator — 写作规则注入', () => {
+    it('提供 getWritingRules 时，规则进入 system prompt', async () => {
+        const getWritingRules = vi.fn(async () => '# 小说写作规则\n核心锚点：每章只有一个镜头。');
+        const deps = makeDeps({ getWritingRules });
+        const generate = createSceneBodyGenerator(deps);
+        await generate(makeTask(), '', undefined);
+
+        expect(getWritingRules).toHaveBeenCalledTimes(1);
+        const sysArg = (deps.callAI as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+        expect(sysArg).toContain('【写作规则（必须遵循）】');
+        expect(sysArg).toContain('核心锚点：每章只有一个镜头。');
+    });
+
+    it('同一生成器多次调用只取一次规则（缓存）', async () => {
+        const getWritingRules = vi.fn(async () => '规则文本');
+        const deps = makeDeps({ getWritingRules });
+        const generate = createSceneBodyGenerator(deps);
+        await generate(makeTask(), '', undefined);
+        await generate(makeTask({ num: 2, name: '第二场' }), '', undefined);
+
+        expect(getWritingRules).toHaveBeenCalledTimes(1);
+    });
+
+    it('规则为空/读取失败时正常生成（不注入空段）', async () => {
+        const getWritingRules = vi.fn(async () => '   ');
+        const deps = makeDeps({ getWritingRules });
+        const generate = createSceneBodyGenerator(deps);
+        const result = await generate(makeTask(), '', undefined);
+        expect(result.error).toBeNull();
+
+        const failing = makeDeps({ getWritingRules: vi.fn(async () => { throw new Error('读库失败'); }) });
+        const generate2 = createSceneBodyGenerator(failing);
+        const result2 = await generate2(makeTask(), '', undefined);
+        expect(result2.error).toBeNull();
+        const sysArg = (failing.callAI as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+        expect(sysArg).not.toContain('【写作规则（必须遵循）】');
+    });
+});

@@ -130,11 +130,14 @@ describe('callAIStream：截断不得当成功（缺陷①）', () => {
 });
 
 
-describe('回归锁（源码契约）：generateChapterStream 不得兜 stop（缺陷④）', () => {
-    it('ai-engine.ts 的 finalFinishReason 赋值不得含 || ' + String.fromCharCode(39) + 'stop' + String.fromCharCode(39) + ' 兜底', async () => {
+describe('回归锁（源码契约）：续写链路不得兜 stop（缺陷④）', () => {
+    it('callAIStreamWithRetry 的 finalFinishReason 赋值不得含 || 兜底', async () => {
+        // 2026-11-28：generateChapterStream 已随死代码清理删除；
+        // 续写链路唯一实现在 engine/step-runner-retry.ts，契约随之指向活文件。
+        // 行为级回归另有 tests/unit/engine/step-runner-retry-finish-reason.test.ts。
         const fs = await import('node:fs');
         const source = fs.readFileSync(
-            'engine/ai-engine.ts',
+            'engine/step-runner-retry.ts',
             'utf8',
         );
         const lines = source.split(String.fromCharCode(10)).filter(l => l.includes('finalFinishReason ='));

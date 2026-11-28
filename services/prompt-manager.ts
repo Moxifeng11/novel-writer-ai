@@ -297,9 +297,13 @@ export class PromptManager {
     }
 
     private fillTemplate(template: string, vars: Record<string, string>): string {
+        // 2026-11-28 修真实缺陷：字符串形式的替换值会被 String.replace 解释
+        // $&/中$`/$'/$$ 序列（与 engine/prompts/template-utils.ts 同一缺陷同日修复）。
+        // 用户在模板里写的正文含这些序列时会被静默改写，改函数式替换原样插入。
         let result = template;
         for (const [key, value] of Object.entries(vars)) {
-            result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value || '');
+            const text = value || '';
+            result = result.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), () => text);
         }
         return result;
     }

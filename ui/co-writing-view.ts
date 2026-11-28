@@ -720,7 +720,11 @@ export class CoWritingView extends ItemView {
       // 同人设定缺失/损坏时协同会以「空规则」继续写作：必须让用户看见，而不是只写日志
       this.warnFanficRulesOnce();
       // 承接规划成果：从磁盘读取本章 6 个规划文件 → ChapterBrief
-      this.facade.setChapterBrief(await this.loadChapterBriefInput(bodyOnly));
+      const briefInput = await this.loadChapterBriefInput(bodyOnly);
+      this.facade.setChapterBrief(briefInput);
+      // 2026-11-28：缓存大纲/情绪规划原文，updatePlotCompletion 时传给面板 B，
+      // 解析「预期节奏」——rhythm-intent 的生产注入点此前一直为空。
+      this.lastPlanHints = { outline: briefInput.outline || '', emotionPlan: briefInput.emotionPlan || '' };
       this.facade.updateSnapshot(this.rightEditor.value);
       this.tractionEngine = await this.facade.createEndingTractionEngine(project);
       await this.renderAllPanels();
@@ -3862,6 +3866,9 @@ ${text}`;
     }).open();
   }
 
+  /** 最近一次读到的规划文本（大纲/情绪规划），供面板 B 解析预期节奏；切章时更新 */
+  private lastPlanHints: { outline?: string; emotionPlan?: string } | null = null;
+
   private updatePlotCompletion(): void {
     try {
       const workspaceManager = this.plugin.workspaceManager;
@@ -3878,7 +3885,7 @@ ${text}`;
       if (this.project) {
         panelB.setActiveProject(this.project);
       }
-      panelB.updateCompletion(text, chapterKey);
+      panelB.updateCompletion(text, chapterKey, this.lastPlanHints ?? undefined);
     } catch (e) {
       log.warn('[CoWritingView] 更新剧情完成度失败:', e);
     }

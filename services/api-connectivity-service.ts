@@ -7,6 +7,7 @@
 import { requestUrl } from 'obsidian';
 import { resolveUiMessage, uiMessage } from '@/shared/ui-message';
 import { createLogger } from '@/shared/logger';
+import { isPrivateNetworkEndpoint } from '@/shared/model-source';
 import { isStoredCiphertext } from '@/shared/secret-value';
 import {
     buildAuthHeaders,
@@ -149,8 +150,13 @@ export function normalizeChatEndpoint(endpoint: string): string {
     return `${raw}/v1/chat/completions`;
 }
 
+/**
+ * 2026-11-28 收敛判定口径：改用 shared/model-source 的 isPrivateNetworkEndpoint
+ * （localhost + 私网段 10./192.168./172.16-31./.local）。原实现只认 localhost 系，
+ * 192.168.x 的本地 Ollama 会被误判 cloud → 「无 key」报错，与拆解链路的判定相反。
+ */
 function isLocalEndpoint(endpoint: string): boolean {
-    return /(^https?:\/\/)?(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(endpoint);
+    return isPrivateNetworkEndpoint(endpoint);
 }
 
 function shortMessage(text: string, max = 220): string {

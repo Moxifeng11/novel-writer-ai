@@ -38,6 +38,7 @@ import {
 import { createPlotDivergenceEngine, createWritingQualityEngine } from "@/engine/quality/quality-engine-factory";
 import { AdaptiveDebounceManager } from "@/shared/adaptive-debounce-manager";
 import { divergenceLevelFromScore, qualityScoreColor } from "@/shared/quality-grade";
+import { parseExpectedRhythm } from "@/shared/rhythm-intent";
 import { CommandIds } from '@/shared/command-ids';
 import { loadQualityHistory, appendQualityHistory } from "@/services/quality-history-store";
 import { aggregateQualityHistoryByChapter, computeChapterTrend, mergeQualityHistory, normalizeChapterKey, type QualityHistoryRecord } from "@/shared/quality-history";
@@ -236,7 +237,17 @@ export class MonitorPanelB extends DraggablePanel {
    * @param text - 文本内容
    * @param chapterKey - 章节键
    */
-  updateCompletion(text: string, chapterKey?: string): void {
+  /**
+ * 注入正文并评估。
+ *
+ * @param text - 正文全文
+ * @param chapterKey - 章节键（质量历史/基线用）
+ * @param planHints - 规划文本（可选）。2026-11-28 修复：剧情偏离引擎的
+ *   `expectedRhythm` 此前从未被生产代码填充（`rhythm-intent.ts` 文件头自述的问题
+ *   本身没接上），引擎永远跑默认 'medium'。现在由调用方把大纲/情绪规划传进来，
+ *   用 `parseExpectedRhythm` 解析显式标注（无标注保持默认，绝不从语义猜测）。
+ */
+updateCompletion(text: string, chapterKey?: string, planHints?: { outline?: string; emotionPlan?: string }): void {
     if (!this.completionEngine || !this.completionContent) return;
 
     if (chapterKey && chapterKey !== this.currentChapterKey) {
@@ -267,6 +278,12 @@ export class MonitorPanelB extends DraggablePanel {
       this.restoreQualityHistory();
     }
 
+    if (planHints) {
+      const expected = parseExpectedRhythm(planHints.outline, planHints.emotionPlan);
+      if (this.divergenceEngine) {
+        this.divergenceEngine.updateOptions(expected ? { expectedRhythm: expected } : {});
+      }
+    }
     this.currentChapterText = text;
 
     this.debounceManager.debounceFixed('completion-eval', () => {

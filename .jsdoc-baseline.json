@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-11-27T11:54:07.557Z",
-  "note": "棘轮基线：已注释数不得下降、未注释数不得上升；只在覆盖率上升后 --update-baseline。",
+  "generatedAt": "2026-11-28T11:33:33.470Z",
+  "note": "删除死文件 ai-prompt-builder.ts 与 provider-detection.ts（第六节①：生产零调用方），同步基线",
   "layers": {
     "engine": {
-      "files": 342,
-      "exports": 1948,
-      "documented": 1947,
-      "methods": 1264,
-      "methodsDocumented": 1264,
+      "files": 340,
+      "exports": 1941,
+      "documented": 1940,
+      "methods": 1248,
+      "methodsDocumented": 1248,
       "incomplete": 0
     },
     "services": {
@@ -19,9 +19,9 @@
       "incomplete": 0
     },
     "shared": {
-      "files": 268,
-      "exports": 2310,
-      "documented": 2309,
+      "files": 271,
+      "exports": 2331,
+      "documented": 2329,
       "methods": 163,
       "methodsDocumented": 163,
       "incomplete": 0
@@ -295,8 +295,8 @@
     "engine/ai-chapter-helpers.ts": {
       "exports": 1,
       "documented": 1,
-      "methods": 7,
-      "methodsDocumented": 7,
+      "methods": 2,
+      "methodsDocumented": 2,
       "incomplete": 0
     },
     "engine/ai-character-generator.ts": {
@@ -309,8 +309,8 @@
     "engine/ai-engine.ts": {
       "exports": 2,
       "documented": 2,
-      "methods": 32,
-      "methodsDocumented": 32,
+      "methods": 21,
+      "methodsDocumented": 21,
       "incomplete": 0,
       "exampleTargets": 1,
       "examplesDocumented": 1
@@ -334,13 +334,6 @@
       "documented": 1,
       "methods": 3,
       "methodsDocumented": 3,
-      "incomplete": 0
-    },
-    "engine/ai-prompt-builder.ts": {
-      "exports": 5,
-      "documented": 5,
-      "methods": 0,
-      "methodsDocumented": 0,
       "incomplete": 0
     },
     "engine/ai-scene-expander.ts": {
@@ -887,8 +880,8 @@
       "incomplete": 0
     },
     "engine/deconstruction-scheduler.ts": {
-      "exports": 12,
-      "documented": 12,
+      "exports": 13,
+      "documented": 13,
       "methods": 34,
       "methodsDocumented": 34,
       "incomplete": 0
@@ -1598,13 +1591,6 @@
     "engine/prompt-resolver.ts": {
       "exports": 4,
       "documented": 4,
-      "methods": 0,
-      "methodsDocumented": 0,
-      "incomplete": 0
-    },
-    "engine/prompts/body-v2-prompts.ts": {
-      "exports": 3,
-      "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -2952,6 +2938,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/annotation-marker.ts": {
+      "exports": 5,
+      "documented": 5,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/api-format.ts": {
       "exports": 21,
       "documented": 21,
@@ -3172,6 +3165,13 @@
     "shared/context-budget-policy.ts": {
       "exports": 7,
       "documented": 7,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/context-budget.ts": {
+      "exports": 9,
+      "documented": 9,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -3816,7 +3816,7 @@
       "incomplete": 0
     },
     "shared/model-source.ts": {
-      "exports": 3,
+      "exports": 4,
       "documented": 3,
       "methods": 0,
       "methodsDocumented": 0,
@@ -4078,6 +4078,13 @@
       "methodsDocumented": 0,
       "incomplete": 0
     },
+    "shared/prompts/body-v2-prompts.ts": {
+      "exports": 3,
+      "documented": 3,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
     "shared/prose-metrics.ts": {
       "exports": 10,
       "documented": 10,
@@ -4102,13 +4109,6 @@
     "shared/protocol-lines.ts": {
       "exports": 8,
       "documented": 8,
-      "methods": 0,
-      "methodsDocumented": 0,
-      "incomplete": 0
-    },
-    "shared/provider-detection.ts": {
-      "exports": 4,
-      "documented": 4,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4375,6 +4375,13 @@
     "shared/step-frontmatter.ts": {
       "exports": 4,
       "documented": 4,
+      "methods": 0,
+      "methodsDocumented": 0,
+      "incomplete": 0
+    },
+    "shared/step-gate.ts": {
+      "exports": 6,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0
@@ -4782,8 +4789,8 @@
       "incomplete": 0
     },
     "shared/writing-rules-mode-addons.ts": {
-      "exports": 5,
-      "documented": 5,
+      "exports": 6,
+      "documented": 6,
       "methods": 0,
       "methodsDocumented": 0,
       "incomplete": 0

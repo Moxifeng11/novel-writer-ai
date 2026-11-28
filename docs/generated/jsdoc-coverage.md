@@ -6,9 +6,9 @@
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
 | `core/` | 6 | 30 | 30 | 100% | 64 | 64 | 100% | 0 |
 | `domains/` | 15 | 88 | 88 | 100% | 1 | 1 | 100% | 0 |
-| `engine/` | 342 | 1949 | 1948 | 100% | 1264 | 1264 | 100% | 0 |
+| `engine/` | 340 | 1941 | 1940 | 100% | 1248 | 1248 | 100% | 0 |
 | `services/` | 66 | 297 | 297 | 100% | 312 | 312 | 100% | 0 |
-| `shared/` | 271 | 2331 | 2330 | 100% | 163 | 163 | 100% | 0 |
+| `shared/` | 271 | 2331 | 2329 | 100% | 163 | 163 | 100% | 0 |
 | `ui/` | 307 | 1175 | 1175 | 100% | 681 | 680 | 100% | 0 |
 
 ## 缺口最大的文件（按未注释导出数）
@@ -17,6 +17,7 @@
 |---|---:|---:|---:|---:|
 | `engine/co-writer/local-model-utils.ts` | 9 | 1 | 0 | 0 |
 | `shared/degradation-notifier.ts` | 11 | 1 | 7 | 0 |
+| `shared/model-source.ts` | 4 | 1 | 0 | 0 |
 | `ui/settings-tab.ts` | 1 | 0 | 4 | 1 |
 | `engine/agent/agent-types.ts` | 23 | 0 | 0 | 0 |
 | `engine/agent/conversation-engine.ts` | 1 | 0 | 5 | 0 |
@@ -44,7 +45,6 @@
 | `engine/agent/harness/repair-tools.ts` | 11 | 0 | 0 | 0 |
 | `engine/agent/harness/session-log.ts` | 1 | 0 | 10 | 0 |
 | `engine/agent/harness/session-snapshot.ts` | 11 | 0 | 0 | 0 |
-| `engine/agent/harness/skill-tools.ts` | 1 | 0 | 0 | 0 |
 
 ## @example 覆盖（公共入口）
 
