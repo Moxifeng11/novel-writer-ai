@@ -110,7 +110,22 @@
 
 ---
 
-## 六、已确认但**未修**的（需用户决策）
+## 六、五项收敛（2026-11-28 第二轮：已全部修复 → commit 1c95ddb6）
+
+> 处理原则：先逐项重新取证（不采信扫描 agent 的行号与结论），再动手。
+> 取证修正了两处审计结论：`reviewChapter`/`extractElements` 其实活着
+> （review-agent.ts:161、command-registry.ts:647 调用），保留；
+> `provider-detection.ts` 比预想更死——全仓零 import，直接删除。
+>
+> 另发现一项被死测试掩盖的事实：Rev 186「关联索引替代平铺伏笔/时间线」
+> 只落在死路径 `ai-prompt-builder`，活路径模板（body-v2/v4）没有
+> `${storyLinkage}` 占位符——数据流到 buildStoryContext 即断。
+> 属新功能接线而非缺陷修复，待单独决策是否补。
+>
+> 验证：10760 测试全绿，preflight EXIT=0。运行时三探针待 Obsidian 恢复后补跑
+>（桌面应用自更新 1.15.1 后未重启成功，与改动无关）。
+
+### 6.1 死代码 ✅ 已清理
 
 ### 6.1 死代码规模
 
@@ -125,7 +140,7 @@ generateWorldviewModule / resetSessionTokens / sessionTokens / getMaxConcurrent
 
 **为什么没删**：删公开方法可能影响外部脚本/测试，且用户未授权大规模删除。建议单独一轮处理。
 
-### 6.2 三条正文生成路径并存
+### 6.2 三条正文生成路径并存 ✅ 已收敛（路径C随①删除；路径B补齐写作规则）
 
 | 路径 | 状态 | 是否含 `writingRules` | 人味块 |
 |---|---|---|---|
@@ -135,19 +150,19 @@ generateWorldviewModule / resetSessionTokens / sessionTokens / getMaxConcurrent
 
 路径 B 不含写作规则是实质差异——开启「逐场循环」后用户的规则不生效。需确认这是有意设计还是缺陷。
 
-### 6.3 三套「是否本地端点」判定
+### 6.3 三套「是否本地端点」判定 ✅ 已收敛到 shared/model-source.ts
 
 `shared/model-source.ts`（认私网段）、`services/api-connectivity-service.ts`（不认私网段）、
 `shared/provider-detection.ts`（第三套表）。后果：`192.168.1.8:11434` 在一处判 local、
 另一处判 cloud，同一端点结论相反。建议收敛到 `model-source.ts` 单一真相源。
 
-### 6.4 V2 正文模板两份且字段已漂移
+### 6.4 V2 正文模板两份且字段已漂移 ✅ 已单一来源化（canonical 下沉 shared/prompts/）
 
 `services/prompt-templates-default.ts`（PromptManager 默认值）与
 `engine/prompts/body-v2-prompts.ts`（实际生效）字段集不同。用户在 PromptManager 里
 「改」`body-generation-v2`，改的是另一份文本。
 
-### 6.5 `expectedRhythm` 从未被填充
+### 6.5 `expectedRhythm` 从未被填充 ✅ 已接线（co-writing-view → monitor-panel-b → PlotDivergenceEngine）
 
 `shared/rhythm-intent.ts` 文件头自述「此前没有任何生产调用方提供该字段，导致节奏偏离
 长期恒空」——而该字段的生产注入点至今仍为空。模块声称要修的问题本身未被接入。
