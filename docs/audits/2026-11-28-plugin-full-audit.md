@@ -189,9 +189,11 @@ generateWorldviewModule / resetSessionTokens / sessionTokens / getMaxConcurrent
 否则修内存会引入新 bug。
 
 `Rev186 关联索引`复核结论：`story_linkage`（ledger 系）与
-`formattedCrossLink`（story-context-graph）是**两套不同生产者**，
-活模板已有 `${storyContextPack}`；「linkage 未进活路径」维持待决策，
-不并入纠错。
+`formattedCrossLink`（story-context-graph）是**两套不同生产者**。
+用户批准作为功能增强接入后已完成（commit e6ef87d0）：四个正文用户模板
+（V2/V3/V4/pipeline）各插入 `${storyLinkage}`，装配语义收敛到
+`engine/prompts/story-linkage-vars.ts` 纯函数——有 linkage 注入
+【关联索引】并把平铺伏笔/时间线替换为短注记，无 linkage 平铺原样保留。
 
 ## 七、新增的实测工具
 
