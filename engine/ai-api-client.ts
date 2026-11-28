@@ -764,16 +764,22 @@ export class AIApiClient {
                         model: currentModel,
                         endpoint: endpoint.substring(0, 50),
                     });
-                    const response = await requestJson(requestEndpoint, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            ...buildAuthHeaders(apiFormat, apiKey),
-                            ...this.resolveProviderHeaders(endpoint),
-                        },
-                        body: JSON.stringify(requestBody),
-                        signal: ac.signal,
-                    });
-                    performanceMonitor.end(perfFetchId, { status: response.status });
+                    // 2026-11-28 修真实泄漏：请求抛错（网络/取消/超时）会跳过 end()，
+                    // 每次失败漏一个 activeMarks 条目，长期会话无界增长。finally 兜底。
+                    let response;
+                    try {
+                        response = await requestJson(requestEndpoint, {
+                            headers: {
+                                'Content-Type': 'application/json',
+                                ...buildAuthHeaders(apiFormat, apiKey),
+                                ...this.resolveProviderHeaders(endpoint),
+                            },
+                            body: JSON.stringify(requestBody),
+                            signal: ac.signal,
+                        });
+                    } finally {
+                        performanceMonitor.end(perfFetchId);
+                    }
 
                     window.clearTimeout(timer);
                     timer = null;

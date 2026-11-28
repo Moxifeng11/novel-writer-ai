@@ -52,12 +52,18 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
         const timeoutId = window.setTimeout(() => timeoutController.abort(), 30000); // 30秒超时
 
         // 如果有外部 signal，监听它并转发到 timeoutController
+        // 2026-11-28 修真实缺陷（监听器累积）：此处闭包从不解除——外部 signal
+        // 是活整个任务的任务级 controller，每来一个 chunk 就多挂一个监听器，
+        // embedBatch 5 并发 × 几百块 = 数千个闭包挂在同一个 signal 上直到任务结束。
+        // 持引用 + finally 解除。
+        let forwardAbort: (() => void) | null = null;
         if (options?.signal) {
             if (options.signal.aborted) {
                 window.clearTimeout(timeoutId);
                 throw new Error('Embedding 已取消');
             }
-            options.signal.addEventListener('abort', () => timeoutController.abort());
+            forwardAbort = () => timeoutController.abort();
+            options.signal.addEventListener('abort', forwardAbort, { once: true });
         }
 
         try {
@@ -96,6 +102,10 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
             }
             throw error;
         } finally {
+            if (forwardAbort && options?.signal) {
+                options.signal.removeEventListener('abort', forwardAbort);
+                forwardAbort = null;
+            }
             window.clearTimeout(timeoutId);
         }
     }

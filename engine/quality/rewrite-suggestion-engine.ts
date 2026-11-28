@@ -55,6 +55,9 @@ export class RewriteSuggestionEngine {
   private readonly cache: LruCache<string, RewriteResult>;
   private state: RewriteEngineState = 'idle';
   private currentAbort?: AbortController;
+  /** 2026-11-28：外部 signal 转发监听的解绑凭据（cleanup 用） */
+  private currentSignal?: AbortSignal;
+  private currentSignalListener?: () => void;
 
   constructor(options: RewriteSuggestionEngineOptions = {}) {
     this.aiEngine = options.aiEngine;
@@ -122,7 +125,13 @@ export class RewriteSuggestionEngine {
       if (signal.aborted) {
         return this.buildCancelledResult(context, startTime);
       }
-      signal.addEventListener('abort', () => internalAbort.abort(), { once: true });
+      // 2026-11-28 防御性修复（监听器累积）：持有引用，cleanup() 统一解除。
+      // 当前生产调用方不传 signal，但任何未来传入视图级长生命周期 signal 的
+      // 调用方都会让闭包在多次建议间累积（文件头注释提过同类问题）。
+      const forwardAbort = () => internalAbort.abort();
+      this.currentSignal = signal;
+      this.currentSignalListener = forwardAbort;
+      signal.addEventListener('abort', forwardAbort, { once: true });
     }
 
     this.state = 'generating';
@@ -600,6 +609,12 @@ export class RewriteSuggestionEngine {
 
   private cleanup(): void {
     this.currentAbort = undefined;
+    // 解绑外部 signal 的转发监听（generate 的三条退路都走 cleanup）
+    if (this.currentSignal && this.currentSignalListener) {
+      this.currentSignal.removeEventListener('abort', this.currentSignalListener);
+    }
+    this.currentSignal = undefined;
+    this.currentSignalListener = undefined;
   }
 }
 

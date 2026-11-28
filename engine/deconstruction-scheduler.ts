@@ -412,6 +412,8 @@ export class DeconstructionScheduler {
     private pendingWrites: Map<string, string> = new Map();
 
     private dimensionCache: Map<string, { hash: string; result: unknown }> = new Map();
+    /** 维度结果缓存上限：重跑去重只需覆盖最近几本书（每本最多 8 维） */
+    private static readonly DIMENSION_CACHE_MAX_ENTRIES = 16;
 
     constructor(
         app: App,
@@ -1297,7 +1299,15 @@ export class DeconstructionScheduler {
 
                         if (dimResult !== undefined && dimResult !== null) {
                             dimensionResults.set(dimension, dimResult);
+                            // 2026-11-28 修真实缺陷（无界内存）：缓存按 bookId:dimension 累积
+                            // 整份维度分析结果，几十本书后不释放。设插入序上限，
+                            // 超限淘汰最早条目（Map 迭代序=插入序）。
                             this.dimensionCache.set(cacheKey, { hash: contentHash, result: dimResult });
+                            while (this.dimensionCache.size > DeconstructionScheduler.DIMENSION_CACHE_MAX_ENTRIES) {
+                                const oldest = this.dimensionCache.keys().next().value;
+                                if (oldest === undefined) break;
+                                this.dimensionCache.delete(oldest);
+                            }
                         }
 
                         const isDegraded = degradedDimensions.includes(dimension);
@@ -1557,6 +1567,12 @@ export class DeconstructionScheduler {
                 this.cleanupTaskMaps(taskId);
                 this.activeCount--;
                 this.scheduleNext();
+                // 2026-11-28 修真实缺陷（无界内存）：任务终态后 tasks Map 仍长持
+                // 整本原文（93 万字 ≈ 1.9MB × sourceText + preprocessedText 两份），
+                // 几十本书后内存持续上涨。终态后无人再读原文（重试已改走 rerunBook
+                // 从知识库重读），这里释放。
+                task.sourceText = '';
+                task.preprocessedText = undefined;
             }
         } catch (prepError) {
             // 只在「前置准备阶段就已失败」时进入：内层 try 尚未开始，
@@ -1564,6 +1580,8 @@ export class DeconstructionScheduler {
             log.error('[DeconstructionScheduler] 拆解前置准备失败，任务终止:', prepError);
             task.status = 'failed';
             task.error = prepError instanceof Error ? prepError.message : String(prepError);
+            task.sourceText = '';
+            task.preprocessedText = undefined;
             void this.appendBreakdownLog(
                 task.bookName,
                 `## 拆解失败（前置准备）\n\n错误: ${task.error}\n\n`,
@@ -1584,15 +1602,20 @@ export class DeconstructionScheduler {
 
     private async waitForResume(taskId: string, signal: AbortSignal): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            this.pauseResolvers.set(taskId, resolve);
-
             const onAbort = () => {
                 signal.removeEventListener('abort', onAbort);
                 this.pauseResolvers.delete(taskId);
                 reject(new Error('任务已取消'));
             };
-
-            signal.addEventListener('abort', onAbort);
+            // 2026-11-28 修真实缺陷（监听器泄漏）：resumeTask 走 resolve 时 onAbort
+            // 永不触发，监听器会一直挂在任务级 controller 上（每个 pause→resume
+            // 循环漏一个）。两条退路都解绑，resolve 路径用包装函数先摘监听。
+            const onResolved = () => {
+                signal.removeEventListener('abort', onAbort);
+                resolve();
+            };
+            this.pauseResolvers.set(taskId, onResolved);
+            signal.addEventListener('abort', onAbort, { once: true });
         });
     }
 
@@ -1704,6 +1727,13 @@ export class DeconstructionScheduler {
         // 书已删除：不写维度文件，避免把已删除的书目录重新建出来。
         if (!(await this.knowledgeBaseManager.getBook(task.bookId))) {
             log.info(`[DeconstructionScheduler] 书籍已删除，跳过保存${DIMENSION_LABELS[dimension]}结果`);
+            return;
+        }
+        // 2026-11-28 修真实缺陷（取消后仍写盘）：这里只校验「书是否还存在」，
+        // 不校验任务是否已取消——用户看到「已取消」后，分段聚合完成仍会把整套
+        // 维度报告写到磁盘（非分段路径每次落盘前都有 checkAbort，此处漏了）。
+        if (task.status === 'cancelled' || task.status === 'failed') {
+            log.info(`[DeconstructionScheduler] 任务已${task.status === 'cancelled' ? '取消' : '失败'}，跳过保存${DIMENSION_LABELS[dimension]}结果`);
             return;
         }
         try {

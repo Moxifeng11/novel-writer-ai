@@ -456,7 +456,10 @@ export class KnowledgeMonitorModal extends Modal {
 
     private async retryTask(task: BreakdownTask): Promise<void> {
         try {
-            await this.scheduler.addTask(task.bookId, task.sourceText, task.dimensions);
+            // 2026-11-28：改走 rerunBook（从知识库重读原文）。此前直接读
+            // task.sourceText——调度器为控制内存会在任务终态后释放原文，
+            // 重试会提交空文本。
+            await this.scheduler.rerunBook(task.bookId, task.dimensions);
             new Notice(`已重新提交《${task.bookName}》的拆解任务`);
             this.activeTab = 'current';
             this.render();

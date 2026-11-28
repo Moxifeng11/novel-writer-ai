@@ -148,6 +148,7 @@ import { clearPetImageFromDisk, loadPetImageFromDisk, savePetImageToDisk } from 
 import { shouldAutoOpenFirstRunGuide } from './shared/first-run-guide';
 import { RulesService } from './services/rules-service';
 import { GenreConfigRegistry } from './engine/genre';
+import { clearSharedEmbeddingProvider } from './engine/embedding/embedding-service';
 import { getPromptCache } from './engine/prompt-cache';
 import { StyleFingerprintLibrary } from './engine/style-fingerprint-library';
 import { ForeshadowConfigManager, ForeshadowConfig } from './engine/foreshadow-config-manager';
@@ -3487,6 +3488,10 @@ export default class NovelWriterPlugin extends Plugin {
         // `resetInstance` 定义了却从不被调用（grep main.ts 为 0）——热重载/切 vault
         // 后，A vault 的 LLM 自创 genreId 会留在 B vault，污染 getGenreConfig 的回退。
         GenreConfigRegistry.resetInstance();
+        // 2026-11-28：共享向量 provider 含 baseUrl/apiKey，且热重载后新实例会
+        // setSharedEmbeddingProvider 覆盖——但卸载时不清，旧引用（连同凭据）会
+        // 一直留在模块级变量里。clear 在 engine-registry 之外只有测试调用过。
+        clearSharedEmbeddingProvider();
         // P0-14/16 + O-3: 不向 localStorage 保存恢复状态。
         // 热重载交接由按钮 handler 写入 sessionStorage（10 分钟 TTL、读取即删），
         // 新实例 onload 消费一次；Obsidian 正常关闭→启动时 sessionStorage 已随窗口清空，

@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 358 | 148011 | 1967 | 1552 | 79% |
+| `engine/` | 358 | 148077 | 1967 | 1552 | 79% |
 | `services/` | 66 | 19645 | 298 | 206 | 69% |
 | `shared/` | 273 | 54518 | 2327 | 1803 | 77% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114404 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114407 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -70,8 +70,8 @@
 | `engine/agent/harness/tool-registry.ts` | 307 | 5 | 2 |
 | `engine/agent/harness/tool-result-pruner.ts` | 67 | 5 | 5 |
 | `engine/ai-api-client-shared.ts` | 86 | 6 | 5 |
-| `engine/ai-api-client.ts` | 1098 | 2 | 2 |
-| `engine/ai-api-stream.ts` | 1034 | 3 | 2 |
+| `engine/ai-api-client.ts` | 1104 | 2 | 2 |
+| `engine/ai-api-stream.ts` | 1039 | 3 | 2 |
 | `engine/ai-batch-entity-generator.ts` | 577 | 1 | 1 |
 | `engine/ai-chapter-helpers.ts` | 89 | 1 | 1 |
 | `engine/ai-character-generator.ts` | 426 | 1 | 1 |
@@ -158,7 +158,7 @@
 | `engine/craft-constraints.ts` | 84 | 5 | 5 |
 | `engine/cross-volume-integration.ts` | 517 | 6 | 1 |
 | `engine/cross-volume-outline-validator.ts` | 638 | 16 | 14 |
-| `engine/deconstruction-scheduler.ts` | 3338 | 14 | 10 |
+| `engine/deconstruction-scheduler.ts` | 3368 | 14 | 10 |
 | `engine/deconstruction-worker-manager.ts` | 695 | 3 | 3 |
 | `engine/deconstructors/character-deconstructor.ts` | 4062 | 14 | 14 |
 | `engine/deconstructors/commercial-deconstructor.ts` | 2052 | 6 | 6 |
@@ -175,7 +175,7 @@
 | `engine/embedding/embedding-provider.ts` | 13 | 1 | 1 |
 | `engine/embedding/embedding-service.ts` | 53 | 4 | 4 |
 | `engine/embedding/index.ts` | 12 | 6 | 0 |
-| `engine/embedding/ollama-provider.ts` | 219 | 2 | 2 |
+| `engine/embedding/ollama-provider.ts` | 229 | 2 | 2 |
 | `engine/embedding/openai-provider.ts` | 241 | 2 | 2 |
 | `engine/embedding/provider-factory.ts` | 211 | 4 | 4 |
 | `engine/embedding/qwen-provider.ts` | 50 | 2 | 2 |
@@ -293,7 +293,7 @@
 | `engine/quality/quality-worker.ts` | 87 | 0 | 0 |
 | `engine/quality/realtime-monitor.ts` | 550 | 7 | 7 |
 | `engine/quality/rewrite-prompts.ts` | 258 | 6 | 6 |
-| `engine/quality/rewrite-suggestion-engine.ts` | 611 | 2 | 2 |
+| `engine/quality/rewrite-suggestion-engine.ts` | 626 | 2 | 2 |
 | `engine/quality/rewrite-types.ts` | 235 | 13 | 13 |
 | `engine/rag/retrieval-service.ts` | 298 | 6 | 6 |
 | `engine/relationship-change-queue.ts` | 234 | 7 | 6 |
@@ -904,7 +904,7 @@
 | `ui/knowledge-detail-format.ts` | 46 | 4 | 4 |
 | `ui/knowledge-detail-modal.ts` | 1708 | 1 | 1 |
 | `ui/knowledge-folder-navigation.ts` | 15 | 1 | 1 |
-| `ui/knowledge-monitor-modal.ts` | 490 | 1 | 1 |
+| `ui/knowledge-monitor-modal.ts` | 493 | 1 | 1 |
 | `ui/knowledge-rebuild-action.ts` | 48 | 1 | 1 |
 | `ui/manage-providers-modal.ts` | 647 | 1 | 1 |
 | `ui/manuscript-precheck-modal.ts` | 199 | 2 | 2 |

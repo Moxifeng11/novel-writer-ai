@@ -263,17 +263,22 @@ export async function callAIStream(
                         });
                         // O-1：移动端由 http-transport 缓冲 SSE 后合成 reader，
                         // 桌面端仍是原生 fetch（ReadableStream + 取消语义不变）。
-                        const response = await openStreamResponse(requestEndpoint, {
-                            headers: {
-                                'Content-Type': 'application/json',
-                                ...buildAuthHeaders(apiFormat, apiKey),
-                                ...host.resolveProviderHeaders(endpoint),
-                                'Accept': 'text/event-stream',
-                            },
-                            body: JSON.stringify(streamRequestBody),
-                            signal: ac.signal,
-                        });
-                        performanceMonitor.end(perfStreamFetchId, { status: response.status });
+                        // 2026-11-28 修真实泄漏：finally 兜底 end()（同 callAI 非流式位）。
+                        let response;
+                        try {
+                            response = await openStreamResponse(requestEndpoint, {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    ...buildAuthHeaders(apiFormat, apiKey),
+                                    ...host.resolveProviderHeaders(endpoint),
+                                    'Accept': 'text/event-stream',
+                                },
+                                body: JSON.stringify(streamRequestBody),
+                                signal: ac.signal,
+                            });
+                        } finally {
+                            performanceMonitor.end(perfStreamFetchId);
+                        }
 
                         // 同 nativeStreamIterator：头部到达后保留空闲超时看门狗，避免读流永久挂起
                         const armIdleTimer = () => {
