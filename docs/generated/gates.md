@@ -24,6 +24,7 @@
 | `npm run check:css` | CSS 预算与命名棘轮 |
 | `npm run check:decon` | — |
 | `npm run check:deps` | 分层依赖与循环依赖（棘轮） |
+| `npm run check:doc-anchors` | — |
 | `npm run check:docs` | 文档索引/链接/版本/编码检查 |
 | `npm run check:engine-msg` | — |
 | `npm run check:func` | — |
@@ -119,11 +120,12 @@
 30. npm run check:cjk-keep
 31. npm run check:changelog
 32. npm run check:docs
-33. npm run check:support-qr
-34. npm run check:workers-inline
-35. npm run build
-36. npm run check:bundle
-37. npm run check:release
+33. npm run check:doc-anchors
+34. npm run check:support-qr
+35. npm run check:workers-inline
+36. npm run build
+37. npm run check:bundle
+38. npm run check:release
 ```
 
 ## 说明

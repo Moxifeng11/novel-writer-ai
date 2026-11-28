@@ -123,3 +123,21 @@ describe('PerformanceMonitor（services 唯一实现）', () => {
         expect(monitor.getStats('unique-op-0')).toBeNull();
     });
 });
+
+/**
+ * 2026-11-28：activeMarks 自愈上限——调用位漏 end()（错误/取消早退）时
+ * mark 永驻 Map 无界增长。中心化兜底：超 200 按插入序淘汰最旧条目。
+ */
+describe('PerformanceMonitor — activeMarks 自愈上限', () => {
+    it('超过上限后最旧 mark 被淘汰，新 mark 仍可 end', async () => {
+        const { performanceMonitor } = await import('../../../services/performance-monitor');
+        performanceMonitor.setEnabled(true);
+        // 造 205 个未闭合 mark（超过 MAX_ACTIVE_MARKS=200）
+        const ids: Array<string | null> = [];
+        for (let i = 0; i < 205; i++) ids.push(performanceMonitor.start(`op-${i}`, 'other'));
+        // 最旧的 5 个应被淘汰（end 返回 null），最新的仍可正常 end（返回数值）
+        expect(ids[0]).not.toBeNull();
+        expect(performanceMonitor.end(ids[0])).toBeNull();
+        expect(typeof performanceMonitor.end(ids[204])).toBe('number');
+    });
+});

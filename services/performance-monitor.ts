@@ -158,6 +158,9 @@ export class PerformanceMonitor {
     private static instance: PerformanceMonitor | null = null;
     private options: PerformanceMonitorOptions;
     private activeMarks: Map<string, PerformanceMark> = new Map();
+    /** 未闭合 mark 的自愈上限（2026-11-28）：调用位漏 end() 时按插入序淘汰最旧条目 */
+    private static readonly MAX_ACTIVE_MARKS = 200;
+    private staleMarkWarned = false;
     private log: PerformanceLogEntry[] = [];
     private statsByOperation: Map<string, { durations: number[]; total: number; count: number; min: number; max: number }> = new Map();
     private peakMemory: number = 0;
@@ -247,6 +250,7 @@ export class PerformanceMonitor {
         }
 
         this.activeMarks.set(id, mark);
+        this.evictStaleMarks();
 
         if (parentId) {
             const parent = this.activeMarks.get(parentId);
@@ -256,6 +260,29 @@ export class PerformanceMonitor {
         }
 
         return id;
+    }
+
+    /**
+     * 淘汰超限的未闭合 mark（自愈，不改变正常 start/end 配对）。
+     *
+     * 2026-11-28 修真实泄漏：start() 后未 end()（错误/取消早退）的 mark 永驻
+     * `activeMarks`，无上限。调用位侧已在两处高频 AI 请求位补 finally；这里是
+     * 中心化兜底——任何未来漏 end 的调用位也被 bounded。
+     * 只淘汰无子节点的最旧条目（子节点随父保留，直到父被淘汰链式清理）。
+     */
+    private evictStaleMarks(): void {
+        while (this.activeMarks.size > PerformanceMonitor.MAX_ACTIVE_MARKS) {
+            const oldest = this.activeMarks.keys().next().value;
+            if (oldest === undefined) break;
+            this.activeMarks.delete(oldest);
+            if (!this.staleMarkWarned) {
+                this.staleMarkWarned = true;
+                log.warn(
+                    `[PerformanceMonitor] 未闭合 mark 超过 ${PerformanceMonitor.MAX_ACTIVE_MARKS}，`
+                    + `已按插入序淘汰最旧条目（说明有 start 后未 end 的调用位）`,
+                );
+            }
+        }
     }
 
     /**

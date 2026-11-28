@@ -148,6 +148,18 @@ export class RewriteSuggestionModal extends Modal {
 
         try {
             const result = await this.engine.generate(context);
+            // 2026-11-28 接线死配置 suggestions.autoAdoptHighConfidence/autoAdoptThreshold：
+            // 开启且最高置信度建议达到阈值时自动应用（语义=「高置信建议自动采纳」），
+            // 其余候选仍渲染卡片供人工选择。未开启保持纯人工流程。
+            const s = this.plugin.settings.suggestions;
+            if (s?.autoAdoptHighConfidence === true && result.suggestions.length > 0) {
+                const threshold = s.autoAdoptThreshold ?? 0.9;
+                const best = result.suggestions.reduce((a, b) => (b.confidence > a.confidence ? b : a));
+                if (best.confidence >= threshold) {
+                    this.applySuggestion(best);
+                    return;
+                }
+            }
             this.renderResult(result);
         } catch (e) {
             this.resultEl.empty();

@@ -1993,7 +1993,14 @@ export default class NovelWriterPlugin extends Plugin {
             projectPath: project,
             model,
             injectForSceneBody: async () => [constraints.section, sceneHint].filter(Boolean).join('\n\n'),
-            injectForSceneBodyLayers: async () => ({ system: '', user: [constraints.section, sceneHint].filter(Boolean).join('\n\n') }),
+            // 2026-11-28 修真实缺陷（必须层降级）：原 stub 把 constraints.section
+            // 全塞进 user——那是人物硬事实/口吻/高重要度伏笔「不得改设定」类
+            // **必须层**内容，分层注入器的设计就是必须层进 system（不参与裁剪，
+            // 避免 user 尾部截断丢掉），sceneHint（逐场检索提示）才是按需层。
+            injectForSceneBodyLayers: async () => ({
+                system: constraints.section,
+                user: sceneHint,
+            }),
             callAI: (system, user, targetModel) => engine.callAI(system, user, targetModel, 0.7, undefined, { isWritingTask: true }),
             // 2026-11-28：逐场循环此前不带写作规则（主链路每章都注入）。同一份
             // RulesService 单一来源，缓存由生成器内部处理。

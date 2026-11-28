@@ -7,11 +7,11 @@
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
 | `engine/` | 359 | 147432 | 1955 | 1540 | 79% |
-| `services/` | 66 | 19489 | 298 | 206 | 69% |
+| `services/` | 66 | 19516 | 298 | 206 | 69% |
 | `shared/` | 275 | 55350 | 2341 | 1817 | 78% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114416 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114354 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -429,7 +429,7 @@
 | `services/local-model-probe.ts` | 185 | 6 | 5 |
 | `services/memory-graph-service.ts` | 246 | 2 | 2 |
 | `services/model-discovery.ts` | 436 | 5 | 5 |
-| `services/performance-monitor.ts` | 819 | 9 | 9 |
+| `services/performance-monitor.ts` | 846 | 9 | 9 |
 | `services/plan-spec-service.ts` | 147 | 3 | 2 |
 | `services/planning-store.ts` | 76 | 1 | 1 |
 | `services/post-generation-check-service.ts` | 221 | 2 | 2 |
@@ -954,7 +954,7 @@
 | `ui/rendering/context-panel.ts` | 957 | 1 | 1 |
 | `ui/rendering/safe-html.ts` | 36 | 2 | 2 |
 | `ui/review-chapter-modal.ts` | 67 | 1 | 1 |
-| `ui/rewrite-suggestion-modal.ts` | 218 | 1 | 1 |
+| `ui/rewrite-suggestion-modal.ts` | 230 | 1 | 1 |
 | `ui/scene-confirm-modal.ts` | 471 | 5 | 2 |
 | `ui/services/agent-attachment-store.ts` | 171 | 10 | 6 |
 | `ui/services/agent-port.ts` | 776 | 3 | 3 |
@@ -975,8 +975,8 @@
 | `ui/settings/deconstruction-section.ts` | 415 | 1 | 1 |
 | `ui/settings/fingerprint-section.ts` | 447 | 1 | 1 |
 | `ui/settings/foreshadow-section.ts` | 294 | 1 | 1 |
-| `ui/settings/general-sections.ts` | 1260 | 5 | 5 |
-| `ui/settings/knowledge-section.ts` | 794 | 1 | 1 |
+| `ui/settings/general-sections.ts` | 1198 | 5 | 5 |
+| `ui/settings/knowledge-section.ts` | 782 | 1 | 1 |
 | `ui/settings/locale-setting.ts` | 55 | 2 | 2 |
 | `ui/settings/mcp-section.ts` | 76 | 1 | 1 |
 | `ui/settings/mode-section.ts` | 115 | 1 | 1 |

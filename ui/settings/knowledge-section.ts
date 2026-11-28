@@ -466,22 +466,10 @@ export class KnowledgeSection extends SettingsSection {
                 });
             });
 
-        new Setting(vectorSection)
-            .setName(t('settings.knowledge.thresholdName'))
-            .setDesc(t('settings.knowledge.thresholdDesc', { value: (this.plugin.settings.vectorDeconstructionThreshold ?? 0.3).toFixed(2) }))
-            .addSlider(slider => {
-                slider.setLimits(0.1, 0.9, 0.05);
-                slider.setValue(this.plugin.settings.vectorDeconstructionThreshold ?? 0.3);
-                slider.onChange(async (value) => {
-                    this.plugin.settings.vectorDeconstructionThreshold = value;
-                    const descEl = slider.sliderEl.closest('.setting-item')?.querySelector('.setting-item-description');
-                    if (descEl) {
-                        descEl.textContent = t('settings.knowledge.thresholdDesc', { value: value.toFixed(2) });
-                    }
-                    await this.plugin.saveSettings();
-                });
-            });
-
+        // 2026-11-28 死配置处置：vectorDeconstructionThreshold 已摘除——拆解向量
+        // 增强链路没有置信度阈值概念（向量可用性由 checkVectorAvailability 决定），
+        // 字段保留兼容旧 data.json。接线或彻底移除见
+        // docs/audits/2026-11-28-settings-module-map.md 死配置清单。
         new Setting(vectorSection)
             .setName(t('settings.knowledge.providerName'))
             .setDesc(t('settings.knowledge.providerDesc'))

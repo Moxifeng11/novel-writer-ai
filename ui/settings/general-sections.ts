@@ -410,49 +410,11 @@ export class RulesSection extends SettingsSection {
     async render(container: HTMLElement): Promise<void> {
         const section = container.createEl('section');
         await this.mountRulesSection(section);
-        // 语义关键词兜底属于规则层配置，随分区渲染（原来由宿主注入 → 弹窗缺失）
-        this.renderRuleKeywords(container);
-    }
-
-    /**
-     * 渲染「关键词兜底」设置（规则层用）。
-     *
-     * 内置词表没覆盖某个说法时用户可追加；只影响「词表兜底」层，不改变结构化判定。
-     *
-     * @param container - 容器元素
-     */
-    private renderRuleKeywords(container: HTMLElement): void {
-        const overrides = this.plugin.settings.semanticKeywordOverrides ?? {};
-        const section = container.createDiv({ cls: 'nw-settings-section' });
-        new Setting(section)
-            .setName(t('settings.general.rulesKeywordTitle'))
-            .setDesc(t('settings.general.rulesKeywordDesc'))
-            .setHeading();
-        const fields: Array<{
-            key: keyof NonNullable<typeof overrides>;
-            name: string;
-            hint: string;
-        }> = [
-            { key: 'injury', name: t('settings.general.kwInjury'), hint: t('settings.general.kwInjuryHint') },
-            { key: 'action', name: t('settings.general.kwAction'), hint: t('settings.general.kwActionHint') },
-            { key: 'modern', name: t('settings.general.kwModern'), hint: t('settings.general.kwModernHint') },
-            { key: 'location', name: t('settings.general.kwLocation'), hint: t('settings.general.kwLocationHint') },
-            { key: 'drastic', name: t('settings.general.kwDrastic'), hint: t('settings.general.kwDrasticHint') },
-        ];
-        for (const field of fields) {
-            new Setting(section)
-                .setName(field.name)
-                .addTextArea(text => text
-                    .setPlaceholder(field.hint)
-                    .setValue((overrides[field.key] ?? []).join(', '))
-                    .onChange(async value => {
-                        const words = value.split(/[,，\s]+/).map(word => word.trim()).filter(Boolean);
-                        const next = { ...(this.plugin.settings.semanticKeywordOverrides ?? {}) };
-                        next[field.key] = words;
-                        this.plugin.settings.semanticKeywordOverrides = next;
-                        await this.plugin.saveSettings();
-                    }));
-        }
+        // 2026-11-28 死配置处置：语义关键词兜底分区已摘除——词表槽位
+        // （analyzeLogicConsistency 的 options.keywords）存在，但整条链
+        // 「设置→词表→logic-consistency-checker→UI」全断（checker 无 UI 入口），
+        // 字段 semanticKeywordOverrides 保留兼容旧 data.json。接线见
+        // docs/audits/2026-11-28-settings-module-map.md 死配置清单。
     }
 
     /**
@@ -1227,33 +1189,9 @@ export class SuggestionsSection extends SettingsSection {
                     });
                 });
         }
-
-        new Setting(section)
-            .setName(t('settings.general.sugEvidenceName'))
-            .setDesc(t('settings.general.sugEvidenceDesc'))
-            .addToggle(toggle => toggle
-                .setValue(suggestions.showEvidenceByDefault)
-                .onChange(async (value) => {
-                    this.plugin.settings.suggestions = {
-                        ...this.plugin.settings.suggestions!,
-                        showEvidenceByDefault: value,
-                    };
-                    await this.plugin.saveSettings();
-                }));
-
-        new Setting(section)
-            .setName(t('settings.general.sugBatchName'))
-            .setDesc(t('settings.general.sugBatchDesc', { value: suggestions.batchAdoptThreshold.toFixed(2) }))
-            .addSlider(slider => {
-                slider.setLimits(0.5, 1, 0.01);
-                slider.setValue(suggestions.batchAdoptThreshold);
-                slider.onChange(async (value) => {
-                    this.plugin.settings.suggestions = {
-                        ...this.plugin.settings.suggestions!,
-                        batchAdoptThreshold: value,
-                    };
-                    await this.plugin.saveSettings();
-                });
-            });
+        // 2026-11-28 死配置处置：摘除 showEvidenceByDefault（RewriteSuggestion 无
+        // evidence 数据，无处展示）与 batchAdoptThreshold（改写建议是同位置多方案，
+        // 「批量采纳」语义不成立）。字段保留在 settings 接口（兼容旧 data.json），
+        // 未来补数据后再回 UI。见 docs/audits/2026-11-28-settings-module-map.md。
     }
 }

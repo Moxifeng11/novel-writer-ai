@@ -27,11 +27,14 @@ describe('两宿主统一装配', () => {
         expect(source).toContain('createSettingsSection');
     });
 
-    it('统计词表/关键词兜底已内聚到分区（宿主持久没有特例注入）', () => {
+    it('统计词表已内聚到分区；关键词兜底已随死配置处置摘除（2026-11-28）', () => {
         expect(read('ui/settings-tab.ts')).not.toContain('renderStatKeywords');
         expect(read('ui/settings-tab.ts')).not.toContain('renderRuleKeywords');
         expect(read('ui/settings/fingerprint-section.ts')).toContain('renderStatKeywords');
-        expect(read('ui/settings/general-sections.ts')).toContain('renderRuleKeywords');
+        // 关键词兜底 UI 已摘除（semanticKeywordOverrides 是断链死配置，词表槽位
+        // 与 checker 无 UI 入口）——分区不再含该方法；字段保留兼容旧 data.json。
+        // 见 docs/audits/2026-11-28-settings-module-map.md 死配置清单。
+        expect(read('ui/settings/general-sections.ts')).not.toContain('renderRuleKeywords');
     });
 });
 
