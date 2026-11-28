@@ -233,6 +233,7 @@ export const DEFAULT_PROMPT_TEMPLATES: PromptTemplate[] = [
             { name: 'allItems', description: '所有物品', required: false },
             { name: 'timelineEvents', description: '时间线事件', required: false },
             { name: 'unrevealedForeshadow', description: '未揭示伏笔', required: false },
+            { name: 'storyLinkage', description: '关联索引（story_linkage.promptText；存在时替代平铺伏笔/时间线）', required: false },
             { name: 'forcedRevealHint', description: '强制揭示提示', required: false },
             { name: 'dialogueSkeleton', description: '台词骨架', required: false },
             { name: 'writingStyleContent', description: '文笔风格', required: false },

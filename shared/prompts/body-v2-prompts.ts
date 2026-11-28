@@ -122,6 +122,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V2 = `【他这章要经历的事—�
 \${allLocs}
 \${allItems}
 
+\${storyLinkage}
 【时间线（本章时间不得倒退）】\${timelineEvents}
 
 【需要处理的伏笔】\${unrevealedForeshadow}

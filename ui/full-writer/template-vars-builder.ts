@@ -23,6 +23,7 @@ import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
 import { PROTOCOL_LINES_INSTRUCTION } from '@/shared/protocol-lines';
 import { buildAnnotationParts } from '@/shared/annotation-marker';
+import { finalizeStoryLinkageVars } from '@/engine/prompts/story-linkage-vars';
 import { auditContextBudget, formatBudgetLine } from '@/shared/context-budget';
 
 /**
@@ -771,12 +772,14 @@ const HYGIENE_BLOCKS: Array<[string, string]> = [
   ['storyContextPack', '故事上下文包'],
 ];
 
+
 /**
  * 上下文缺失时必须补空串的模板变量。
  * 这些键只在 `deps.context` 存在时由 buildEntityVars / buildContextVars 写入；
  * 漏掉任意一个，fillTemplate 就不会替换，`${allChars}` 这类占位符会原样发给模型。
  * 导出供静态契约测试锁定（见 full-writer-view-contracts.test.ts）。
  */
+
 export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "worldView",
   "settingLib",
@@ -788,6 +791,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "protocolLines",
   "writingAnnotations",
   "unrevealedForeshadow",
+  "storyLinkage",
   "timelineEvents",
   "sceneCardDigest",
   "lensDeclaration",
@@ -1197,6 +1201,11 @@ ${vars["allItems"]}`);
   }
   // v4.20 注入溯源账本：对全部模板段统计字符/token/影响面，供步骤日志与成本评估。
   // 纯遥测变量（模板无 ${_injectionLedger} 占位，不会进 prompt）。
+  // Rev 186 关联索引接入活路径（2026-11-28）：
+  // 此前 story_linkage 数据流到 buildStoryContext 即断——死路径 ai-prompt-builder
+  // 有「有 linkage 则注入【关联索引】并替代平铺伏笔/时间线」，但活模板从未有
+  // ${storyLinkage} 占位符。现在补齐；纯函数见下方导出。
+  finalizeStoryLinkageVars(vars, deps.context?.data?.story_linkage ?? null);
   try {
     vars["_injectionLedger"] = JSON.stringify(buildInjectionLedger(vars));
   } catch (e) {

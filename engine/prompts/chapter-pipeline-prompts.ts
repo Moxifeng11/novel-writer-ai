@@ -308,6 +308,7 @@ export const BODY_GENERATION_USER_TEMPLATE = `【本章在分卷中的定位】\
 \${allItems}
 【角色灵魂层（欲望/恐惧/创伤）】\${characterCores}
 【触发了的记忆碎片（感官细节会让他想起）】\${triggeredMemories}
+\${storyLinkage}
 【时间线（本章时间不得倒退）】\${timelineEvents}
 【需要处理的伏笔】\${unrevealedForeshadow}
 \${forcedRevealHint}

@@ -75,6 +75,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V3 = `【台词清单——按顺序�
 
 【设定库】\${settingLib}
 
+\${storyLinkage}
 【时间线（本章时间不得倒退）】\${timelineEvents}
 
 【需要处理的伏笔】\${unrevealedForeshadow}

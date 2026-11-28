@@ -72,6 +72,7 @@ export const BODY_GENERATION_USER_TEMPLATE_V4 = `【台词清单（按编号顺�
 \${allLocs}
 \${allItems}
 
+\${storyLinkage}
 【时间线（本章时间不得倒退）】\${timelineEvents}
 
 【需要处理的伏笔】\${unrevealedForeshadow}

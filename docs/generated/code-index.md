@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 358 | 148077 | 1967 | 1552 | 79% |
-| `services/` | 66 | 19645 | 298 | 206 | 69% |
-| `shared/` | 273 | 54518 | 2327 | 1803 | 77% |
+| `engine/` | 359 | 148121 | 1968 | 1553 | 79% |
+| `services/` | 66 | 19646 | 298 | 206 | 69% |
+| `shared/` | 273 | 54519 | 2327 | 1803 | 77% |
 | `core/` | 7 | 3401 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114407 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114416 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -267,9 +267,9 @@
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 10 | 0 | 0 |
-| `engine/prompts/body-v3-prompts.ts` | 99 | 3 | 3 |
-| `engine/prompts/body-v4-prompts.ts` | 95 | 3 | 3 |
-| `engine/prompts/chapter-pipeline-prompts.ts` | 641 | 11 | 11 |
+| `engine/prompts/body-v3-prompts.ts` | 100 | 3 | 3 |
+| `engine/prompts/body-v4-prompts.ts` | 96 | 3 | 3 |
+| `engine/prompts/chapter-pipeline-prompts.ts` | 642 | 11 | 11 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
 | `engine/prompts/human-countable-hints.ts` | 15 | 1 | 1 |
@@ -279,6 +279,7 @@
 | `engine/prompts/priority-system.ts` | 85 | 2 | 2 |
 | `engine/prompts/prompt-registry.ts` | 210 | 8 | 8 |
 | `engine/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
+| `engine/prompts/story-linkage-vars.ts` | 41 | 1 | 1 |
 | `engine/prompts/style-exemplars.ts` | 134 | 8 | 7 |
 | `engine/prompts/template-utils.ts` | 187 | 4 | 4 |
 | `engine/prompts/writing-rules-format.ts` | 48 | 3 | 3 |
@@ -437,7 +438,7 @@
 | `services/project-rename-service.ts` | 192 | 2 | 2 |
 | `services/project-standard-service.ts` | 68 | 3 | 1 |
 | `services/prompt-manager.ts` | 880 | 6 | 5 |
-| `services/prompt-templates-default.ts` | 597 | 1 | 1 |
+| `services/prompt-templates-default.ts` | 598 | 1 | 1 |
 | `services/quality-history-store.ts` | 182 | 5 | 5 |
 | `services/quality-panel-service.ts` | 113 | 2 | 1 |
 | `services/relation-graph-sync-service.ts` | 141 | 6 | 1 |
@@ -630,7 +631,7 @@
 | `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
-| `shared/prompts/body-v2-prompts.ts` | 148 | 3 | 3 |
+| `shared/prompts/body-v2-prompts.ts` | 149 | 3 | 3 |
 | `shared/prose-metrics.ts` | 587 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
 | `shared/protagonist.ts` | 40 | 2 | 2 |
@@ -878,7 +879,7 @@
 | `ui/full-writer/step-render-controller.ts` | 679 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1289 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1298 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
