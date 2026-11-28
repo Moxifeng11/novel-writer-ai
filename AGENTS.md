@@ -34,3 +34,13 @@
   读脚本仍用 vault 相对路径，如 `.obsidian/plugins/novel-writer-ai/scripts/xxx.js`。
 - 提交前跑 `npm run preflight`（含 30+ 项门禁），视觉改动另跑 `node scripts/check-visual-diff.mjs`。
 
+## 附：固化文档随码更新（2026-11-28 规矩，用户要求固化）
+
+- `docs/audits/` 里的文档分两类：**活文档**（文件名含 `-flow` / `-map` / `-reference` / `-guide`，
+  会被后续优化当设计依据）与**历史快照**（`*-audit.md` 等时间点报告，允许过期）。
+- 活文档必须随软件优化同步更新——`check:doc-anchors` 门禁已把这条变成强制：
+  活文档里引用的代码路径 / 设置字段被移动、改名、删除时 preflight 直接拦。
+- 改代码前若依赖某份固化文档的结论，先确认它的锚点仍在（跑 `npm run check:doc-anchors`）；
+  历史记述引用已删除的路径时，行内加 `<!-- anchor-ok: 历史记述 -->` 豁免。
+- 过期的活文档宁可改名降级为 `*-snapshot.md`，也不要留着误导后续优化。
+

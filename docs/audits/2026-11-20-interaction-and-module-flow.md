@@ -36,7 +36,7 @@
 
 - **现象**：同一个 Ctrl+S，三个编辑面三种行为；且绑定都在编辑器元素上，焦点在 UI 控件时失效（按钮 tooltip 却承诺了它）。
 - **证据**：
-  - 绑定层：`ui/co-writing/editor-shortcuts.ts:81`（`mod+s → {kind:'save'}`，挂在 `co-writing-view.ts:1074` 的 `rightEditor` keydown）；`ui/co-write-floating-panel.ts:204`；`ui/full-writer/unit-writer-controller.ts:271`
+  - 绑定层：`ui/co-writing/editor-shortcuts.ts:81`（`mod+s → {kind:'save'}`，挂在 `co-writing-view.ts:1074` 的 `rightEditor` keydown）；`ui/co-writing/save-state.ts`（悬浮面板已于 2026-11 后模块化拆入 ui/co-writing/*，浮窗本体移除）；`ui/full-writer/unit-writer-controller.ts:271`
   - 行为差异：协同视图 = 推撤销快照 + 成功 Notice（`co-writing-view.ts:1744-1747`）；全文写作台 = 仅 flush + Notice，**不推快照**；悬浮面板 = **静默**（仅状态字变化，`:308`）
   - 承诺：`ui/co-writing/control-panel.ts:22` tooltip「立即保存当前正文（Ctrl+S）」（资源 `cowrite.panel.tipSave`）——按钮在编辑器**外**，焦点不在编辑器时 Ctrl+S 落到 Obsidian 全局
   - Obsidian 命令体系：全仓 `hotkeys:` 注册 **0** 处
@@ -47,7 +47,7 @@
 ### A-3 同一协同正文，两个入口的丢失风险策略不同（P0/P1，交互不一致）
 
 - **现象**：主视图编辑器 2 秒防抖自动保存；**悬浮面板编辑同一正文却完全没有自动保存**——输入后只把状态字改成「编辑中」，之后全靠用户手动点 💡 保存或按 Ctrl+S（且静默）。
-- **证据**：主视图 `ui/co-writing-view.ts:1095`（input → `scheduleAutoSave()`，`:3469-3474` `debounceFixed("auto-save", …, 2000)`）；悬浮面板 `ui/co-write-floating-panel.ts:210-214`（input 仅 `updateSnapshot/updateSaveState("编辑中")`），全文件无 debounce/autoSave 实现。
+- **证据**：主视图 `ui/co-writing-view.ts:1095`（input → `scheduleAutoSave()`，`:3469-3474` `debounceFixed("auto-save", …, 2000)`）；悬浮面板 `ui/co-write-floating-panel.ts:210-214`（input 仅 `updateSnapshot/updateSaveState("编辑中")`），全文件无 debounce/autoSave 实现。 <!-- anchor-ok: 历史记述（2026-11-20 证据，浮窗本体已拆） -->
 - **影响**：用户从悬浮面板快速记笔记，关面板 = 未保存内容丢失；而同样操作在主视图是安全的。**同一份正文，丢失风险取决于从哪个入口编辑。**
 - **建议**：悬浮面板接入同一 `BodySaveController`（或至少同一防抖保存）。
 - **预估**：0.5 天（控制器已抽好，接 host 接口即可）。
@@ -121,7 +121,7 @@
 ### A-12 保存按钮文案与图标三种（P2，交互不一致）
 
 - **现象**：「💡 保存」（悬浮面板，灯泡）/「💾 保存」（模板管理、指纹强度弹窗，软盘）/「保存」（MCP 表单，无图标）。
-- **证据**：`co-write-floating-panel.ts:159`、`template-manager.ts:473`、`fingerprint-intensity-modal.ts:453`、`mcp-server-form-modal.ts:192`。
+- **证据**：`co-write-floating-panel.ts:159`、`template-manager.ts:473`、`fingerprint-intensity-modal.ts:453`、`mcp-server-form-modal.ts:192`。 <!-- anchor-ok: 历史记述 -->
 - **影响**：小但显眼——保存是最常用的动作，图标语义（灯泡 vs 软盘）混乱。
 - **建议**：统一「💾 保存」；并入 i18n 资源时用同一键。
 - **预估**：0.25 天。
@@ -129,7 +129,7 @@
 ### A-13 保存状态文案双轨：枚举 i18n vs 硬编码中文（P1，交互不一致）
 
 - **现象**：协同主视图已把保存状态重构为 `SaveState` 枚举 + i18n（ZC-20261120-05，修过 en 下脏标记常亮的真 bug）；**悬浮面板仍硬编码中文状态串流转**——en 界面下面板状态恒为中文。
-- **证据**：`ui/co-writing/save-state.ts:1-8`（文件头自述动机）+ `:14` 枚举；`co-write-floating-panel.ts:144,213,270,308,313` 硬编码 "未保存/编辑中/已加载/已保存/保存失败"。
+- **证据**：`ui/co-writing/save-state.ts:1-8`（文件头自述动机）+ `:14` 枚举；`co-write-floating-panel.ts:144,213,270,308,313` 硬编码 "未保存/编辑中/已加载/已保存/保存失败"。 <!-- anchor-ok: 历史记述 -->
 - **影响**：en 用户在悬浮面板看到中文状态；与主视图同功能两套实现（正是 save-state.ts 注释警告的模式在另一个文件重演）。
 - **建议**：悬浮面板接入 `SaveState` 枚举与 `saveStateLabel()`（与 A-3 一起改，同文件）。
 - **预估**：0.25 天。
@@ -166,7 +166,7 @@
 - **影响**：用户在全文写作台误删段落无撤销；两编辑面能力不对等。
 - **建议**：评估把协同的撤销栈抽成共享件接入单元写作（工作量需评估，先列 P2）。
 - **预估**：2 天（若共享化）。
-- **状态（2026-11-20，DSH）**：已修。`ui/co-writing/edit-history.ts` 移到 `shared/edit-history.ts`（纯数据结构），协同视图与单元写作台共用 `ChapterHistoryStore`；`ui/full-writer/unit-writer-controller.ts` 接入栈键「项目|单元号」、800ms 节流快照（输入 / 失焦 / AI 落笔 / 一键排版都提交）、Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 仅在正文编辑器内接管（标题框保持原生撤销）、头部右侧撤销/重做按钮按 `canUndoRedo` 启停。实机验证：切到第 2 节再切回第 1 节，撤销栈仍在。
+- **状态（2026-11-20，DSH）**：已修。`ui/co-writing/edit-history.ts` 移到 `shared/edit-history.ts`（纯数据结构），协同视图与单元写作台共用 `ChapterHistoryStore`；`ui/full-writer/unit-writer-controller.ts` 接入栈键「项目|单元号」、800ms 节流快照（输入 / 失焦 / AI 落笔 / 一键排版都提交）、Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 仅在正文编辑器内接管（标题框保持原生撤销）、头部右侧撤销/重做按钮按 `canUndoRedo` 启停。实机验证：切到第 2 节再切回第 1 节，撤销栈仍在。 <!-- anchor-ok: 历史记述（迁移已完成，旧路径仅记叙） -->
 
 ### A-18 图表空态带内联 style，与内联样式基线冲突（P2）
 
@@ -366,7 +366,7 @@ graph TD
 | # | 事项 | 来源 | 依赖 | 预估 | 需另派任务？ |
 |---|---|---|---|---|---|
 | 1 | `withButtonBusy` 接入全部 AI 生成按钮（≥10 处），优先 `plan-book-modal` / `ai-builder-modal`（当前零守卫） | A-1 | 无 | 1 天 | 是（scope: `ui/plan-book-modal.ts, ui/ai-builder-modal.ts, ui/button-busy.ts`） |
-| 2 | 悬浮面板接入 `BodySaveController` 自动保存 + `SaveState` 枚举（同一正文两入口风险策略不同 + en 状态恒中文） | A-3 + A-13 | 无 | 1 天 | 是（scope: `ui/co-write-floating-panel.ts, ui/co-writing/save-state.ts`） |
+| 2 | 悬浮面板接入 `BodySaveController` 自动保存 + `SaveState` 枚举（同一正文两入口风险策略不同 + en 状态恒中文） | A-3 + A-13 | 无 | 1 天 | 是（scope: `ui/co-write-floating-panel.ts, ui/co-writing/save-state.ts`） | <!-- anchor-ok: 历史任务行（浮窗本体已按 RETIRE-V1 移除） -->
 | 3 | `confirmDiscardIfDirty` 工具 + 高危 10 个 Modal 接入（42 个可编辑 Modal 关闭即丢，0 个有确认） | A-5 | 无 | 1.5 天 | 是（scope: `ui/components/, ui/*modal*.ts` 高危清单） |
 | 4 | ~~伏笔库写入统一加锁~~ —— **已撤销**：交付前逐点复核发现 analysis-report-engine:1310 已有锁（v4.27 P1-1），settlement 三处写点全有锁；见 B10 更正 | B10 | — | — | 撤销（任务 ZC-20261120-28 已 fail） |
 
@@ -389,7 +389,7 @@ graph TD
 | # | 事项 | 来源 | 依赖 | 预估 | 需另派任务？ |
 |---|---|---|---|---|---|
 | 14 | ✅ **已修（2026-11-20）** 空态统一：`ui/components/empty-state.ts` 增 `variant: 'compact'`（类 `nw-empty-state--compact`，不渲染图标）+ `createCompactEmptyState()` + `chartEmptyStateHtml(text)`（无内联 style，转义文本）。替换面：`ui/svg-charts.ts` **14 处**内联空态（11 处「暂无数据」+ 雷达图维度不足 / 数据总和为 0 / 暂无事件）、`ui/prompt-manager-settings.ts` 3 处 `nw-empty-center-muted`、`ui/monitor-panel-a.ts` 4 default + `showEmpty()` 5 处、`ui/monitor-panel-b.ts` 3 处、六个弹窗/视图（asset-registry / backup-center ×2 / job-center / home / project-health ×3 / usage-ledger）改 `appendChild(createEmptyState(...))`。样式：`styles-src/07-charts-and-review.css` 新增 `.nw-empty-state--compact`（**必须同时写 `.nw-scope .nw-empty-state--compact`**，否则 0,2,0 的 `.nw-scope .nw-empty-state` 压过裸类）与 `.nw-chart-empty`；删 `.nw-float-empty`（05 号文件）、`.nw-empty-center-muted`（06 号文件）。文案新增顶层组 `emptyState`（zh/en 各 16 条）→ 资源各 6064。验证：job-center 空态 606×252、project-health 594×270、监控两面板 compact 行各 33px（元素截图在 CDP 下不可靠，改探针读计算样式 padding 8px 0 / 无边框 / 12px）；check:css 基线 801044；i18n 棘轮降 30 到 205 文件 / 5415 条 | A-8 + A-18 | 无 | 1 天 | 已由 DSH 直接完成 |
-| 15 | ✅ **已修（2026-11-20）** 持久进度统一：`utils/helpers.ts`（**审计写的 `ui/utils/helpers.ts` 路径不存在，实际在仓根 `utils/`**）新增 `ProgressHandle` 接口 + `progressHandle(key, message)` —— 内部走 `showProgress`/`hideProgress` 的 key 槽位，返回 `{ setMessage, hide }`，调用方 `.setMessage()`/`.hide()` 语义不变（最小 diff）。30 处 `new Notice(msg, 0)` 全部替换，key 逐流程分配（`backup-yuan` / `protect-yuan` / `batch-create` / `continue-create` / `continue-generate` / `setting-lib-generate` / `cover-save` / `project-create` / `ideation-generate` / `plan-book-worldview` / `plan-book-outline` / `rebuild-chapters` / `volume-intro-generate` / `kb-batch-classify` / `worldview-generate` / `tomato-rank` / `novel-tags-analyze` / `cowrite-quality-fix` / `ai-builder-worldview` / `ai-builder-generate` / `fanfic-materials` / `fanfic-generate` / golden-opening ×7）。`ui/ai-builder-modal.ts` 的 `generateSingle`/`generateBatch` 形参类型 `Notice` → `ProgressHandle`。`ui/outline-expand-modal.ts` 私有 DOM 进度方法改名 `setProgressText`/`hideProgressBar`（避免与共享 helper 同名混淆）。新增 4 例单测（创建即登记 / setMessage 复用 / hide 幂等 / 不同 key 隔离） | A-9 + A-10 | 无 | 1 天 | 已由 DSH 直接完成 |
+| 15 | ✅ **已修（2026-11-20）** 持久进度统一：`utils/helpers.ts`（**审计写的 `ui/utils/helpers.ts` 路径不存在，实际在仓根 `utils/`**）新增 `ProgressHandle` 接口 + `progressHandle(key, message)` —— 内部走 `showProgress`/`hideProgress` 的 key 槽位，返回 `{ setMessage, hide }`，调用方 `.setMessage()`/`.hide()` 语义不变（最小 diff）。30 处 `new Notice(msg, 0)` 全部替换，key 逐流程分配（`backup-yuan` / `protect-yuan` / `batch-create` / `continue-create` / `continue-generate` / `setting-lib-generate` / `cover-save` / `project-create` / `ideation-generate` / `plan-book-worldview` / `plan-book-outline` / `rebuild-chapters` / `volume-intro-generate` / `kb-batch-classify` / `worldview-generate` / `tomato-rank` / `novel-tags-analyze` / `cowrite-quality-fix` / `ai-builder-worldview` / `ai-builder-generate` / `fanfic-materials` / `fanfic-generate` / golden-opening ×7）。`ui/ai-builder-modal.ts` 的 `generateSingle`/`generateBatch` 形参类型 `Notice` → `ProgressHandle`。`ui/outline-expand-modal.ts` 私有 DOM 进度方法改名 `setProgressText`/`hideProgressBar`（避免与共享 helper 同名混淆）。新增 4 例单测（创建即登记 / setMessage 复用 / hide 幂等 / 不同 key 隔离） | A-9 + A-10 | 无 | 1 天 | 已由 DSH 直接完成 | <!-- anchor-ok: 历史记述（旧路径已在文中自证不存在） -->
 | 16 | ✅ **已修（2026-11-20）** 字符串键收编：①`shared/paths.ts` 新增 `VOLUME_OUTLINE_SUFFIX = '_分卷大纲.md'` + `isVolumeOutlineFileName(name)` + `volumeNumberFromOutlineName(name)`，`pjVolumeOutlineFile()` 改由常量拼装；**10 处**运行时判断改为谓词（`engine/ai-outline-generator.ts`、`engine/long-term-memory.ts`（原正则 `/^第(\d+)卷_分卷大纲\.md$/`）、`ui/chapter-outline-tree-modal.ts`、`ui/continue-chapters-modal.ts`、`ui/full-writer/wizard-controller.ts`、`ui/full-writer/wizard-step-validators.ts`、`ui/plot-canvas-modal.ts`、`ui/rebuild-chapters-modal.ts`、`ui/volume-intro-modal.ts`、`utils/helpers.ts` 两处 + 卷号排序）。②`shared/format-constants.ts` 新增 `RE_OUTLINE_KEY_LINE` 与 `RE_OUTLINE_SUMMARY_FIELD(field)`；顺手修掉既存 bug：模板/plan-book 写的是 `- **总字数目标**：120万`（加粗），旧正则只认 `总字数目标：`，导致两弹窗的总览字段长期取空、提示词永远「未设定」——新正则吃掉可选 `**`。③**两份重复解析器收编**：新增 `shared/volume-summary.ts`（`parseVolumeSummary` / `formatVolumePromptSummary`），`ui/novel-tags-modal.ts` 的 `parseOutline`+`buildFullSummary`、`ui/volume-intro-modal.ts` 的 `readVolumes` 解析段+`buildFullSummary` 全部删除改为调用共享实现（novel-tags 仍用「冲突示例」前缀，volume-intro 仍限 6000 字并保留总览兜底）；`FIELD_VOLUME_NAME` 从零消费死常量复活，两处 `sections['卷名']` 改用常量。④新增 `tests/unit/shared/volume-summary.test.ts`（14 例：总览字段/切卷/KV/章节表条件/前缀与截断/总览兜底/文件名谓词/「两弹窗不再自写正则」源码不变量）。验证：i18n 棘轮 205 文件 5415 → **5366** 条（删重复中文键名）；bundle main.js 6,228,536 → **6,227,024**（−1,512） | B3 + 补充 | 依赖 8 | 1 天 | 已由 DSH 直接完成 |
 | 17 | ✅ **已修（2026-11-20）** 知识库 baseDir 双口径：`services/knowledge-base-manager.ts` 的 `sweepOrphanVectorArtifacts` 两处 `fsPort.listFolders(kbKnowledgeBaseDir())`（:602 / :634 分支）改为 `kbKnowledgeBaseDir(this.baseDir)`；`ui/settings/knowledge-section.ts` 显示的库路径与「打开文件夹」改用 `this.knowledgeBaseManager?.getBaseDir() ?? kbKnowledgeBaseDir()`（原来硬编码 `写作知识库/`，自定义 baseDir 时显示与实际扫描目录不一致）。`tests/unit/services/knowledge-base-orphan-vectors.test.ts` 的 FakeFileSystem 增 `folderListArgs` 记录入参，新增 2 例（自定义 baseDir 传入自定义目录 / 自定义 baseDir 无书时照常清理），6 例通过 | B6 | 无 | 0.5 天 | 已由 DSH 直接完成 |
 | 18 | ✅ **已修（2026-11-20）** 自动保存徽标 + 高危字段恢复：新增 `ui/settings/autosave-hint.ts`（`renderAutoSaveHint()`，幂等，遍历 `container.children` 去重——**不能用 `:scope >` 选择器**，test fake-dom 不支持）与 `ui/settings/autosave-snapshot.ts`（`AutoSaveSnapshot` 只保留首次值 / `createRestoreButton()`→`nw-api-restore-btn`，不可用时 `disabled` + `is-disabled`）。接线：`ui/settings-tab.ts` 与 `ui/mini-settings-modal.ts` 在分区渲染前插徽标；`ui/settings/api-section.ts` 对 Base URL（键 `endpoint:<id>`）与 API Key（`apiKey:<id>`）在建控件后建恢复按钮、`change` 时 `capture()` 改动前值，恢复走 `updateProvider` + `saveSettings` + `rerender`（密钥恢复按 `saveSettingsWithOutcome()` 的 `droppedSecrets` 选提示）。i18n 新增 5 键（`settings.autoSave.badge` / `.hint`、`settings.api.restorePrevious` / `.restorePreviousHint` / `.keyRestored`）→ 资源各 6069。样式 `styles-src/21-settings-navigation.css`：`.nw-settings-autosave*` 三件套 + `.nw-api-restore-btn`（`width: fit-content; align-self: flex-start`，否则在 Base URL 字段里被拉成整行 414px）。测试 `tests/unit/ui/settings-autosave.test.ts` 7 例。实机：设置弹窗在**独立窗口**（CDP 里是第二个 target，主窗口 `.modal` 数为 0），zh「自动保存 / 修改后立即生效，没有保存按钮。」、en「Auto-saved / Changes take effect immediately — there is no save button.」，零横向溢出 | A-15 | 无 | 1 天 | 已由 DSH 直接完成 |
@@ -425,7 +425,7 @@ graph TD
 
 提交信息描述的三件事，都能在「新函数存在」层面成立，但调用层面全部缺失：
 
-1. **自动保存没有接上**：`ui/co-write-floating-panel.ts` 的 `scheduleAutoSave()` 从未被调用——input 监听只更新状态与字数，A-3 描述的丢内容问题实际仍在。
+1. **自动保存没有接上**：`ui/co-write-floating-panel.ts` 的 `scheduleAutoSave()` 从未被调用——input 监听只更新状态与字数，A-3 描述的丢内容问题实际仍在。 <!-- anchor-ok: 历史记述（已被 RETIRE-V1 整体移除取代） -->
 2. **状态展示出现用户可见回归**：`updateSaveState(state: string)` 仍是字符串签名、方法体是 `setText(state)`；而调用方已改传 `'editing' / 'saved' / 'saveFailed'`，等于把英文枚举键直接显示给用户（中英界面都错）。
 3. **脏态类未接**：`isDirtySaveState`、`SaveState` 两个导入未被使用（lint 三条 unused 警告），提交里说的「附带接上脏态样式类」不存在；`styles-src/04-workspace-layers.css` 也没有对应规则。
 
@@ -456,7 +456,7 @@ graph TD
 
 DSH 建议：**退役**（与 2026-11-19「旧正文写入链」同一处理口径），但这是用户可见功能删除，需用户确认；确认前保留本次修复（布局恢复的用户仍受益）。
 
-**用户裁定（m24178，2026-11-20）**：「判断旧入口退役。同时，直接在dsh修改，暂时不派给zcode」。已执行 `RETIRE-V1`：删除 `ui/co-write-floating-panel.ts` 与契约测试、移除 `workspace-manager.ts` 的 import/`FLOAT_VIEW_TYPES` 成员/`registerView`、删除 `.nw-float-cowrite-root` 四条样式与只为它新增的脏态修饰类、清掉 `scripts/audit-cjk.mjs` 的待迁登记；清单见 `docs/planning/2026-11-19-legacy-modal-retirement.md` §九。
+**用户裁定（m24178，2026-11-20）**：「判断旧入口退役。同时，直接在dsh修改，暂时不派给zcode」。已执行 `RETIRE-V1`：删除 `ui/co-write-floating-panel.ts` 与契约测试、移除 `workspace-manager.ts` 的 import/`FLOAT_VIEW_TYPES` 成员/`registerView`、删除 `.nw-float-cowrite-root` 四条样式与只为它新增的脏态修饰类、清掉 `scripts/audit-cjk.mjs` 的待迁登记；清单见 `docs/planning/2026-11-19-legacy-modal-retirement.md` §九。 <!-- anchor-ok: 历史裁定记录（删除动作本身） -->
 
 ### 5.5 方法教训
 
