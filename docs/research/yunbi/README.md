@@ -118,9 +118,24 @@ docs/research/yunbi/
 | 抽屉宽度六档 | `--nw-drawer-*` + `.nw-drawer--*` | `d8210792` |
 | 生成待确认（引擎） | `BodyWriteRequest.requireConfirm` | `d8210792` |
 | 朱雀检测接入知识库 | `engine/zhuque-detector.ts` | `e5b8d64f` |
+| T1-T8 优化模板（温度分档/预算计量/协议行/批注/待确认/预设/步骤门禁） | `shared/ai-task-profile.ts` 等 | 见 `docs/templates/yunbi-optimization-template.md` |
+| **蒸馏回流（18 项中的 11 项 + 双向补写 + T 行链式）** | `shared/distill-contract.ts`、`shared/timeline-chain.ts` | `30ea0f66` |
 
 ## 未落地的部分
 
 见 `docs/templates/yunbi-optimization-template.md`（T1-T8 八个模板，含代码）。
 
-优先级最高的是 **T1 温度分档**（本仓现在 0.7/1.4/1.25 三值混用）。
+~~优先级最高的是 T1 温度分档~~ —— T1-T8 已全部落地；T9（蒸馏回流）切片1 已完成（`30ea0f66`）。
+
+### 蒸馏回流落地状态（T9，任务板 ZC-20261128-01）
+
+| 云笔 18 项 | 本仓承担方 | 状态 |
+|---|---|---|
+| C/EL/T/CF/M/K/G/L/W/OP/PH（11 项） | `shared/distill-contract.ts` | ✅ 切片1 |
+| CR/CI/BT/NE（关系/物品/境界/新实体） | `shared/protocol-lines.ts`（既有） | ✅ 已上线 |
+| 出场角色 / 角色经历 | `analysis-report-engine` 实体提取（既有） | ✅ 已上线 |
+
+**仍缺（切片2 候选）**：
+1. 时间轴链式校验的**跨章聚合**（现在只做单章 reversed-span；需要读取历史章 T 行才能判「倒退/机械推进」）
+2. 待确认清单的**一键应用**（现在只生成清单，人工抄写）
+3. 蒸馏触发时机接进流水线（现在靠正文末尾自带蒸馏行；`inject` 模式可让模型产出，但未加自动「正文后蒸馏」步骤）
