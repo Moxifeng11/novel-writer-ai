@@ -169,6 +169,30 @@ generateWorldviewModule / resetSessionTokens / sessionTokens / getMaxConcurrent
 
 ---
 
+## 六之二、第三轮：生命周期/内存缺陷（commit 11b3dbab，2026-11-28）
+
+第二份审计「并发/资源」类的剩余项，逐个取证后全部修复：
+
+| # | 缺陷 | 触发 | 后果 |
+|---|---|---|---|
+| A | `saveSegmentedDimensionResult` 只查书还在，不查任务终态 | 用户取消后分段聚合恰完成 | 「已取消」之后整套维度报告仍写盘 |
+| B1 | tasks Map 终态后长持整本原文（×2 份） | 几十本书累积 | 每本 ~4MB 常驻，无界上涨 |
+| B2 | dimensionCache 无上限 | 同上 | 整份分析结果永久累积 |
+| C | `ollama-provider.embed` 转发闭包不解除 | 任务级 signal × 每 chunk | embedBatch 5 并发 × 几百块 = 数千闭包 |
+| D | rewrite-suggestion abort 闭包不解除 | **不可达**（唯一调用方不传 signal） | 防御性修复 |
+| E | `waitForResume` resolve 路径不解绑 | 每个 pause→resume 循环 | 任务级 controller 上漏一个监听器 |
+| F | `performanceMonitor.start→await→end` 无 finally | 每次网络失败 | activeMarks 无界增长 |
+| G | 共享向量 provider 卸载不清 | 热重载/禁用 | baseUrl/apiKey 留在模块级变量 |
+
+连带修正：`knowledge-monitor-modal.retryTask` 原来读 `task.sourceText` 重提
+（B1 释放后会提交空文本），改走 `rerunBook` 从知识库重读——两处必须一起改，
+否则修内存会引入新 bug。
+
+`Rev186 关联索引`复核结论：`story_linkage`（ledger 系）与
+`formattedCrossLink`（story-context-graph）是**两套不同生产者**，
+活模板已有 `${storyContextPack}`；「linkage 未进活路径」维持待决策，
+不并入纠错。
+
 ## 七、新增的实测工具
 
 | 命令 | 覆盖 | 成本 |
