@@ -6,12 +6,12 @@
 
 | 层 | 文件数 | 行数 | 导出声明 | 有 JSDoc | 覆盖率 |
 |---|---:|---:|---:|---:|---:|
-| `engine/` | 359 | 147432 | 1955 | 1540 | 79% |
+| `engine/` | 359 | 147492 | 1955 | 1540 | 79% |
 | `services/` | 66 | 19516 | 298 | 206 | 69% |
-| `shared/` | 275 | 55350 | 2341 | 1817 | 78% |
-| `core/` | 7 | 3401 | 35 | 20 | 57% |
+| `shared/` | 277 | 55981 | 2362 | 1829 | 77% |
+| `core/` | 7 | 3402 | 35 | 20 | 57% |
 | `domains/` | 15 | 1584 | 88 | 58 | 66% |
-| `ui/` | 309 | 114354 | 1185 | 946 | 80% |
+| `ui/` | 309 | 114375 | 1185 | 946 | 80% |
 
 ## 文件清单
 
@@ -22,7 +22,7 @@
 | `core/example-project-service.ts` | 331 | 3 | 3 |
 | `core/index.ts` | 22 | 5 | 0 |
 | `core/provider-manager.ts` | 800 | 4 | 2 |
-| `core/settings-service.ts` | 653 | 5 | 4 |
+| `core/settings-service.ts` | 654 | 5 | 4 |
 | `core/theme-manager.ts` | 327 | 4 | 3 |
 | `domains/harness-profile-registry.ts` | 30 | 2 | 2 |
 | `domains/kernel/domain-project-factory.ts` | 170 | 2 | 0 |
@@ -267,8 +267,8 @@
 | `engine/prompt-resolver.ts` | 164 | 4 | 2 |
 | `engine/prompt-templates.ts` | 10 | 0 | 0 |
 | `engine/prompts/body-v2-prompts.ts` | 10 | 0 | 0 |
-| `engine/prompts/body-v3-prompts.ts` | 100 | 3 | 3 |
-| `engine/prompts/body-v4-prompts.ts` | 96 | 3 | 3 |
+| `engine/prompts/body-v3-prompts.ts` | 102 | 3 | 3 |
+| `engine/prompts/body-v4-prompts.ts` | 98 | 3 | 3 |
 | `engine/prompts/chapter-pipeline-prompts.ts` | 10 | 0 | 0 |
 | `engine/prompts/co-write-prompts.ts` | 103 | 4 | 4 |
 | `engine/prompts/deai-prompts.ts` | 100 | 4 | 4 |
@@ -353,7 +353,7 @@
 | `engine/step-definitions.ts` | 297 | 13 | 11 |
 | `engine/step-modal-controller.ts` | 673 | 2 | 2 |
 | `engine/step-prompt-assembly.ts` | 335 | 5 | 4 |
-| `engine/step-result-saver.ts` | 623 | 5 | 4 |
+| `engine/step-result-saver.ts` | 679 | 5 | 4 |
 | `engine/step-runner-callbacks.ts` | 160 | 5 | 0 |
 | `engine/step-runner-retry.ts` | 234 | 6 | 5 |
 | `engine/step-runner.ts` | 2505 | 2 | 1 |
@@ -514,6 +514,7 @@
 | `shared/degradation-notifier.ts` | 286 | 11 | 5 |
 | `shared/desktop-shell.ts` | 79 | 3 | 2 |
 | `shared/diff-utils.ts` | 322 | 8 | 8 |
+| `shared/distill-contract.ts` | 360 | 12 | 6 |
 | `shared/divergence-trend.ts` | 44 | 2 | 2 |
 | `shared/document-scopes.ts` | 51 | 4 | 4 |
 | `shared/dom-window.ts` | 77 | 4 | 3 |
@@ -631,8 +632,8 @@
 | `shared/prompt-manager-import.ts` | 208 | 6 | 3 |
 | `shared/prompt-manager-types.ts` | 139 | 11 | 11 |
 | `shared/prompt-template-catalog.ts` | 51 | 3 | 0 |
-| `shared/prompts/body-v2-prompts.ts` | 149 | 3 | 3 |
-| `shared/prompts/chapter-pipeline-prompts.ts` | 642 | 11 | 11 |
+| `shared/prompts/body-v2-prompts.ts` | 151 | 3 | 3 |
+| `shared/prompts/chapter-pipeline-prompts.ts` | 644 | 11 | 11 |
 | `shared/prompts/soul-driven-prompts.ts` | 189 | 3 | 3 |
 | `shared/prose-metrics.ts` | 587 | 10 | 10 |
 | `shared/prose-naturalizer.ts` | 234 | 3 | 3 |
@@ -705,6 +706,7 @@
 | `shared/thresholds.ts` | 927 | 126 | 98 |
 | `shared/time-context.ts` | 44 | 3 | 3 |
 | `shared/time-estimator.ts` | 465 | 6 | 2 |
+| `shared/timeline-chain.ts` | 267 | 9 | 6 |
 | `shared/timeline-events-format.ts` | 59 | 2 | 2 |
 | `shared/token-estimator.ts` | 187 | 8 | 8 |
 | `shared/true-random.ts` | 134 | 3 | 3 |
@@ -881,7 +883,7 @@
 | `ui/full-writer/step-render-controller.ts` | 679 | 2 | 2 |
 | `ui/full-writer/streamlined-nav-presenter.ts` | 294 | 12 | 12 |
 | `ui/full-writer/tab-controller.ts` | 381 | 2 | 2 |
-| `ui/full-writer/template-vars-builder.ts` | 1298 | 7 | 7 |
+| `ui/full-writer/template-vars-builder.ts` | 1305 | 7 | 7 |
 | `ui/full-writer/title-bar-controller.ts` | 196 | 2 | 2 |
 | `ui/full-writer/tool-catalog.ts` | 12 | 1 | 1 |
 | `ui/full-writer/unit-tab.ts` | 57 | 2 | 2 |
@@ -984,7 +986,7 @@
 | `ui/settings/section-factory.ts` | 125 | 4 | 1 |
 | `ui/settings/settings-search.ts` | 289 | 10 | 6 |
 | `ui/settings/setup-section.ts` | 136 | 1 | 1 |
-| `ui/settings/writing-sections.ts` | 884 | 6 | 6 |
+| `ui/settings/writing-sections.ts` | 898 | 6 | 6 |
 | `ui/settlement-recovery-modal.ts` | 149 | 1 | 1 |
 | `ui/sidebar-component.ts` | 37 | 1 | 1 |
 | `ui/states/chapter-state-manager.ts` | 403 | 1 | 1 |

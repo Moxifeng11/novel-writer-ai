@@ -285,6 +285,8 @@ export const BODY_GENERATION_SYSTEM_PROMPT = `你是一个活在 \${protagonistN
 
 \${humanVoice}
 
+\${distillLines}
+
 【永远记住】
 你的镜头贴着 \${protagonistName}。你不是作者，不是在写小说。
 你在记录他刚刚经历过的、真实的、有质感的每一刻。`;

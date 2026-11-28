@@ -23,6 +23,7 @@ import { extractWorldviewMeta } from '@/ui/utils/worldview-utils';
 import { chapterOutlineSection, volumeSectionSlice } from '@/shared/format-constants';
 import { PROTOCOL_LINES_INSTRUCTION } from '@/shared/protocol-lines';
 import { buildAnnotationParts } from '@/shared/annotation-marker';
+import { DISTILL_LINES_INSTRUCTION } from '@/shared/distill-contract';
 import { finalizeStoryLinkageVars } from '@/engine/prompts/story-linkage-vars';
 import { auditContextBudget, formatBudgetLine } from '@/shared/context-budget';
 
@@ -676,6 +677,11 @@ ${toShow.map((f) => `- ${f.name}（${f.importance || "中"}，计划:${f.planned
   vars["protocolLines"] = deps.plugin.settings.structuredChangeLines === true
     ? PROTOCOL_LINES_INSTRUCTION
     : "";
+  // 蒸馏回流（2026-11-28，云笔「蒸馏闭环」落地）：默认 parse 模式零 token 成本，
+  // 只有 inject 才把蒸馏行指令写进模板；两种模式产物都只是待确认清单。
+  vars["distillLines"] = deps.plugin.settings.distillBackflowMode === 'inject'
+    ? DISTILL_LINES_INSTRUCTION
+    : "";
   vars["nextChapterHook"] = nextHook.trim()
     || "（无下一章信息：本章结尾可自由收束，但不要写出任何暗示后续揭示的定论）";
   vars["chapPosition"] = `第${deps.chapterNum}章（${deps.volume}）`;
@@ -792,6 +798,7 @@ export const TEMPLATE_VAR_FALLBACK_KEYS = [
   "writingAnnotations",
   "unrevealedForeshadow",
   "storyLinkage",
+  "distillLines",
   "timelineEvents",
   "sceneCardDigest",
   "lensDeclaration",

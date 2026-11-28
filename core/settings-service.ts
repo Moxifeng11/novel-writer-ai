@@ -528,6 +528,7 @@ export function getDefaultSettings(): NovelWriterSettings {
         activeBodyTemplate: 'auto',
         countableHumanHints: false,
         structuredChangeLines: false,
+        distillBackflowMode: 'parse',
         contextHygieneAutoFix: true,
         firstRunComplete: false,
         autoRevisionAfterQC: true,

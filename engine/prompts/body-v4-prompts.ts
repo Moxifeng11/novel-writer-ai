@@ -31,7 +31,9 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V4 = `\${lensDeclaration}
 
 \${humanVoice}
 
-\${protocolLines}`;
+\${protocolLines}
+
+\${distillLines}`;
 
 /**
  * BODY_GENERATION_USER_TEMPLATE_V4 常量。

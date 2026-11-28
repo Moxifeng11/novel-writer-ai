@@ -15,6 +15,8 @@ import { App, TFile } from 'obsidian';
 import { getChapterFileName, CHAPTER_FILE_TYPES, findChapterFile } from './chapter-utils';
 import { BodyWriter } from './body-writer';
 import { splitProtocolLines, validateProtocolLines, renderProtocolChecklist } from '@/shared/protocol-lines';
+import { splitDistillLines, validateDistillLines, renderDistillChecklist } from '@/shared/distill-contract';
+import { parseStructuredDate, validateTimelineChain, renderTimelineChainSummary } from '@/shared/timeline-chain';
 import { pjBodyFile, pjBodyDir } from '@/shared/paths';
 import { entityDir } from '@/shared/entity-reader';
 import { findBodyFileByChapterNum } from './chapter-utils';
@@ -64,6 +66,8 @@ export interface StepResultSaverDeps {
             naturalParagraphMode?: boolean;
             /** 结构化变更行开关（默认关）；关闭时不解析协议行，避免误摘正文。 */
             structuredChangeLines?: boolean;
+            /** 蒸馏回流模式；off 不介入，parse 只解析，inject 另由模板注入指令。 */
+            distillBackflowMode?: 'off' | 'parse' | 'inject';
         };
     };
     showNotice?: (msg: string, duration?: number) => void;
@@ -365,10 +369,62 @@ export class StepResultSaver {
                         }
                     }
                 }
+                /**
+                 * 蒸馏回流（2026-11-28，云笔「蒸馏闭环」落地）。
+                 *
+                 * 顺序在协议行之后：CR/CI/BT/NE 先被剥走，这里只处理蒸馏行
+                 * （C/EL/T/CF/M/K/G/L/W/OP/PH），两者不抢同一行。
+                 *
+                 * 安全阀沿用协议行教训：`splitDistillLines` 只有在解析到 C 或 EL
+                 * 时才认定是蒸馏块并剥离，否则正文原样保留（普通散文里以 `W|`/`K|`
+                 * 开头的行不能被误摘）。
+                 *
+                 * 产物仍是**待确认清单**，不直写数据表——AI 可能编造。
+                 */
+                const distillMode = this.deps.getPlugin?.()?.settings?.distillBackflowMode ?? 'parse';
+                let distillCleanContent = cleanContent;
+                if (distillMode !== 'off') {
+                    const distillSplit = splitDistillLines(cleanContent);
+                    if (distillSplit.stripped) {
+                        distillCleanContent = distillSplit.body;
+                        const distillValidation = validateDistillLines(distillSplit.parsed);
+                        const chainNotes: string[] = [];
+                        for (const tLine of distillSplit.parsed.lines.T) {
+                            const start = parseStructuredDate(tLine.fields[0] ?? '');
+                            const end = parseStructuredDate(tLine.fields[1] ?? '');
+                            const isFlashback = /闪回/.test(tLine.fields[2] ?? '');
+                            const summary = renderTimelineChainSummary(validateTimelineChain([
+                                { chapter: chapNum ?? 0, start, end, isFlashback },
+                            ]));
+                            if (summary) chainNotes.push(summary);
+                        }
+                        const checklist = renderDistillChecklist(
+                            distillSplit.parsed,
+                            distillValidation,
+                            chapterName,
+                            chainNotes,
+                        );
+                        const distillPath = actualTargetPath.replace(/\.md$/, '.蒸馏回流待确认.md');
+                        try {
+                            if (this.app) {
+                                await writeVaultText(this.app, distillPath, checklist);
+                                log.info(
+                                    `[StepResultSaver] 蒸馏回流清单已写入: ${distillPath}`
+                                    + `（错误 ${distillValidation.errors.length} / 告警 ${distillValidation.warnings.length}）`,
+                                );
+                            }
+                        } catch (e) { // silent-ok: 清单是辅助产物，写失败不影响正文落盘；正文已正确剥离蒸馏行
+                            log.warn('[StepResultSaver] 蒸馏回流清单写入失败（不影响正文）:', e);
+                        }
+                        if (distillValidation.errors.length > 0) {
+                            log.warn(`[StepResultSaver] ${chapterName} 蒸馏行硬错误：${distillValidation.errors.join('；')}`);
+                        }
+                    }
+                }
                 const writer = new BodyWriter({ fs: this.getFS(), frontmatter: this.getFrontmatter() });
                 await writer.write({
                     path: actualTargetPath,
-                    raw: cleanContent,
+                    raw: distillCleanContent,
                     chapterNum: chapNum,
                     chapterName,
                     volume,

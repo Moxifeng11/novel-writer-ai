@@ -192,6 +192,33 @@ if (sched.ok && sched.raw !== 'NO_SCHEDULER') {
     record('拆解调度器可用', !!s && s.methods.length > 0, s ? `入口 ${s.methods.length} 个` : '异常');
 } else record('拆解调度器可用', false, sched.raw, true);
 
+// ── 9. 蒸馏回流（T9）接线：设置值合法 + 构建产物含契约与占位 ──
+const distill = obsidianEval(
+    `(async function(){
+    const p=app.plugins.plugins['${PLUGIN_ID}'];
+    const mode=String(p.settings?.distillBackflowMode ?? '');
+    let bundle='';
+    try { bundle = await app.vault.adapter.read('.obsidian/plugins/${PLUGIN_ID}/main.js'); } catch(e) { bundle=''; }
+    return JSON.stringify({
+      mode,
+      modeOk: ['off','parse','inject'].includes(mode),
+      hasPlaceholder: bundle.includes('distillLines'),
+      hasContract: bundle.includes('蒸馏回流待确认'),
+      bundleBytes: bundle.length,
+    });})()`,
+);
+if (!distill.ok) {
+    record('蒸馏回流接线', false, distill.raw, true);
+} else {
+    let d = null;
+    try { d = JSON.parse(distill.raw); } catch { d = null; }
+    const okMode = !!d && d.modeOk === true;
+    const okBundle = !!d && d.hasPlaceholder === true && d.hasContract === true;
+    record('蒸馏回流 · 设置值合法', okMode, d ? `mode=${d.mode}` : '无法解析');
+    record('蒸馏回流 · 产物含契约与占位', okBundle,
+        d ? (okBundle ? `main.js ${Math.round(d.bundleBytes / 1024)} KB 含 distillLines 与清单名` : 'main.js 未命中（构建产物过期？）') : '无法解析');
+}
+
 finish();
 
 function finish() {

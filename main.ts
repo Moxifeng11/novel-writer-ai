@@ -391,6 +391,17 @@ export interface NovelWriterSettings {
     /** 追加「可数硬指标」（时间锚点/口语/对话段数）；实验 C9 的组成部分，默认关 */
     countableHumanHints?: boolean;
     /**
+     * 蒸馏回流模式（云笔「蒸馏闭环」的落地开关）。
+     *
+     * - `off`：完全不介入
+     * - `parse`：只解析正文末尾的蒸馏行（C/EL/T/CF/M/K/G/L/W/OP/PH），生成
+     *   「蒸馏回流待确认」清单；不注入指令、零 token 成本（默认）
+     * - `inject`：额外把蒸馏行指令注入正文模板（约 200 字/章），提高产出率
+     *
+     * 无论哪种模式都**不直写数据表**：产物是待确认清单，由人核对后执行。
+     */
+    distillBackflowMode?: 'off' | 'parse' | 'inject';
+    /**
      * 正文末尾追加结构化变更行（CR/CI/BT/NE，省一次蒸馏调用）。
      *
      * 默认关：这段指令约 350 字，每章都要付 token；且会让模型在正文尾部

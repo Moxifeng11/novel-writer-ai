@@ -35,6 +35,8 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V3 = `\${lensDeclaration}
 
 \${humanVoice}
 
+\${distillLines}
+
 【动笔前先排节拍（只用于构思，不要写进正文）】
 每场戏填四格：谁要什么 / 谁在拦 / 交换了什么 / 离场时谁变了。
 排不出来就把这场戏合并掉。`;

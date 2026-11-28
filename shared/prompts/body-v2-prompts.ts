@@ -52,6 +52,8 @@ export const BODY_GENERATION_SYSTEM_PROMPT_V2 = `\${lensDeclaration}
 
 \${protocolLines}
 
+\${distillLines}
+
 【永远记住】
 你的镜头贴着 \${protagonistName}。你不是在写小说。
 你在记录他刚刚经历过的、真实的、有质感的每一刻。

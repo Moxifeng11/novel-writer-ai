@@ -378,6 +378,20 @@ export class WritingSection extends SettingsSection {
                 }));
 
         new Setting(section)
+            .setName(t('settings.writing.distillBackflowName'))
+            .setDesc(t('settings.writing.distillBackflowDesc'))
+            .addDropdown((dropdown) => dropdown
+                .addOption('off', t('settings.writing.distillBackflowOff'))
+                .addOption('parse', t('settings.writing.distillBackflowParse'))
+                .addOption('inject', t('settings.writing.distillBackflowInject'))
+                .setValue(this.plugin.settings.distillBackflowMode ?? 'parse')
+                .onChange(async (value) => {
+                    this.plugin.settings.distillBackflowMode =
+                        value === 'off' ? 'off' : value === 'inject' ? 'inject' : 'parse';
+                    await this.plugin.saveSettings();
+                }));
+
+        new Setting(section)
             .setName(t('settings.writing.structuredLinesName'))
             .setDesc(t('settings.writing.structuredLinesDesc'))
             .addToggle((toggle) => toggle

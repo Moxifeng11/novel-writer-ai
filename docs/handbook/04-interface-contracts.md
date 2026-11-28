@@ -52,6 +52,13 @@
 - 密钥字段必须加密存储、输入框不回填密文（`shared/secret-display.ts`）。
 - 删除键必须走迁移，不允许静默丢弃用户配置。
 
+**已登记的写作链设置键（示例子集，完整以类型声明为准）**
+
+| 键 | 取值 | 语义 | 消费方 |
+|---|---|---|---|
+| `structuredChangeLines` | boolean | 正文末尾追加协议行（CR/CI/BT/NE）指令 | `template-vars-builder` + `step-result-saver` |
+| `distillBackflowMode` | `off` / `parse` / `inject` | 蒸馏回流模式：`parse` 只解析蒸馏行生成待确认清单（零 token）；`inject` 另注入指令 | `template-vars-builder` + `step-result-saver`（`shared/distill-contract.ts`） |
+
 ### 2.6 frontmatter 字段
 
 | 字段 | 写入方 | 语义 |
